@@ -30,16 +30,24 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Show welcome modal on mount
-    const timer = setTimeout(() => setIsWelcomeOpen(true), 500);
-    
-    // Hide feedback tooltip after 30 seconds
-    const tooltipTimer = setTimeout(() => setShowFeedbackTooltip(false), 30000);
-    
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(tooltipTimer);
-    };
+    // Show welcome modal on mount if not shown in this session
+    const hasShownWelcome = sessionStorage.getItem('hasShownWelcome');
+    if (!hasShownWelcome) {
+      const timer = setTimeout(() => {
+        setIsWelcomeOpen(true);
+        sessionStorage.setItem('hasShownWelcome', 'true');
+      }, 500);
+      
+      const tooltipTimer = setTimeout(() => setShowFeedbackTooltip(false), 30000);
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(tooltipTimer);
+      };
+    } else {
+      // Still want the tooltip timer if modal is not shown
+      const tooltipTimer = setTimeout(() => setShowFeedbackTooltip(false), 30000);
+      return () => clearTimeout(tooltipTimer);
+    }
   }, []);
   const [result, setResult] = useState({
     profit: 0,
