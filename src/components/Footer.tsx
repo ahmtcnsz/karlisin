@@ -32,11 +32,16 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <h4 className="text-sm font-bold text-on-surface uppercase tracking-wider">Connect</h4>
+            <h4 className="text-sm font-bold text-on-surface uppercase tracking-wider">İLETİŞİM</h4>
             <div className="flex gap-4">
-              <button className="w-10 h-10 rounded-full bg-white border border-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-white transition-all shadow-sm">
+              <a 
+                href="https://ahmetcansiz.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-white border border-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-white transition-all shadow-sm"
+              >
                 <Globe size={18} />
-              </button>
+              </a>
               <button className="w-10 h-10 rounded-full bg-white border border-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary hover:text-white transition-all shadow-sm">
                 <Mail size={18} />
               </button>

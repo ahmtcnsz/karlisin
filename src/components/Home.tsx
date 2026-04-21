@@ -29,6 +29,8 @@ export default function Home() {
     setFeedbackMessage('');
   };
 
+  const [feedbackBottom, setFeedbackBottom] = useState(24);
+
   useEffect(() => {
     // Show welcome modal on mount if not shown in this session
     const hasShownWelcome = sessionStorage.getItem('hasShownWelcome');
@@ -48,6 +50,31 @@ export default function Home() {
       const tooltipTimer = setTimeout(() => setShowFeedbackTooltip(false), 30000);
       return () => clearTimeout(tooltipTimer);
     }
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const footer = document.querySelector('footer');
+      if (footer) {
+        const footerRect = footer.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        // The "white line" is in the middle of the footer roughly.
+        // Let's adjust based on the visible footer area.
+        const visibleFooterHeight = Math.max(0, viewportHeight - footerRect.top);
+        
+        // Base bottom is 24px (bottom-6). 
+        // We want it to stay at least 24px away from the footer's bottom copyright section line.
+        // The copyright section starts after the border-t in the footer.
+        // Let's push it up as the footer becomes visible.
+        const newBottom = Math.max(24, visibleFooterHeight + 24);
+        setFeedbackBottom(newBottom);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   const [result, setResult] = useState({
     profit: 0,
@@ -723,11 +750,6 @@ export default function Home() {
               <h3 className="text-2xl font-bold mb-2 text-white">AI Destekli Karar Analizi</h3>
               <p className="text-indigo-200 font-medium text-white/80">En çok satan kategorileri ve rekabet oranlarını analiz edin.</p>
             </div>
-            <div className="relative z-10 mt-4">
-              <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-white/60 group-hover:text-white transition-colors">
-                Hemen Başla <ArrowUpRight size={14} />
-              </button>
-            </div>
           </motion.div>
 
           <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -800,7 +822,10 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Feedback Floating Button & Panel */}
-      <div className="fixed bottom-6 right-6 z-[90]">
+      <div 
+        className="fixed right-6 z-[90] transition-all duration-300"
+        style={{ bottom: `${feedbackBottom}px` }}
+      >
         <AnimatePresence>
           {showFeedbackTooltip && !isFeedbackOpen && (
             <motion.div
