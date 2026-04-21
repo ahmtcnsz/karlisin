@@ -1,0 +1,45 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-surface: #020617; /* slate-950 */
+  --color-on-surface: #f1f5f9; /* slate-100 */
+  --color-on-surface-variant: #94a3b8; /* slate-400 */
+  
+  --color-primary: #6366f1; /* indigo-500 */
+  --color-on-primary: #ffffff;
+  --color-secondary: #a855f7; /* purple-500 */
+  
+  --color-outline: rgba(255, 255, 255, 0.1); /* border-white/10 */
+  --color-glass: rgba(255, 255, 255, 0.05); /* bg-white/5 */
+  
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 3rem;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-sans antialiased min-h-screen relative;
+  }
+}
+
+.glass {
+  @apply bg-glass backdrop-blur-md border border-outline;
+}
+
+.glass-dark {
+  @apply bg-black/20 backdrop-blur-xl border border-white/5;
+}
+
+.frosted-bg {
+  background: radial-gradient(circle at 20% 30%, #312e81 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, #701a75 0%, transparent 50%),
+              radial-gradient(circle at 50% 80%, #1e1b4b 0%, transparent 60%);
+  background-attachment: fixed;
+}
