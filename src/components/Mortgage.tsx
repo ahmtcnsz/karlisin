@@ -44,7 +44,9 @@ export default function Mortgage() {
         if (!response.ok) {
           const errorData = await response.json();
           console.error('Mail sunucusu hatası:', errorData);
-          // Hata mesajını konsola basıyoruz, kullanıcıya çaktırmıyoruz ama debug için önemli
+          setErrorMessage(`Mail gönderilemedi: ${errorData.error?.message || 'Sunucu hatası'}`);
+          setStatus('error');
+          return; // Hata durumunda success'e geçme
         }
       } catch (mailError) {
         console.error('Email notification failed or timed out:', mailError);

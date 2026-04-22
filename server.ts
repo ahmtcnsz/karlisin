@@ -28,6 +28,25 @@ async function startServer() {
   app.use(express.json());
   app.use(cors());
 
+  // İstek loglayıcı (Tüm istekleri görmek için)
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+  });
+
+  // Durum kontrolü endpoint'i
+  app.get('/api/status', (req, res) => {
+    res.json({
+      status: 'ok',
+      env: process.env.NODE_ENV || 'development',
+      config: {
+        hasApiKey: !!process.env.RESEND_API_KEY,
+        fromEmail: process.env.RESEND_FROM_EMAIL || 'Tanımlı Değil',
+        region: process.env.RESEND_REGION || 'Global/US'
+      }
+    });
+  });
+
   // E-posta gönderim API'sı
   app.post('/api/welcome-email', async (req, res) => {
     const { email } = req.body;
@@ -84,17 +103,25 @@ async function startServer() {
     }
   });
 
-  // Vite middleware default (SPA)
-  if (process.env.NODE_ENV !== 'production') {
+  // Vite middleware veya Statik Dosya Sunumu
+  const isProduction = process.env.NODE_ENV === 'production';
+  console.log(`Sunucu modu: ${isProduction ? 'PROD' : 'DEV'}`);
+
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, 'dist')));
+    const distPath = path.join(__dirname, 'dist');
+    app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+      // API isteklerini SPA fallback'ten muaf tut
+      if (req.url.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+      }
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
