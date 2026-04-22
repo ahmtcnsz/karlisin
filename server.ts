@@ -56,13 +56,17 @@ async function startServer() {
     }
 
     if (!process.env.RESEND_API_KEY) {
-      console.warn('RESEND_API_KEY bulunamadı, mail gönderilemiyor ancak işleme devam ediliyor.');
-      return res.status(200).json({ message: 'API anahtarı eksik, mail atlanıyor' });
+      console.error('KRİTİK HATA: RESEND_API_KEY sunucu ortamında bulunamadı!');
+      return res.status(500).json({ 
+        error: { 
+          message: 'Sistem Yapılandırma Hatası: API anahtarı sunucuda eksik. Lütfen Secrets kısmını kontrol edin.' 
+        } 
+      });
     }
 
     try {
-      console.log(`E-posta gönderiliyor: ${email}`);
       const sender = process.env.RESEND_FROM_EMAIL || 'FinCalc <onboarding@resend.dev>';
+      console.log(`[${new Date().toISOString()}] Gönderen: ${sender}, Alıcı: ${email}`);
       
       const { data, error } = await resend.emails.send({
         from: sender,
