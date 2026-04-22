@@ -4,6 +4,10 @@ import { Resend } from 'resend';
 import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
+import * as dotenv from 'dotenv';
+
+// .env dosyasını yükle
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,7 +63,11 @@ async function startServer() {
 
       if (error) {
         console.error('[Karlısın-API] Resend hatası:', error);
-        return res.status(400).json({ error });
+        return res.status(400).json({ 
+          error: error.message || 'Resend API Hatası', 
+          details: 'Lütfen Resend panelinden domain doğrulamasını ve API key yetkilerini kontrol edin. Domain doğrulanmadıysa sadece kendi mailinize gönderim yapabilirsiniz.',
+          raw: error 
+        });
       }
 
       console.log('[Karlısın-API] Başarılı gönderim:', data?.id);
@@ -73,6 +81,16 @@ async function startServer() {
   // Hem GET hem POST destekle (Test kolaylığı için)
   app.get('/api/mail', mailHandler);
   app.post('/api/mail', mailHandler);
+
+  // API CATCH-ALL (404 JSON Hatası Dönmek İçin)
+  app.all('/api/*', (req, res) => {
+    console.warn(`[API-404] Bulunamayan API Rotası: ${req.method} ${req.url}`);
+    res.status(404).json({ 
+      error: `API rotası bulunamadı: ${req.url}`,
+      method: req.method,
+      suggestion: 'Lütfen /api/mail rotasını kullandığınızdan emin olun.'
+    });
+  });
 
   const isProduction = process.env.NODE_ENV === 'production';
   
@@ -98,6 +116,7 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Test API: http://localhost:${PORT}/api/mail?email=test@example.com`);
   });
 }
 
