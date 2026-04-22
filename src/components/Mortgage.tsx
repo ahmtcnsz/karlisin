@@ -32,9 +32,9 @@ export default function Mortgage() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // Süreyi 10 saniyeye çıkardım
 
-        // Mutlak URL kullanarak istek at (Proxy/Path sorunlarını önler)
-        const apiUrl = `${window.location.origin}/karlisin-mail-service`;
-        console.log('[Karlısın-Front] Fetching:', apiUrl);
+        // Standart API yolu
+        const apiUrl = `${window.location.origin}/api/mail`;
+        console.log('[Karlısın-Front] İstek atılıyor:', apiUrl);
         
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -46,18 +46,15 @@ export default function Mortgage() {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          const responseText = await response.text();
-          let errorData;
-          try {
-            errorData = JSON.parse(responseText);
-          } catch (e) {
-            console.error('API non-JSON error response:', responseText);
-            setErrorMessage(`Sunucu Hatası (${response.status}): ${apiUrl} adresi JSON dönmedi. Lütfen sayfayı yenileyip tekrar deneyin.`);
-            setStatus('error');
-            return;
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            setErrorMessage(errorData.error || `Sunucu Hatası (${response.status})`);
+          } else {
+            const raw = await response.text();
+            console.error('API Non-JSON Response:', raw.substring(0, 100));
+            setErrorMessage(`Mail servisi şu an meşgul (404/Not JSON). Lütfen birazdan tekrar deneyin.`);
           }
-          console.error('Mail sunucusu hatası:', errorData);
-          setErrorMessage(`Hata: ${errorData.error?.message || errorData.error || 'Mail gönderim sistemi yanıt vermiyor.'}`);
           setStatus('error');
           return;
         }

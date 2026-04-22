@@ -28,12 +28,25 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
 
-  // ÖNCELİKLİ API ROTASI - Hiçbir katman buna dokunmasın
-  app.post('/karlisin-mail-service', async (req, res) => {
-    console.log('[Karlısın-API] Mail isteği geldi:', req.body.email);
-    const { email } = req.body;
+  // Loglama - Hangi istek nereye geliyor görelim
+  app.use((req, res, next) => {
+    console.log(`[Sunucu-Log] ${req.method} ${req.url}`);
+    next();
+  });
+
+  // TEST VE ANA API
+  const mailHandler = async (req: express.Request, res: express.Response) => {
+    console.log('[Karlısın-API] Mail isteği işleniyor...');
+    const email = req.method === 'POST' ? req.body.email : req.query.email;
     
-    if (!email) return res.status(400).json({ error: 'E-posta gerekli' });
+    if (!email) {
+      return res.status(400).json({ error: 'E-posta adresi bulunamadı' });
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      console.error('[Karlısın-API] RESEND_API_KEY tanımsız!');
+      return res.status(500).json({ error: 'Sistem hatası (API Key)' });
+    }
 
     try {
       const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <info@karlisin.com>';
@@ -41,22 +54,27 @@ async function startServer() {
         from: sender,
         to: [email],
         subject: 'Karlısın Temettü Takibi - Hoş Geldin! 🚀',
-        html: `<h1>Hoş Geldin!</h1><p>Bekleme listesine katıldın.</p>`
+        html: `<h1>Hoş Geldin!</h1><p>Bekleme listesine katıldın. En kısa sürede görüşmek üzere.</p>`
       });
 
-      if (error) return res.status(400).json({ error });
-      return res.status(200).json({ status: 'success', id: data?.id });
+      if (error) {
+        console.error('[Karlısın-API] Resend hatası:', error);
+        return res.status(400).json({ error });
+      }
+
+      console.log('[Karlısın-API] Başarılı gönderim:', data?.id);
+      return res.status(200).json({ success: true, id: data?.id });
     } catch (err: any) {
+      console.error('[Karlısın-API] Beklenmedik hata:', err);
       return res.status(500).json({ error: err.message });
     }
-  });
+  };
 
-  // TEST ENDPOINT
-  app.get('/api-verify', (req, res) => {
-    res.json({ msg: 'API is working' });
-  });
+  // Hem GET hem POST destekle (Test kolaylığı için)
+  app.get('/api/mail', mailHandler);
+  app.post('/api/mail', mailHandler);
 
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test';
+  const isProduction = process.env.NODE_ENV === 'production';
   
   if (isProduction) {
     const distPath = path.join(__dirname, 'dist');
@@ -64,10 +82,9 @@ async function startServer() {
     
     // API dışındaki her şeyi index.html'e gönder
     app.get('*', (req, res) => {
-      // Eğer istek bir API rotasıysa (örneğin mail service), buraya hiç uğramamalı
-      // Ama Express'in bazen şaşırdığı durumlar için manuel kontrol yapalım
-      if (req.url === '/karlisin-mail-service' || req.url === '/api-verify') {
-        return; // İşlemi durdur, rota zaten yukarıda tanımlı
+      // API isteklerini SPA fallback'ten muaf tut
+      if (req.url.startsWith('/api')) {
+        return; 
       }
       res.sendFile(path.join(distPath, 'index.html'));
     });
