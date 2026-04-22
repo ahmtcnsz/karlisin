@@ -101,7 +101,7 @@ export default function Investment() {
                 { name: 'Aggressive (12%)', value: '$1.8M' },
                 { name: 'S&P 500 Avg (10%)', value: '$1.4M' }
               ].map((scenario, i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 shadow-sm hover:bg-white/10 transition-all cursor-pointer">
+                <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 shadow-sm transition-all">
                   <span className="text-sm font-bold text-slate-400">{scenario.name}</span>
                   <span className="font-black text-white">{scenario.value}</span>
                 </div>
@@ -180,9 +180,8 @@ export default function Investment() {
 
           {/* Quick Insights Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <motion.div 
-              whileHover={{ scale: 1.02 }}
-              className="bg-white/5 backdrop-blur-md p-8 rounded-[40px] border border-white/10 shadow-sm group hover:border-indigo-500 transition-all"
+            <div 
+              className="bg-white/5 backdrop-blur-md p-8 rounded-[40px] border border-white/10 shadow-sm group transition-all"
             >
               <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-indigo-400 mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all border border-white/5">
                 <Zap size={24} />
@@ -191,7 +190,7 @@ export default function Investment() {
               <p className="text-sm text-slate-400 font-medium leading-relaxed">
                 At your current 9.5% return rate, your money will double every <span className="text-indigo-400 font-black">7.5 years</span>.
               </p>
-            </motion.div>
+            </div>
 
             <motion.div 
               whileHover={{ scale: 1.02 }}

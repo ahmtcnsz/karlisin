@@ -1,11 +1,27 @@
 import React from 'react';
 import { Globe, Mail } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface FooterProps {
   onViewChange?: (view: string) => void;
 }
 
 export default function Footer({ onViewChange }: FooterProps) {
+  const badgeGlint = (
+    <motion.div
+      animate={{
+        x: ['-100%', '200%'],
+      }}
+      transition={{
+        duration: 3,
+        repeat: Infinity,
+        ease: "linear",
+        repeatDelay: 1
+      }}
+      className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 pointer-events-none"
+    />
+  );
+
   return (
     <footer className="w-full py-12 bg-surface-container-low border-t border-surface-container mt-auto font-sans">
       <div className="max-w-7xl mx-auto px-6">
@@ -13,7 +29,7 @@ export default function Footer({ onViewChange }: FooterProps) {
           <div className="col-span-1 md:col-span-1">
             <h3 className="text-xl font-black text-primary mb-4 tracking-tighter">FinCalc</h3>
             <p className="text-sm text-on-surface-variant leading-relaxed">
-              Her hesaplamada hassasiyet. Profesyonel araç setimiz, veriye dayalı içgörülerle finansal geleceğinizi güçlendirir.
+              E-ticaret satıcıları için akıllı, hızlı ve şeffaf fiyatlandırma süreçleri sunan yeni nesil SaaS çözümü.
             </p>
           </div>
           
@@ -21,11 +37,21 @@ export default function Footer({ onViewChange }: FooterProps) {
             <h4 className="text-sm font-bold text-on-surface uppercase tracking-wider">ÜRÜNLER</h4>
             <nav className="flex flex-col gap-2">
               <button onClick={() => onViewChange?.('calculators')} className="text-sm text-on-surface-variant hover:text-primary transition-colors text-left">Hesaplayıcılar</button>
-              <button onClick={() => onViewChange?.('mortgage')} className="text-sm text-on-surface-variant hover:text-primary transition-colors text-left flex items-center gap-2">
-                Temettü
-                <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">YAKINDA</span>
+              <button onClick={() => onViewChange?.('salary')} className="text-sm text-on-surface-variant hover:text-primary transition-colors text-left flex items-center gap-2">
+                Maaş Vergi Hesapla
+                <div className="relative overflow-hidden px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">
+                  {badgeGlint}
+                  <span className="relative z-10">YENİ</span>
+                </div>
               </button>
               <button onClick={() => onViewChange?.('blog')} className="text-sm text-on-surface-variant hover:text-primary transition-colors text-left">Blog</button>
+              <button onClick={() => onViewChange?.('mortgage')} className="text-sm text-on-surface-variant hover:text-primary transition-colors text-left flex items-center gap-2">
+                Temettü
+                <div className="relative overflow-hidden px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">
+                  {badgeGlint}
+                  <span className="relative z-10">YAKINDA</span>
+                </div>
+              </button>
             </nav>
           </div>
 
@@ -76,7 +102,7 @@ export default function Footer({ onViewChange }: FooterProps) {
 
         <div className="pt-8 border-t border-surface-container text-center">
           <p className="text-xs text-on-surface-variant">
-            © 2024 FinCalc Profesyonel Araçlar. Hassas. Güvenilir. Yenilikçi.
+            © 2026 FinCalc Profesyonel Araçlar. Hassas. Güvenilir. Yenilikçi.
           </p>
         </div>
       </div>

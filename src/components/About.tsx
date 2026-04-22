@@ -6,27 +6,27 @@ export default function About() {
   const sections = [
     {
       icon: <Target className="text-indigo-400" size={24} />,
-      title: "Akıllı Süreçler",
+      title: "Akıllı SaaS Çözümü",
       text: "Fiyat Hesaplayıcı, e-ticaret satıcılarının fiyatlandırma süreçlerini daha akıllı, hızlı ve şeffaf hale getirmek için geliştirilmiş bir SaaS aracıdır."
     },
     {
       icon: <ShieldCheck className="text-emerald-400" size={24} />,
-      title: "Güvenilir Analiz",
+      title: "Karmaşıklığa Son",
       text: "Pazaryerlerinde satış yaparken kâr hesaplamak çoğu zaman karmaşık ve zaman alıcıdır. Komisyon oranları, kargo maliyetleri ve hizmet bedelleri gibi birçok değişken, doğru fiyatı belirlemeyi zorlaştırır. Biz bu karmaşıklığı ortadan kaldırıyoruz."
     },
     {
       icon: <Zap className="text-amber-400" size={24} />,
-      title: "Hızlı Kararlar",
+      title: "Gerçek Kârlılık",
       text: "Fiyat Hesaplayıcı ile satıcılar, ürünlerinin gerçek kârlılığını saniyeler içinde analiz edebilir, daha doğru fiyat kararları alabilir ve işlerini büyütmeye odaklanabilir."
     },
     {
       icon: <TrendingUp className="text-purple-400" size={24} />,
-      title: "Veri Odaklı Büyüme",
+      title: "Misyonumuz",
       text: "Amacımız; sade, hızlı ve güvenilir bir deneyim sunarak, e-ticaret satıcılarının günlük kararlarını veri odaklı hale getirmek."
     },
     {
       icon: <Users className="text-rose-400" size={24} />,
-      title: "Kullanıcı Odaklı",
+      title: "Sürekli Gelişim",
       text: "Sürekli gelişen bir ürünüz. Kullanıcı geri bildirimlerini merkeze alıyor, ürünü her geçen gün daha güçlü hale getiriyoruz."
     }
   ];

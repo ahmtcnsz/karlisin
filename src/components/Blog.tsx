@@ -8,7 +8,7 @@ const articles = [
     title: 'Pazaryerinde Satış Yaparken Dikkat Edilmesi Gereken 5 Kriter',
     excerpt: 'Trendyol, Hepsiburada ve Amazon gibi platformlarda kârlılığı artırmanın yollarını keşfedin.',
     category: 'Strateji',
-    date: '12 Ekim 2024',
+    date: '12 Ekim 2026',
     readTime: '6 dk',
     image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800'
   },
@@ -17,7 +17,7 @@ const articles = [
     title: 'Yeni KDV Oranları ve E-ticaret Üzerindeki Etkileri',
     excerpt: 'Mevzuat değişiklikleri sonrasında fiyatlandırma stratejinizi nasıl güncellemelisiniz?',
     category: 'Mevzuat',
-    date: '10 Ekim 2024',
+    date: '10 Ekim 2026',
     readTime: '4 dk',
     image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800'
   },
@@ -26,7 +26,7 @@ const articles = [
     title: 'Kargo Maliyetlerini Düşürmenin Pratik Yolları',
     excerpt: 'Desi hesaplama ve anlaşmalı kargo süreçlerinde tasarruf etmeniz için ipuçları.',
     category: 'Lojistik',
-    date: '08 Ekim 2024',
+    date: '08 Ekim 2026',
     readTime: '5 dk',
     image: 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?auto=format&fit=crop&q=80&w=800'
   }

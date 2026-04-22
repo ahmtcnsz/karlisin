@@ -13,8 +13,9 @@ export default function Navbar({ currentView, onViewChange, isLoggedIn = false }
 
   const navItems = [
     { id: 'calculators', label: 'Hesaplayıcılar' },
-    { id: 'mortgage', label: 'Temettü', badge: 'YAKINDA' },
+    { id: 'salary', label: 'Maaş Vergi Hesapla', badge: 'YENİ' },
     { id: 'blog', label: 'Blog' },
+    { id: 'mortgage', label: 'Temettü', badge: 'YAKINDA' },
   ];
 
   const handleNavClick = (id: string) => {
@@ -46,9 +47,21 @@ export default function Navbar({ currentView, onViewChange, isLoggedIn = false }
               >
                 {item.label.toLocaleUpperCase('tr-TR')}
                 {item.badge && (
-                  <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">
-                    {item.badge}
-                  </span>
+                  <div className="relative overflow-hidden px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">
+                    <motion.div
+                      animate={{
+                        x: ['-100%', '200%'],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "linear",
+                        repeatDelay: 1
+                      }}
+                      className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 pointer-events-none"
+                    />
+                    <span className="relative z-10">{item.badge}</span>
+                  </div>
                 )}
                 {currentView === item.id && (
                   <motion.div 
@@ -108,9 +121,21 @@ export default function Navbar({ currentView, onViewChange, isLoggedIn = false }
                 >
                   {item.label.toLocaleUpperCase('tr-TR')}
                   {item.badge && (
-                    <span className="px-2 py-1 bg-indigo-500/20 text-indigo-400 text-[10px] font-black rounded-lg border border-indigo-500/20">
-                      {item.badge}
-                    </span>
+                    <div className="relative overflow-hidden px-2 py-1 bg-indigo-500/10 text-indigo-400 text-[10px] font-black rounded-lg border border-indigo-500/20">
+                      <motion.div
+                        animate={{
+                          x: ['-100%', '200%'],
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "linear",
+                          repeatDelay: 1
+                        }}
+                        className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 pointer-events-none"
+                      />
+                      <span className="relative z-10">{item.badge}</span>
+                    </div>
                   )}
                 </button>
               ))}

@@ -11,7 +11,9 @@ import Mortgage from './components/Mortgage';
 import Dashboard from './components/Dashboard';
 import About from './components/About';
 import Blog from './components/Blog';
+import SalaryCalculator from './components/SalaryCalculator';
 import Policy from './components/Policy';
+import FeedbackOverlay from './components/FeedbackOverlay';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -38,6 +40,8 @@ export default function App() {
         return <About />;
       case 'blog':
         return <Blog />;
+      case 'salary':
+        return <SalaryCalculator />;
       case 'privacy':
         return <Policy type="privacy" />;
       case 'terms':
@@ -75,6 +79,8 @@ export default function App() {
         <Footer 
           onViewChange={setCurrentView}
         />
+        
+        <FeedbackOverlay />
       </div>
     </div>
   );

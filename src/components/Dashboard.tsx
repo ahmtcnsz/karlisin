@@ -99,11 +99,11 @@ export default function Dashboard() {
             </div>
             <div className="flex flex-col gap-4">
               {[
-                { name: 'Amazon Q3 Electronics', type: 'Profit Analysis', date: 'Oct 12, 2024', status: 'Completed' },
-                { name: 'Downtown Penthouse', type: 'Mortgage Review', date: 'Oct 10, 2024', status: 'Pending' },
-                { name: 'Index Fund 20-Year', type: 'ROI Projection', date: 'Oct 05, 2024', status: 'Draft' }
+                { name: 'Amazon Q3 Electronics', type: 'Profit Analysis', date: 'Oct 12, 2026', status: 'Completed' },
+                { name: 'Downtown Penthouse', type: 'Mortgage Review', date: 'Oct 10, 2026', status: 'Pending' },
+                { name: 'Index Fund 20-Year', type: 'ROI Projection', date: 'Oct 05, 2026', status: 'Draft' }
               ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl group cursor-pointer hover:bg-white/10 transition-all border border-white/5">
+                <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl group transition-all border border-white/5">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-indigo-300 border border-white/10 shadow-sm group-hover:scale-110 transition-transform">
                       <Calculator size={18} />

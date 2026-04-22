@@ -82,7 +82,7 @@ export default function Policy({ type }: PolicyProps) {
       >
         <Info className="text-indigo-400 shrink-0 mt-1" size={20} />
         <p className="text-sm text-slate-400 font-medium leading-relaxed text-center sm:text-left">
-          Bu döküman son olarak 22 Nisan 2024 tarihinde güncellenmiştir. Sorularınız için bizimle iletişime geçebilirsiniz.
+          Bu döküman son olarak 22 Nisan 2026 tarihinde güncellenmiştir. Sorularınız için bizimle iletişime geçebilirsiniz.
         </p>
       </motion.div>
     </div>

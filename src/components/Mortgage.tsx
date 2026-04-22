@@ -44,7 +44,7 @@ export default function Mortgage() {
           { icon: <Wallet size={24} />, title: "Vergi Hesaplama", desc: "Stopaj ve beyanname süreçlerini yönetin." },
           { icon: <LineChart size={24} />, title: "Gelir Projeksiyonu", desc: "10 yıllık gelir tahminlerinizi görün." }
         ].map((feat, i) => (
-          <div key={i} className="p-8 bg-white/5 backdrop-blur-md rounded-[32px] border border-white/10 text-left group hover:border-indigo-500/30 transition-all">
+          <div key={i} className="p-8 bg-white/5 backdrop-blur-md rounded-[32px] border border-white/10 text-left group transition-all">
             <div className="text-indigo-400 mb-4 group-hover:scale-110 transition-transform w-fit uppercase tracking-widest">{feat.icon}</div>
             <h3 className="text-lg font-bold text-white mb-2">{feat.title}</h3>
             <p className="text-sm text-slate-400 font-medium leading-relaxed">{feat.desc}</p>

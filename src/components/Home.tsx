@@ -14,22 +14,6 @@ export default function Home() {
   const [showResult, setShowResult] = useState(false);
   const [isScoreOpen, setIsScoreOpen] = useState(false);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [feedbackType, setFeedbackType] = useState('Öneri');
-  const [feedbackMessage, setFeedbackMessage] = useState('');
-  const [userEmail, setUserEmail] = useState('');
-  const [showFeedbackTooltip, setShowFeedbackTooltip] = useState(true);
-
-  const handleFeedbackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const subject = `Karlisin Geri Bildirim: ${feedbackType}`;
-    const body = `Tür: ${feedbackType}\n\nMesaj: ${feedbackMessage}\n\nGönderen: ${userEmail}`;
-    window.location.href = `mailto:ahmtcnsz@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setIsFeedbackOpen(false);
-    setFeedbackMessage('');
-  };
-
-  const [feedbackBottom, setFeedbackBottom] = useState(24);
 
   useEffect(() => {
     // Show welcome modal on mount if not shown in this session
@@ -40,41 +24,10 @@ export default function Home() {
         sessionStorage.setItem('hasShownWelcome', 'true');
       }, 500);
       
-      const tooltipTimer = setTimeout(() => setShowFeedbackTooltip(false), 30000);
       return () => {
         clearTimeout(timer);
-        clearTimeout(tooltipTimer);
       };
-    } else {
-      // Still want the tooltip timer if modal is not shown
-      const tooltipTimer = setTimeout(() => setShowFeedbackTooltip(false), 30000);
-      return () => clearTimeout(tooltipTimer);
     }
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const footer = document.querySelector('footer');
-      if (footer) {
-        const footerRect = footer.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        // The "white line" is in the middle of the footer roughly.
-        // Let's adjust based on the visible footer area.
-        const visibleFooterHeight = Math.max(0, viewportHeight - footerRect.top);
-        
-        // Base bottom is 24px (bottom-6). 
-        // We want it to stay at least 24px away from the footer's bottom copyright section line.
-        // The copyright section starts after the border-t in the footer.
-        // Let's push it up as the footer becomes visible.
-        const newBottom = Math.max(24, visibleFooterHeight + 24);
-        setFeedbackBottom(newBottom);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial check
-
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   const [result, setResult] = useState({
     profit: 0,
@@ -597,25 +550,25 @@ export default function Home() {
                              IŞIK TUT: NE YAP?
                           </h4>
                           
-                          <div className="space-y-2">
-                            <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-between group cursor-pointer hover:bg-white/10 transition-all">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
-                                <span className="text-sm font-bold text-white/80 group-hover:text-white transition-colors">
-                                  {result.margin > 20 ? 'Bu ürün karlı — stok veya reklam bütçesini artırmayı düşün' : 'Karlılığı artırmak için maliyet kalemlerini gözden geçir'}
-                                </span>
-                              </div>
-                              <span className="text-[9px] font-black text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded tracking-tighter">FIRSAT</span>
+                        <div className="space-y-2">
+                          <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-between group transition-all">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
+                              <span className="text-sm font-bold text-white/80 group-hover:text-white transition-colors">
+                                {result.margin > 20 ? 'Bu ürün karlı — stok veya reklam bütçesini artırmayı düşün' : 'Karlılığı artırmak için maliyet kalemlerini gözden geçir'}
+                              </span>
                             </div>
-
-                            <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-between group cursor-pointer hover:bg-white/10 transition-all">
-                              <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-indigo-400 shadow-[0_0_8px_#818cf8]" />
-                                <span className="text-sm font-bold text-white/80 group-hover:text-white transition-colors">Farklı platformlarda fiyat rekabetini karşılaştırın</span>
-                              </div>
-                              <span className="text-[9px] font-black text-indigo-400 uppercase bg-indigo-500/10 px-2 py-0.5 rounded tracking-tighter">FIRSAT</span>
-                            </div>
+                            <span className="text-[9px] font-black text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded tracking-tighter">FIRSAT</span>
                           </div>
+
+                          <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-between group transition-all">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 rounded-full bg-indigo-400 shadow-[0_0_8px_#818cf8]" />
+                              <span className="text-sm font-bold text-white/80 group-hover:text-white transition-colors">Farklı platformlarda fiyat rekabetini karşılaştırın</span>
+                            </div>
+                            <span className="text-[9px] font-black text-indigo-400 uppercase bg-indigo-500/10 px-2 py-0.5 rounded tracking-tighter">FIRSAT</span>
+                          </div>
+                        </div>
                         </div>
 
                         {/* Score Detail Accordion */}
@@ -713,9 +666,8 @@ export default function Home() {
       {/* Feature Bento Grid */}
       <section className="max-w-7xl mx-auto px-6 py-24">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="md:col-span-2 bg-white/5 backdrop-blur-md rounded-[32px] p-8 border border-white/10 flex flex-col justify-between group overflow-hidden relative shadow-sm hover:shadow-md transition-all"
+          <div 
+            className="md:col-span-2 bg-white/5 backdrop-blur-md rounded-[32px] p-8 border border-white/10 flex flex-col justify-between group overflow-hidden relative shadow-sm transition-all"
           >
             <div className="relative z-10 text-white">
               <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-indigo-400 mb-6 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300 border border-white/10">
@@ -724,24 +676,10 @@ export default function Home() {
               <h3 className="text-2xl font-bold mb-2">Detaylı Raporlama</h3>
               <p className="text-slate-400 font-medium">Sadece kârı değil, gider dağılımınızı pasta grafiği ile görün.</p>
             </div>
-            <div className="mt-8 h-48 bg-white/5 rounded-2xl overflow-hidden relative">
-              <div className="absolute inset-0 flex items-end gap-2 px-8 pt-8">
-                {[40, 60, 30, 80, 50, 90, 70, 85].map((h, i) => (
-                  <motion.div 
-                    key={i}
-                    initial={{ height: 0 }}
-                    whileInView={{ height: `${h}%` }}
-                    transition={{ delay: i * 0.05, duration: 0.5 }}
-                    className="flex-1 bg-indigo-500/50 rounded-t-lg"
-                  />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="bg-indigo-600/20 backdrop-blur-md rounded-[32px] p-8 test-white flex flex-col justify-between relative overflow-hidden shadow-sm border border-white/10 hover:shadow-md transition-all cursor-pointer group"
+          </div>
+          
+          <div 
+            className="bg-indigo-600/20 backdrop-blur-md rounded-[32px] p-8 test-white flex flex-col justify-between relative overflow-hidden shadow-sm border border-white/10 transition-all group"
           >
             <div className="relative z-10">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white mb-6 border border-white/20 group-hover:scale-110 transition-transform">
@@ -750,7 +688,7 @@ export default function Home() {
               <h3 className="text-2xl font-bold mb-2 text-white">AI Destekli Karar Analizi</h3>
               <p className="text-indigo-200 font-medium text-white/80">En çok satan kategorileri ve rekabet oranlarını analiz edin.</p>
             </div>
-          </motion.div>
+          </div>
 
           <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -758,10 +696,9 @@ export default function Home() {
               { icon: <RefreshCw size={28} />, title: 'Anlık Güncelleme', desc: 'Değişen mevzuat anında sistemde.', color: 'bg-purple-500/10 text-purple-400' },
               { icon: <Shield size={28} />, title: 'Güvenli Veri', desc: 'Verileriniz asla kaydedilmez.', color: 'bg-slate-500/10 text-slate-400' }
             ].map((feature, i) => (
-              <motion.div 
+              <div 
                 key={i}
-                whileHover={{ y: -5 }}
-                className="bg-white/5 backdrop-blur-md rounded-[32px] p-8 border border-white/10 flex items-center gap-6 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                className="bg-white/5 backdrop-blur-md rounded-[32px] p-8 border border-white/10 flex items-center gap-6 shadow-sm transition-all group"
               >
                 <div className={`w-16 h-16 ${feature.color} rounded-full flex items-center justify-center shrink-0 border border-white/10 group-hover:scale-110 transition-transform`}>
                   {feature.icon}
@@ -770,7 +707,7 @@ export default function Home() {
                   <h4 className="font-bold text-white transition-colors group-hover:text-indigo-300">{feature.title}</h4>
                   <p className="text-sm font-medium text-slate-400">{feature.desc}</p>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -820,123 +757,6 @@ export default function Home() {
           </div>
         )}
       </AnimatePresence>
-
-      {/* Feedback Floating Button & Panel */}
-      <div 
-        className="fixed right-6 z-[90] transition-all duration-300"
-        style={{ bottom: `${feedbackBottom}px` }}
-      >
-        <AnimatePresence>
-          {showFeedbackTooltip && !isFeedbackOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="absolute bottom-20 right-0 whitespace-nowrap bg-indigo-600 text-white px-4 py-2 rounded-2xl shadow-xl text-sm font-bold flex items-center gap-2"
-            >
-              <span>Geri bildirimleriniz bizim için değerli</span>
-              <div className="absolute -bottom-1.5 right-8 w-3 h-3 bg-indigo-600 rotate-45" />
-            </motion.div>
-          )}
-
-          {isFeedbackOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20, transformOrigin: 'bottom right' }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="absolute bottom-20 right-0 w-[400px] bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden"
-            >
-              <div className="p-6 pb-0 flex justify-between items-start">
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                    <MessageSquare size={24} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-lg">Görüşün bizim için önemli</h3>
-                    <p className="text-sm text-slate-500 font-medium tracking-tight">Birlikte daha özgür olabiliriz</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setIsFeedbackOpen(false)}
-                  className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="p-6">
-                <div className="bg-slate-50/50 p-4 rounded-2xl mb-6">
-                  <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                    Hesaplama deneyimi için çalışıyoruz. Öneri, hata bildirimi veya yeni özellikleri paylaşabilirsiniz.
-                  </p>
-                </div>
-
-                <form onSubmit={handleFeedbackSubmit} className="space-y-4">
-                  <div className="relative group">
-                    <select
-                      value={feedbackType}
-                      onChange={(e) => setFeedbackType(e.target.value)}
-                      className="w-full h-14 pl-5 pr-12 bg-slate-50 border-2 border-transparent group-hover:border-slate-200 focus:border-indigo-500 rounded-2xl text-slate-700 font-bold appearance-none transition-all outline-none"
-                    >
-                      <option>Öneri</option>
-                      <option>Hata Bildirimi</option>
-                      <option>Yeni Özellik</option>
-                      <option>Soru</option>
-                    </select>
-                    <ChevronDown size={20} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  </div>
-
-                  <div className="relative group">
-                    <textarea
-                      required
-                      value={feedbackMessage}
-                      placeholder="Mesajınızı buraya yazın..."
-                      onChange={(e) => setFeedbackMessage(e.target.value)}
-                      className="w-full min-h-[120px] bg-slate-50 border-2 border-transparent group-hover:border-slate-200 focus:border-indigo-500 rounded-3xl p-5 text-slate-700 font-medium transition-all outline-none resize-none placeholder:text-slate-300"
-                    />
-                  </div>
-
-                  <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300">
-                      <Mail size={18} />
-                    </div>
-                    <input
-                      required
-                      type="email"
-                      placeholder="E-posta adresiniz"
-                      value={userEmail}
-                      onChange={(e) => setUserEmail(e.target.value)}
-                      className="w-full h-14 pl-12 pr-5 bg-slate-50 border-2 border-transparent group-hover:border-slate-200 focus:border-indigo-500 rounded-2xl text-slate-700 font-bold transition-all outline-none placeholder:text-slate-300"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all hover:scale-[1.01] active:scale-[0.99]"
-                  >
-                    <Mail size={18} />
-                    <span>Maili Gönder</span>
-                  </button>
-                </form>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => {
-            setIsFeedbackOpen(!isFeedbackOpen);
-            setShowFeedbackTooltip(false);
-          }}
-          className="flex items-center gap-3 px-6 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity" />
-          <MessageSquare size={24} className="fill-white/20" />
-          <span className="text-lg">Geri Bildirim</span>
-        </motion.button>
-      </div>
     </div>
   );
 }
