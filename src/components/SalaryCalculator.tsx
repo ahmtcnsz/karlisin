@@ -200,7 +200,7 @@ export default function SalaryCalculator() {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Maaş Hesaplama');
-    XLSX.writeFile(wb, `FinCalc_Maas_Hesaplama_${year}.xlsx`);
+    XLSX.writeFile(wb, `Karlısın_Maas_Hesaplama_${year}.xlsx`);
   };
 
   const totalTakeHome = calculations.reduce((acc, curr) => acc + curr.totalNet, 0);
@@ -601,7 +601,7 @@ export default function SalaryCalculator() {
                     </div>
 
                     <div className="pt-8 border-t border-white/5">
-                       <p className="text-[9px] text-slate-600 font-black tracking-widest uppercase">© FINCALC PROFESSIONAL TOOLS - TURKEY TAX ENGINE V4.2</p>
+                       <p className="text-[9px] text-slate-600 font-black tracking-widest uppercase">© KARLISIN PROFESSIONAL TOOLS - TURKEY TAX ENGINE V4.2</p>
                     </div>
                   </div>
                 </div>
@@ -616,7 +616,7 @@ export default function SalaryCalculator() {
                 <div className="max-w-4xl bg-slate-900/50 p-6 rounded-2xl border border-white/5">
                   <p className="text-[10px] text-slate-500 font-medium leading-relaxed italic text-left">
                     <AlertCircle size={12} className="inline-block mr-2 mb-0.5 text-slate-600" />
-                    Bu hesaplamada yer alan bilgiler sadece genel bilgilendirme amaçlıdır ve <strong>FinCalc</strong>, onun üye firmaları veya ilişkili kuruluşları (birlikte, "FinCalc Network" olarak anılacaktır) tarafından profesyonel bağlamda herhangi bir tavsiye veya hizmet sunmayı amaçlamamakta ve bilgilerin doğruluğuna dair herhangi bir garanti vermemektedir. Şirketinizi, işinizi, finansmanınızı ya da mali durumunuzu etkileyecek herhangi bir karar ya da aksiyon almadan, yetkin bir profesyonel uzmana danışın. FinCalc Network bünyesinde bulunan hiçbir kuruluş, bu hesaplamada yer alan bilgilerin üçüncü kişiler tarafından kullanılması sonucunda ortaya çıkabilecek zarar veya ziyandan sorumlu değildir.
+                    Bu hesaplamada yer alan bilgiler sadece genel bilgilendirme amaçlıdır ve <strong>Karlısın</strong>, onun üye firmaları veya ilişkili kuruluşları (birlikte, "Karlısın Network"olarak anılacaktır) tarafından profesyonel bağlamda herhangi bir tavsiye veya hizmet sunmayı amaçlamamakta ve bilgilerin doğruluğuna dair herhangi bir garanti vermemektedir. Şirketinizi, işinizi, finansmanınızı ya da mali durumunuzu etkileyecek herhangi bir karar ya da aksiyon almadan, yetkin bir profesyonel uzmana danışın. Karlısın Network bünyesinde bulunan hiçbir kuruluş, bu hesaplamada yer alan bilgilerin üçüncü kişiler tarafından kullanılması sonucunda ortaya çıkabilecek zarar veya ziyandan sorumlu değildir.
                   </p>
                 </div>
               </div>

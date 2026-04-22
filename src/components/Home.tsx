@@ -173,7 +173,7 @@ export default function Home() {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Hesaplama Sonucu');
-    XLSX.writeFile(wb, `FinCalc_${market}_Hesaplama.xlsx`);
+    XLSX.writeFile(wb, `Karlısın_${market}_Hesaplama.xlsx`);
   };
 
   const marginCat = getMarginCategory(result.margin);

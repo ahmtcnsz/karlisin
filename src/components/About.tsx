@@ -7,17 +7,17 @@ export default function About() {
     {
       icon: <Target className="text-indigo-400" size={24} />,
       title: "Akıllı SaaS Çözümü",
-      text: "Fiyat Hesaplayıcı, e-ticaret satıcılarının fiyatlandırma süreçlerini daha akıllı, hızlı ve şeffaf hale getirmek için geliştirilmiş bir SaaS aracıdır."
+      text: "Karlısın, e-ticaret satıcılarının ve yatırımcıların finansal süreçlerini daha akıllı, hızlı ve şeffaf hale getirmek için geliştirilmiş bir SaaS aracıdır."
     },
     {
       icon: <ShieldCheck className="text-emerald-400" size={24} />,
       title: "Karmaşıklığa Son",
-      text: "Pazaryerlerinde satış yaparken kâr hesaplamak çoğu zaman karmaşık ve zaman alıcıdır. Komisyon oranları, kargo maliyetleri ve hizmet bedelleri gibi birçok değişken, doğru fiyatı belirlemeyi zorlaştırır. Biz bu karmaşıklığı ortadan kaldırıyoruz."
+      text: "Finansal kararlar alırken kâr hesaplamak çoğu zaman karmaşık ve zaman alıcıdır. Komisyon oranları, vergiler ve gizli giderler doğru fiyatı belirlemeyi zorlaştırır. Karlısın ile bu karmaşıklığı ortadan kaldırıyoruz."
     },
     {
       icon: <Zap className="text-amber-400" size={24} />,
       title: "Gerçek Kârlılık",
-      text: "Fiyat Hesaplayıcı ile satıcılar, ürünlerinin gerçek kârlılığını saniyeler içinde analiz edebilir, daha doğru fiyat kararları alabilir ve işlerini büyütmeye odaklanabilir."
+      text: "Karlısın ile kullanıcılar, ürünlerinin veya yatırımlarının gerçek kârlılığını saniyeler içinde analiz edebilir, daha doğru kararlar alabilir ve işlerini büyütmeye odaklanabilir."
     },
     {
       icon: <TrendingUp className="text-purple-400" size={24} />,
@@ -92,7 +92,7 @@ export default function About() {
         className="mt-20 p-12 md:p-20 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-[60px] border border-white/10 text-center relative overflow-hidden"
       >
         <div className="relative z-10 max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-5xl font-black text-white mb-8">Neden Fiyat Hesaplayıcı?</h2>
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-8">Neden Karlısın?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
             <div className="space-y-4">
               <div className="text-indigo-400 font-black text-4xl">01.</div>

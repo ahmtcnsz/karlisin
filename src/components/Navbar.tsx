@@ -31,7 +31,7 @@ export default function Navbar({ currentView, onViewChange, isLoggedIn = false }
             onClick={() => handleNavClick('calculators')}
             className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 cursor-pointer"
           >
-            FinCalc
+            Karlısın
           </button>
           
           <div className="hidden md:flex items-center gap-6">

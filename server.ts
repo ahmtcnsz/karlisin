@@ -23,34 +23,18 @@ async function startServer() {
   const resendOptions = process.env.RESEND_REGION === 'eu' 
     ? { baseUrl: 'https://eu.resend.com' } 
     : {};
-  const resend = new Resend(process.env.RESEND_API_KEY, resendOptions);
+  const resend = new Resend(process.env.RESEND_API_KEY || 'dummy_key', resendOptions);
 
   app.use(express.json());
   app.use(cors());
 
-  // İstek loglayıcı (Tüm istekleri görmek için)
-  app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
-  });
-
-  // Durum kontrolü endpoint'i
+  // Durum kontrolü endpoint'i (Production'da kapalı olabilir ama API ayrımı için önemli)
   app.get('/api/status', (req, res) => {
-    res.json({
-      status: 'ok',
-      env: process.env.NODE_ENV || 'development',
-      config: {
-        hasApiKey: !!process.env.RESEND_API_KEY,
-        fromEmail: process.env.RESEND_FROM_EMAIL || 'Tanımlı Değil',
-        region: process.env.RESEND_REGION || 'Global/US'
-      }
-    });
+    res.json({ status: 'ok', mode: process.env.NODE_ENV || 'development' });
   });
 
   // E-posta gönderim API'sı
   app.post('/api/welcome-email', async (req, res) => {
-    console.log('--- YENİ MAIL İSTEĞİ ALINDI ---');
-    console.log('Body:', JSON.stringify(req.body));
     const { email } = req.body;
 
     if (!email) {
@@ -67,19 +51,18 @@ async function startServer() {
     }
 
     try {
-      // Varsayılan göndericiyi karlisin.com yapalım (Secret tanımlı değilse bile hata mesajı net olsun)
-      const sender = process.env.RESEND_FROM_EMAIL || 'FinCalc <info@karlisin.com>';
-      console.log(`[${new Date().toISOString()}] Gönderen: ${sender}, Alıcı: ${email}`);
+      // Varsayılan göndericiyi karlisin.com yapalım
+      const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <info@karlisin.com>';
       
       const { data, error } = await resend.emails.send({
         from: sender,
         to: [email],
-        subject: 'FinCalc Temettü Takibi - Aramıza Hoş Geldin! 🚀',
+        subject: 'Karlısın Temettü Takibi - Aramıza Hoş Geldin! 🚀',
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
             <h1 style="color: #6366f1; font-size: 28px; font-weight: 800; margin-bottom: 20px;">Hoş Geldin!</h1>
             <p style="font-size: 16px; line-height: 1.6;">Merhaba,</p>
-            <p style="font-size: 16px; line-height: 1.6;">FinCalc Temettü Takibi özelliği için bekleme listesine başarıyla katıldın. Borsa İstanbul ve Amerikan borsalarındaki yatırım yolculuğunu kolaylaştırmak için sabırsızlanıyoruz.</p>
+            <p style="font-size: 16px; line-height: 1.6;">Karlısın Temettü Takibi özelliği için bekleme listesine başarıyla katıldın. Borsa İstanbul ve Amerikan borsalarındaki yatırım yolculuğunu kolaylaştırmak için sabırsızlanıyoruz.</p>
             
             <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 30px 0;">
               <h3 style="margin-top: 0; color: #6366f1;">Seni Neler Bekliyor?</h3>
@@ -92,7 +75,7 @@ async function startServer() {
 
             <p style="font-size: 16px; line-height: 1.6;">Özellik yayına girdiğinde sana buradan haber vereceğiz. O zamana kadar bizi takipte kal!</p>
             <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-            <p style="font-size: 12px; color: #94a3b8;">FinCalc Ekibi</p>
+            <p style="font-size: 12px; color: #94a3b8;">Karlısın Ekibi</p>
           </div>
         `
       });
