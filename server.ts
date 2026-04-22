@@ -49,6 +49,8 @@ async function startServer() {
 
   // E-posta gönderim API'sı
   app.post('/api/welcome-email', async (req, res) => {
+    console.log('--- YENİ MAIL İSTEĞİ ALINDI ---');
+    console.log('Body:', JSON.stringify(req.body));
     const { email } = req.body;
 
     if (!email) {

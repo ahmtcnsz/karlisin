@@ -30,7 +30,7 @@ export default function Mortgage() {
       // Backend üzerinden hoş geldin maili gönder
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 saniye sonra vazgeç
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // Süreyi 10 saniyeye çıkardım
 
         const response = await fetch('/api/welcome-email', {
           method: 'POST',
@@ -44,12 +44,15 @@ export default function Mortgage() {
         if (!response.ok) {
           const errorData = await response.json();
           console.error('Mail sunucusu hatası:', errorData);
-          setErrorMessage(`Mail gönderilemedi: ${errorData.error?.message || 'Sunucu hatası'}`);
+          setErrorMessage(`Hata: ${errorData.error?.message || 'Mail gönderim sistemi yanıt vermiyor.'}`);
           setStatus('error');
-          return; // Hata durumunda success'e geçme
+          return; // ÖNEMLİ: Hata varsa aşağıya (Success) geçme!
         }
-      } catch (mailError) {
+      } catch (mailError: any) {
         console.error('Email notification failed or timed out:', mailError);
+        setErrorMessage('Sistem şu an meşgul veya bağlantı hatası oluştu. Lütfen birazdan tekrar deneyin.');
+        setStatus('error');
+        return; // ÖNEMLİ: Hata varsa aşağıya geçme!
       }
 
       setStatus('success');
