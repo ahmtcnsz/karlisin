@@ -42,11 +42,20 @@ export default function Mortgage() {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          const errorData = await response.json();
+          const responseText = await response.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(responseText);
+          } catch (e) {
+            console.error('API non-JSON error response:', responseText);
+            setErrorMessage(`Sunucu Hatası (${response.status}): Yanıt JSON değil.`);
+            setStatus('error');
+            return;
+          }
           console.error('Mail sunucusu hatası:', errorData);
-          setErrorMessage(`Hata: ${errorData.error?.message || 'Mail gönderim sistemi yanıt vermiyor.'}`);
+          setErrorMessage(`Hata: ${errorData.error?.message || errorData.error || 'Mail gönderim sistemi yanıt vermiyor.'}`);
           setStatus('error');
-          return; // ÖNEMLİ: Hata varsa aşağıya (Success) geçme!
+          return;
         }
       } catch (mailError: any) {
         console.error('Email notification error:', mailError);

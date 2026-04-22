@@ -28,7 +28,7 @@ async function startServer() {
   app.use(express.json());
   app.use(cors());
 
-  // Durum kontrolü endpoint'i (Production'da kapalı olabilir ama API ayrımı için önemli)
+  // Durum kontrolü endpoint'i
   app.get('/api/status', (req, res) => {
     res.json({ status: 'ok', mode: process.env.NODE_ENV || 'development' });
   });
@@ -36,24 +36,17 @@ async function startServer() {
   // E-posta gönderim API'sı
   app.post('/api/welcome-email', async (req, res) => {
     const { email } = req.body;
-
+    
     if (!email) {
       return res.status(400).json({ error: 'E-posta adresi gerekli' });
     }
 
     if (!process.env.RESEND_API_KEY) {
-      console.error('KRİTİK HATA: RESEND_API_KEY sunucu ortamında bulunamadı!');
-      return res.status(500).json({ 
-        error: { 
-          message: 'Sistem Yapılandırma Hatası: API anahtarı sunucuda eksik. Lütfen Secrets kısmını kontrol edin.' 
-        } 
-      });
+      return res.status(500).json({ error: 'Sistem Yapılandırma Hatası: API anahtarı sunucuda eksik.' });
     }
 
     try {
-      // Varsayılan göndericiyi karlisin.com yapalım
       const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <info@karlisin.com>';
-      
       const { data, error } = await resend.emails.send({
         from: sender,
         to: [email],
@@ -61,19 +54,8 @@ async function startServer() {
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
             <h1 style="color: #6366f1; font-size: 28px; font-weight: 800; margin-bottom: 20px;">Hoş Geldin!</h1>
-            <p style="font-size: 16px; line-height: 1.6;">Merhaba,</p>
-            <p style="font-size: 16px; line-height: 1.6;">Karlısın Temettü Takibi özelliği için bekleme listesine başarıyla katıldın. Borsa İstanbul ve Amerikan borsalarındaki yatırım yolculuğunu kolaylaştırmak için sabırsızlanıyoruz.</p>
-            
-            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 30px 0;">
-              <h3 style="margin-top: 0; color: #6366f1;">Seni Neler Bekliyor?</h3>
-              <ul style="padding-left: 20px;">
-                <li>Otomatik temettü takvimi</li>
-                <li>Vergi ve beyanname hesaplama araçları</li>
-                <li>10 yıllık pasif gelir projeksiyonları</li>
-              </ul>
-            </div>
-
-            <p style="font-size: 16px; line-height: 1.6;">Özellik yayına girdiğinde sana buradan haber vereceğiz. O zamana kadar bizi takipte kal!</p>
+            <p>Karlısın Temettü Takibi özelliği için bekleme listesine başarıyla katıldın.</p>
+            <p>Özellik yayına girdiğinde haber vereceğiz.</p>
             <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
             <p style="font-size: 12px; color: #94a3b8;">Karlısın Ekibi</p>
           </div>
@@ -81,16 +63,18 @@ async function startServer() {
       });
 
       if (error) {
-        console.error('Resend API Hatası:', JSON.stringify(error, null, 2));
         return res.status(400).json({ error });
       }
 
-      console.log('E-posta başarıyla gönderildi:', data?.id);
-      res.status(200).json({ message: 'E-posta başarıyla gönderildi', data });
-    } catch (err) {
-      console.error('Sunucu hatası:', err);
-      res.status(500).json({ error: 'E-posta gönderilemedi' });
+      res.status(200).json({ status: 'success', id: data?.id });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Sunucu hatası' });
     }
+  });
+
+  // 404 handler for API routes ONLY
+  app.all('/api/*', (req, res) => {
+    res.status(404).json({ error: `API rotası bulunamadı: ${req.method} ${req.url}` });
   });
 
   // Vite middleware veya Statik Dosya Sunumu
