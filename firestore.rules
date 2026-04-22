@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helpers
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function isSignedIn() { return request.auth != null; }
+
+    // Waitlist validation
+    function isValidWaitlistEntry(data) {
+      return data.keys().hasAll(['email', 'source', 'createdAt']) &&
+             data.keys().size() == 3 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
+             data.source is string && data.source.size() <= 50 &&
+             data.createdAt == request.time;
+    }
+
+    match /waitlist/{entryId} {
+      allow create: if isValidId(entryId) && isValidWaitlistEntry(incoming());
+      // Admins or internal tools would read these, but for simplicity here we deny public read.
+      allow read, update, delete: if false;
+    }
+  }
+}
