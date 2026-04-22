@@ -67,7 +67,8 @@ async function startServer() {
     }
 
     try {
-      const sender = process.env.RESEND_FROM_EMAIL || 'FinCalc <onboarding@resend.dev>';
+      // Varsayılan göndericiyi karlisin.com yapalım (Secret tanımlı değilse bile hata mesajı net olsun)
+      const sender = process.env.RESEND_FROM_EMAIL || 'FinCalc <info@karlisin.com>';
       console.log(`[${new Date().toISOString()}] Gönderen: ${sender}, Alıcı: ${email}`);
       
       const { data, error } = await resend.emails.send({
