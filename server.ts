@@ -12,8 +12,18 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
   
-  // API Key buraya gelecek (.env'den okunmalı)
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  // Ortam değişkenleri kontrolü (Debug için)
+  console.log('--- Sistem Yapılandırması ---');
+  console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'Tanımlı (Ok)' : 'EKSİK!');
+  console.log('RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL || 'Tanımlı Değil (Varsayılan kullanılıyor)');
+  console.log('RESEND_REGION:', process.env.RESEND_REGION || 'Global/US');
+  console.log('---------------------------');
+
+  // Resend yapılandırması
+  const resendOptions = process.env.RESEND_REGION === 'eu' 
+    ? { baseUrl: 'https://eu.resend.com' } 
+    : {};
+  const resend = new Resend(process.env.RESEND_API_KEY, resendOptions);
 
   app.use(express.json());
   app.use(cors());
