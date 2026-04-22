@@ -10,6 +10,8 @@ import Home from './components/Home';
 import Mortgage from './components/Mortgage';
 import Dashboard from './components/Dashboard';
 import About from './components/About';
+import Blog from './components/Blog';
+import Policy from './components/Policy';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -34,6 +36,12 @@ export default function App() {
         return <Dashboard />;
       case 'about':
         return <About />;
+      case 'blog':
+        return <Blog />;
+      case 'privacy':
+        return <Policy type="privacy" />;
+      case 'terms':
+        return <Policy type="terms" />;
       default:
         return <Home />;
     }
@@ -64,7 +72,9 @@ export default function App() {
           </AnimatePresence>
         </main>
 
-        <Footer />
+        <Footer 
+          onViewChange={setCurrentView}
+        />
       </div>
     </div>
   );

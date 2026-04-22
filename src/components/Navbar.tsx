@@ -14,7 +14,7 @@ export default function Navbar({ currentView, onViewChange, isLoggedIn = false }
   const navItems = [
     { id: 'calculators', label: 'Hesaplayıcılar' },
     { id: 'mortgage', label: 'Temettü', badge: 'YAKINDA' },
-    { id: 'about', label: 'Blog' },
+    { id: 'blog', label: 'Blog' },
   ];
 
   const handleNavClick = (id: string) => {
