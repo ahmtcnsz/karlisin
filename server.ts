@@ -39,16 +39,11 @@ async function startServer() {
     res.json({ status: 'ok', mode: process.env.NODE_ENV || 'development' });
   });
 
-  // E-posta gönderim API'sı
-  app.post(['/api/welcome-email', '/api/welcome-email/'], async (req, res) => {
+  app.post('/welcome-email', async (req, res) => {
     const { email } = req.body;
     
     if (!email) {
       return res.status(400).json({ error: 'E-posta adresi gerekli' });
-    }
-
-    if (!process.env.RESEND_API_KEY) {
-      return res.status(500).json({ error: 'Sistem Yapılandırma Hatası: API anahtarı sunucuda eksik.' });
     }
 
     try {
@@ -57,52 +52,32 @@ async function startServer() {
         from: sender,
         to: [email],
         subject: 'Karlısın Temettü Takibi - Aramıza Hoş Geldin! 🚀',
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
-            <h1 style="color: #6366f1; font-size: 28px; font-weight: 800; margin-bottom: 20px;">Hoş Geldin!</h1>
-            <p>Karlısın Temettü Takibi özelliği için bekleme listesine başarıyla katıldın.</p>
-            <p>Özellik yayına girdiğinde haber vereceğiz.</p>
-            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-            <p style="font-size: 12px; color: #94a3b8;">Karlısın Ekibi</p>
-          </div>
-        `
+        html: `<h1>Hoş Geldin!</h1><p>Bekleme listesine katıldın.</p>`
       });
 
-      if (error) {
-        return res.status(400).json({ error });
-      }
-
-      res.status(200).json({ status: 'success', id: data?.id });
+      if (error) return res.status(400).json({ error });
+      res.status(200).json({ status: 'success' });
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Sunucu hatası' });
+      res.status(500).json({ error: err.message });
     }
   });
 
-  // 404 handler for API routes ONLY
-  app.all('/api/*', (req, res) => {
-    res.status(404).json({ error: `API rotası bulunamadı: ${req.method} ${req.url}` });
-  });
-
-  // Vite middleware veya Statik Dosya Sunumu
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test';
-  console.log(`[Karlısın] Sunucu modu: ${isProduction ? 'PROD' : 'DEV'}`);
-
-  if (!isProduction) {
+  // Vite ve Statik Dosya İşlemleri
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction) {
+    const distPath = path.join(__dirname, 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      if (req.url === '/welcome-email') return; // API'yı pas geç
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  } else {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(__dirname, 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      // API isteklerini SPA fallback'ten muaf tut
-      if (req.url.startsWith('/api/')) {
-        return res.status(404).json({ error: 'API endpoint not found' });
-      }
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
   }
 
   app.listen(PORT, '0.0.0.0', () => {

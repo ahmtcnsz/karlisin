@@ -32,7 +32,7 @@ export default function Mortgage() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // Süreyi 10 saniyeye çıkardım
 
-        const apiUrl = '/api/welcome-email';
+        const apiUrl = '/welcome-email';
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
