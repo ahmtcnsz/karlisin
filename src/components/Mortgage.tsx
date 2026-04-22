@@ -32,7 +32,7 @@ export default function Mortgage() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 saniye sonra vazgeç
 
-        await fetch('/api/welcome-email', {
+        const response = await fetch('/api/welcome-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
@@ -40,9 +40,14 @@ export default function Mortgage() {
         });
         
         clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Mail sunucusu hatası:', errorData);
+          // Hata mesajını konsola basıyoruz, kullanıcıya çaktırmıyoruz ama debug için önemli
+        }
       } catch (mailError) {
         console.error('Email notification failed or timed out:', mailError);
-        // Mail gitmese bile kullanıcıyı sıraya eklediğimiz için devam ediyoruz
       }
 
       setStatus('success');

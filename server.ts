@@ -32,11 +32,12 @@ async function startServer() {
     }
 
     try {
-      // 1. Veritabanı kaydı zaten frontend'de yapılıyor ama burada da bir log tutabiliriz
-      // 2. Hoş geldin maili gönder
+      console.log(`E-posta gönderiliyor: ${email}`);
+      const sender = process.env.RESEND_FROM_EMAIL || 'FinCalc <onboarding@resend.dev>';
+      
       const { data, error } = await resend.emails.send({
-        from: 'FinCalc <onboarding@resend.dev>',
-        to: email,
+        from: sender,
+        to: [email],
         subject: 'FinCalc Temettü Takibi - Aramıza Hoş Geldin! 🚀',
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
@@ -61,10 +62,11 @@ async function startServer() {
       });
 
       if (error) {
-        console.error('Mail gönderim hatası:', error);
+        console.error('Resend API Hatası:', JSON.stringify(error, null, 2));
         return res.status(400).json({ error });
       }
 
+      console.log('E-posta başarıyla gönderildi:', data?.id);
       res.status(200).json({ message: 'E-posta başarıyla gönderildi', data });
     } catch (err) {
       console.error('Sunucu hatası:', err);
