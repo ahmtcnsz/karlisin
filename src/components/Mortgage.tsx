@@ -32,7 +32,8 @@ export default function Mortgage() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // Süreyi 10 saniyeye çıkardım
 
-        const response = await fetch('/api/welcome-email', {
+        const apiUrl = '/api/welcome-email';
+        const response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
@@ -48,7 +49,7 @@ export default function Mortgage() {
             errorData = JSON.parse(responseText);
           } catch (e) {
             console.error('API non-JSON error response:', responseText);
-            setErrorMessage(`Sunucu Hatası (${response.status}): Yanıt JSON değil.`);
+            setErrorMessage(`Sunucu Hatası (${response.status}): ${apiUrl} adresi JSON dönmedi. Lütfen sayfayı yenileyip tekrar deneyin.`);
             setStatus('error');
             return;
           }

@@ -28,13 +28,19 @@ async function startServer() {
   app.use(express.json());
   app.use(cors());
 
+  // İstek Loglayıcı (Debug için)
+  app.use((req, res, next) => {
+    console.log(`[Karlısın-Log] ${req.method} ${req.url}`);
+    next();
+  });
+
   // Durum kontrolü endpoint'i
-  app.get('/api/status', (req, res) => {
+  app.get(['/api/status', '/api/status/'], (req, res) => {
     res.json({ status: 'ok', mode: process.env.NODE_ENV || 'development' });
   });
 
   // E-posta gönderim API'sı
-  app.post('/api/welcome-email', async (req, res) => {
+  app.post(['/api/welcome-email', '/api/welcome-email/'], async (req, res) => {
     const { email } = req.body;
     
     if (!email) {
