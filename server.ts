@@ -94,8 +94,8 @@ async function startServer() {
   });
 
   // Vite middleware veya Statik Dosya Sunumu
-  const isProduction = process.env.NODE_ENV === 'production';
-  console.log(`Sunucu modu: ${isProduction ? 'PROD' : 'DEV'}`);
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test';
+  console.log(`[Karlısın] Sunucu modu: ${isProduction ? 'PROD' : 'DEV'}`);
 
   if (!isProduction) {
     const vite = await createViteServer({

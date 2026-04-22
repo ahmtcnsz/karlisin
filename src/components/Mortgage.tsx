@@ -49,10 +49,10 @@ export default function Mortgage() {
           return; // ÖNEMLİ: Hata varsa aşağıya (Success) geçme!
         }
       } catch (mailError: any) {
-        console.error('Email notification failed or timed out:', mailError);
-        setErrorMessage('Sistem şu an meşgul veya bağlantı hatası oluştu. Lütfen birazdan tekrar deneyin.');
+        console.error('Email notification error:', mailError);
+        setErrorMessage(`Bağlantı Hatası: ${mailError.message || 'Sunucuya ulaşılamıyor.'}`);
         setStatus('error');
-        return; // ÖNEMLİ: Hata varsa aşağıya geçme!
+        return;
       }
 
       setStatus('success');
