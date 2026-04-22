@@ -32,7 +32,10 @@ export default function Mortgage() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // Süreyi 10 saniyeye çıkardım
 
-        const apiUrl = '/karlisin-mail-service';
+        // Mutlak URL kullanarak istek at (Proxy/Path sorunlarını önler)
+        const apiUrl = `${window.location.origin}/karlisin-mail-service`;
+        console.log('[Karlısın-Front] Fetching:', apiUrl);
+        
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
