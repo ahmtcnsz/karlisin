@@ -65,6 +65,22 @@ const articles = [
       <h3 style="color: white; margin-top: 24px;">Lojistik Gücü</h3>
       <p>Doğru kargo anlaşması ve hızlı teslimat, markanızı zirveye taşıyacak iki temel dayanaktır.</p>
     `
+  },
+  {
+    id: 5,
+    title: 'Maliyet Yönetimi: 2026 Stratejileri',
+    excerpt: 'Artan maliyetler karşısında kâr marjınızı korumanın yolları ve yeni ekonomi modeli.',
+    category: 'Finans',
+    date: '23 Nisan 2026',
+    readTime: '9 dk',
+    image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>2026 yılı maliyet yönetimi açısından zorlayıcı olsa da Karlısın araçlarıyla bu süreci avantaja çevirebilirsiniz.</p>
+      <h3 style="color: white; margin-top: 24px;">Operasyonel Verimlilik</h3>
+      <p>Gereksiz harcamaları kısmak yerine, var olan kaynakları daha verimli kullanma stratejilerini inceliyoruz.</p>
+      <h3 style="color: white; margin-top: 24px;">Fiyatlandırma Psikolojisi</h3>
+      <p>Maliyet artışlarını fiyata yansıtırken müşteri sadakatini bozmamak için kullanabileceğiniz psikolojik modeller.</p>
+    `
   }
 ];
 
@@ -174,7 +190,6 @@ export default function Blog() {
             <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> Geri Dön
           </motion.button>
 
-          {/* Test Duyur Butonu */}
           <button 
             onClick={() => handleAnnounce(selectedArticle)}
             disabled={broadcastStatus === 'loading'}
