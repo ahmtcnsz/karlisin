@@ -8,7 +8,7 @@ const FeedbackOverlay: React.FC = () => {
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [showFeedbackTooltip, setShowFeedbackTooltip] = useState(true);
-  const [feedbackBottom, setFeedbackBottom] = useState(24);
+  const [feedbackBottom, setFeedbackBottom] = useState(32);
 
   const handleFeedbackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,21 +30,31 @@ const FeedbackOverlay: React.FC = () => {
       if (footer) {
         const footerRect = footer.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
-        const visibleFooterHeight = Math.max(0, viewportHeight - footerRect.top);
-        const newBottom = Math.max(24, visibleFooterHeight + 24);
-        setFeedbackBottom(newBottom);
+        
+        // Footer'ın üst çizgisinin ekrana göre konumu
+        const footerRelativeTop = viewportHeight - footerRect.top;
+        
+        // Eğer footer görünüyorsa (visibleFooterHeight > 0)
+        // butonun yeni taban noktasını hesapla:
+        // footer yüksekliği + ekstra boşluk
+        if (footerRect.top < viewportHeight) {
+          // 32px (varsayılan) + footer'ın ekranda kapladığı alan + 80px (çizginin üstünde kalması için)
+          setFeedbackBottom(Math.max(32, footerRelativeTop + 80));
+        } else {
+          setFeedbackBottom(32);
+        }
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial check
+    handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
     <div 
-      className="fixed right-6 z-[90] transition-all duration-300"
+      className="fixed right-6 z-[90] transition-all duration-500 ease-out"
       style={{ bottom: `${feedbackBottom}px` }}
     >
       <AnimatePresence>

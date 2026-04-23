@@ -129,6 +129,24 @@ const articles = [
       <h3 style="color: white; margin-top: 24px;">Veri Odaklı Pazar Seçimi</h3>
       <p>Hangi ülkeye gireceğinize hislerinizle değil, Karlısın'ın pazar analiz araçlarıyla karar verin. Doğru veri, sizi milyonlarca dolarlık reklam israfından korur.</p>
     `
+  },
+  {
+    id: 9,
+    title: 'Finansal Özgürlüğün Gizli Formülü: Bileşik Getiri Gücü',
+    excerpt: 'Einstein\'ın "Dünyanın 8. harikası" dediği bileşik getiriyi kullanarak 10 yılda nasıl servet inşa edilir?',
+    category: 'Strateji',
+    date: '23 Nisan 2026',
+    readTime: '14 dk',
+    image: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>Finansal özgürlük, bir varış noktası değil, bir yolculuktur. Bu yolculuğun en güçlü yakıtı ise zaman ve bileşik getiridir. Karlısın olarak, bu gücü hesaplamalarınıza dahil etmenin yollarını inceliyoruz.</p>
+      <h3 style="color: white; margin-top: 24px;">Bileşik Getiri Nedir?</h3>
+      <p>Bileşik getiri, sadece ana paranızın değil, kazandığınız faiz veya kârın da tekrar kazanç getirmesi sürecidir. Küçük miktarlarla başlasanız bile, zamanla kartopu etkisi yaratarak devasa bir portföye dönüşebilir.</p>
+      <h3 style="color: white; margin-top: 24px;">2026 Ekonomi Modelinde Strateji</h3>
+      <p>Günümüzün volatil piyasalarında, anlık kazançlar yerine sürdürülebilir büyüme oranlarına odaklanmak kritik. Karlısın'ın yatırım projeksiyon araçları, size yıllık %10 ile %25 arasındaki farkın 20 yılda ne kadar büyük bir uçuruma dönüştüğünü somut verilerle gösterir.</p>
+      <h3 style="color: white; margin-top: 24px;">Disiplin ve Sabır</h3>
+      <p>Bileşik getirinin en büyük düşmanı sabırsızlıktır. Erken yaşta, küçük bütçelerle bile olsa bugün başlayın. Karlısın ile hedeflerinizi belirleyin ve her ay bu hedefe ne kadar yaklaştığınızı takip edin. Unutmayın, finansal gelecek şansa değil, doğru hesaplamalara dayanır.</p>
+    `
   }
 ];
 
