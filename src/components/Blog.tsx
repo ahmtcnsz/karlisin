@@ -1,36 +1,56 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2 } from 'lucide-react';
+import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2, ArrowLeft, Share2 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const articles = [
   {
     id: 1,
+    title: 'Haftalık Temettü Analizi: 23-27 Ekim Haftası',
+    excerpt: 'Bu hafta temettü ödemesi yapacak şirketler ve BIST 100 genel görünümü üzerine detaylı analiz.',
+    category: 'Analiz',
+    date: '23 Ekim 2026',
+    readTime: '8 dk',
+    image: 'https://images.unsplash.com/photo-1611974717528-58730d385ad2?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>Borsa İstanbul'da Ekim ayının son haftasına girerken temettü portföyleri için kritik bir haftayı geride bırakıyoruz. Bu hafta özellikle sanayi ve finans sektöründeki şirketlerin nakit akışı yönetimleri dikkat çekiyor.</p>
+      <h3 style="color: white; margin-top: 24px;">Öne Çıkan Şirketler</h3>
+      <p>Listemizde yer alan 3 temel şirket, nakit kârlılık oranlarını geçtiğimiz yılın ayn dönemine göre %15 artırmış durumda. Bu, önümüzdeki yıl için temettü verimi beklentilerini yükseltiyor.</p>
+      <h3 style="color: white; margin-top: 24px;">Global Görünüm</h3>
+      <p>Amerikan Merkez Bankası'nın (FED) faiz kararları sonrasında dolar bazlı temettü getirisi olan şirketlerin cazibesi artmaya devam ediyor. Karlısın olarak biz, pasif gelir yolculuğunuzda temettü sürekliliğine odaklanmanızı tavsiye ediyoruz.</p>
+    `
+  },
+  {
+    id: 2,
     title: 'Pazaryerinde Satış Yaparken Dikkat Edilmesi Gereken 5 Kriter',
     excerpt: 'Trendyol, Hepsiburada ve Amazon gibi platformlarda kârlılığı artırmanın yollarını keşfedin.',
     category: 'Strateji',
     date: '12 Ekim 2026',
     readTime: '6 dk',
-    image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800'
+    image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <h3 style="color: white; margin-top: 24px;">1. Doğru Ürün Analizi</h3>
+      <p>Her ürün her pazaryerinde aynı performansı göstermez. Karlısın araçlarını kullanarak hangi ürünün hangi platformda daha yüksek kâr marjı bıraktığını görebilirsiniz.</p>
+      <h3 style="color: white; margin-top: 24px;">2. Kargo ve Lojistik Yönetimi</h3>
+      <p>E-ticarette kârı yutan en büyük kalem kargodur. Desi hesaplamalarınızı hatasız yaparak fatura sürprizlerinden kurtulun. Lojistik optimizasyonu maliyetlerinizi %20 oranında düşürebilir.</p>
+      <h3 style="color: white; margin-top: 24px;">3. Müşteri Deneyimi</h3>
+      <p>Hızlı yanıt ve doğru paketleme, iade oranlarını düşürürken marka sadakatini artırır.</p>
+    `
   },
   {
-    id: 2,
+    id: 3,
     title: 'Yeni KDV Oranları ve E-ticaret Üzerindeki Etkileri',
     excerpt: 'Mevzuat değişiklikleri sonrasında fiyatlandırma stratejinizi nasıl güncellemelisiniz?',
     category: 'Mevzuat',
     date: '10 Ekim 2026',
     readTime: '4 dk',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: 3,
-    title: 'Kargo Maliyetlerini Düşürmenin Pratik Yolları',
-    excerpt: 'Desi hesaplama ve anlaşmalı kargo süreçlerinde tasarruf etmeniz için ipuçları.',
-    category: 'Lojistik',
-    date: '08 Ekim 2026',
-    readTime: '5 dk',
-    image: 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?auto=format&fit=crop&q=80&w=800'
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>Resmi Gazete'de yayımlanan kararlar ile e-ticaret sitelerindeki vergi yapılandırması değişti. Fiyatlarınızı güncellerken kâr marjınızı nasıl koruyacağınız üzerine bir rehber hazırladık.</p>
+      <h3 style="color: white; margin-top: 24px;">Mevcut Durum Analizi</h3>
+      <p>Yüksek KDV oranları karşısında tüketicilerin harcama alışkanlıkları değişebilir. Bu süreçte sepet ortalamasını artıracak kampanyalar kârlılığınızı dengeleyebilir.</p>
+    `
   }
 ];
 
@@ -38,6 +58,7 @@ export default function Blog() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [selectedArticle, setSelectedArticle] = useState<typeof articles[0] | null>(null);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,14 +81,11 @@ export default function Blog() {
 
       // 2. Mail gönder (Backend üzerinden)
       try {
-        // Kesin çalışan URL yapısı (Domain yönlendirme hatalarını aşmak için)
         const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/mail';
         const isCustomDomain = window.location.hostname.includes('karlisin.com') || window.location.hostname.includes('www');
         const apiUrl = isCustomDomain ? workingCloudRunUrl : '/api/mail';
 
-        console.log('[Karlısın-Blog] İstek atılıyor:', apiUrl);
-
-        const response = await fetch(apiUrl, {
+        await fetch(apiUrl, {
           method: 'POST',
           mode: 'cors',
           headers: { 'Content-Type': 'application/json' },
@@ -76,11 +94,6 @@ export default function Blog() {
             type: 'newsletter' 
           })
         });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          console.error('Newsletter mail error status:', response.status, errData);
-        }
       } catch (mailErr) {
         console.error('Mail trigger error:', mailErr);
       }
@@ -93,6 +106,63 @@ export default function Blog() {
       setStatus('error');
     }
   };
+
+  if (selectedArticle) {
+    return (
+      <div className="pt-24 pb-20 px-6 max-w-4xl mx-auto min-h-screen">
+        <motion.button 
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => setSelectedArticle(null)}
+          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 group font-bold tracking-tight"
+        >
+          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> Geri Dön
+        </motion.button>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="aspect-[21/9] rounded-[40px] overflow-hidden mb-12 border border-white/10">
+            <img src={selectedArticle.image} alt={selectedArticle.title} className="w-full h-full object-cover" />
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-black text-indigo-400 uppercase tracking-widest mb-6">
+            <span className="px-3 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/20">{selectedArticle.category}</span>
+            <span>•</span>
+            <span className="flex items-center gap-1.5"><Clock size={14} /> {selectedArticle.readTime} oku</span>
+            <span>•</span>
+            <span>{selectedArticle.date}</span>
+          </div>
+
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-8 tracking-tight leading-[1.1]">
+            {selectedArticle.title}
+          </h1>
+
+          <div className="prose prose-invert prose-indigo max-w-none">
+            <div 
+              className="text-slate-300 text-lg leading-relaxed space-y-6 font-medium"
+              dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+            />
+          </div>
+
+          <div className="mt-16 pt-8 border-t border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white">K</div>
+              <div>
+                <p className="text-white font-bold">Karlısın Ekibi</p>
+                <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Finans Editörü</p>
+              </div>
+            </div>
+            <button className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 text-white transition-all">
+              <Share2 size={20} />
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
@@ -139,7 +209,8 @@ export default function Blog() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-white/5 backdrop-blur-md rounded-[32px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col shadow-sm"
+            onClick={() => setSelectedArticle(article)}
+            className="bg-white/5 backdrop-blur-md rounded-[32px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col shadow-sm cursor-pointer"
           >
             <div className="aspect-[16/9] overflow-hidden relative">
               <img 
