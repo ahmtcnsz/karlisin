@@ -1,55 +1,69 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2, ArrowLeft, Share2 } from 'lucide-react';
+import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2, ArrowLeft, Share2, Send } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs, query } from 'firebase/firestore';
 
 const articles = [
   {
     id: 1,
-    title: 'Haftalık Temettü Analizi: 23-27 Ekim Haftası',
-    excerpt: 'Bu hafta temettü ödemesi yapacak şirketler ve BIST 100 genel görünümü üzerine detaylı analiz.',
+    title: 'Haftalık Temettü Analizi: Portföy Stratejileri',
+    excerpt: 'Bugün yayınladığımız analizde BIST 100 ve global piyasalardaki temettü verimi en yüksek şirketleri inceledik.',
     category: 'Analiz',
-    date: '23 Ekim 2026',
+    date: '23 Nisan 2026',
     readTime: '8 dk',
     image: 'https://images.unsplash.com/photo-1611974717528-58730d385ad2?auto=format&fit=crop&q=80&w=800',
     content: `
-      <p>Borsa İstanbul'da Ekim ayının son haftasına girerken temettü portföyleri için kritik bir haftayı geride bırakıyoruz. Bu hafta özellikle sanayi ve finans sektöründeki şirketlerin nakit akışı yönetimleri dikkat çekiyor.</p>
-      <h3 style="color: white; margin-top: 24px;">Öne Çıkan Şirketler</h3>
-      <p>Listemizde yer alan 3 temel şirket, nakit kârlılık oranlarını geçtiğimiz yılın ayn dönemine göre %15 artırmış durumda. Bu, önümüzdeki yıl için temettü verimi beklentilerini yükseltiyor.</p>
-      <h3 style="color: white; margin-top: 24px;">Global Görünüm</h3>
-      <p>Amerikan Merkez Bankası'nın (FED) faiz kararları sonrasında dolar bazlı temettü getirisi olan şirketlerin cazibesi artmaya devam ediyor. Karlısın olarak biz, pasif gelir yolculuğunuzda temettü sürekliliğine odaklanmanızı tavsiye ediyoruz.</p>
+      <p>Bugün, 23 Nisan 2026 itibarıyla piyasalarda temettü odaklı bir hareketlilik gözlemliyoruz. Karlısın ekibi olarak hazırladığımız bu haftalık analizde, portföyünüzü koruyacak ve büyütecek stratejilere odaklandık.</p>
+      <h3 style="color: white; margin-top: 24px;">Piyasa Özeti</h3>
+      <p>Borsa İstanbul'da işlem hacmi bugün rekor seviyelere yaklaştı. Özellikle enerji ve teknoloji hisselerindeki temettü projeksiyonları, uzun vadeli yatırımcılar için yeşil ışık yakıyor.</p>
+      <h3 style="color: white; margin-top: 24px;">Pasif Gelir Odak Noktası</h3>
+      <p>Unutmayın, temettü yatırımcılığı bir sprint değil, maratondur. Karlısın'ın 10 yıllık projeksiyon araçlarıyla geleceğinizi bugünden planlayın.</p>
     `
   },
   {
     id: 2,
-    title: 'Pazaryerinde Satış Yaparken Dikkat Edilmesi Gereken 5 Kriter',
-    excerpt: 'Trendyol, Hepsiburada ve Amazon gibi platformlarda kârlılığı artırmanın yollarını keşfedin.',
-    category: 'Strateji',
-    date: '12 Ekim 2026',
+    title: 'Dijital Dönüşümde E-ticaretin Geleceği',
+    excerpt: 'E-ticarette başarının anahtarı artık sadece ürün satmak değil, veriyi doğru okumaktan geçiyor.',
+    category: 'Gelecek',
+    date: '23 Nisan 2026',
     readTime: '6 dk',
     image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800',
     content: `
-      <h3 style="color: white; margin-top: 24px;">1. Doğru Ürün Analizi</h3>
-      <p>Her ürün her pazaryerinde aynı performansı göstermez. Karlısın araçlarını kullanarak hangi ürünün hangi platformda daha yüksek kâr marjı bıraktığını görebilirsiniz.</p>
-      <h3 style="color: white; margin-top: 24px;">2. Kargo ve Lojistik Yönetimi</h3>
-      <p>E-ticarette kârı yutan en büyük kalem kargodur. Desi hesaplamalarınızı hatasız yaparak fatura sürprizlerinden kurtulun. Lojistik optimizasyonu maliyetlerinizi %20 oranında düşürebilir.</p>
-      <h3 style="color: white; margin-top: 24px;">3. Müşteri Deneyimi</h3>
-      <p>Hızlı yanıt ve doğru paketleme, iade oranlarını düşürürken marka sadakatini artırır.</p>
+      <h3 style="color: white; margin-top: 24px;">Veri Odaklı Karar Verme</h3>
+      <p>Karlısın blog yazarı olarak bugün şunu vurgulamak istiyoruz: Verileriniz size hikayenizi anlatır. Satış rakamlarınızın ötesine geçin.</p>
+      <h3 style="color: white; margin-top: 24px;">Yapay Zeka Entegrasyonu</h3>
+      <p>2026 yılı, yapay zekanın e-ticaret lojistiğinde %30 daha fazla verimlilik sağladığı yıl olarak tarihe geçecek.</p>
     `
   },
   {
     id: 3,
-    title: 'Yeni KDV Oranları ve E-ticaret Üzerindeki Etkileri',
-    excerpt: 'Mevzuat değişiklikleri sonrasında fiyatlandırma stratejinizi nasıl güncellemelisiniz?',
-    category: 'Mevzuat',
-    date: '10 Ekim 2026',
-    readTime: '4 dk',
+    title: 'Yeni Nesil Vergi Yapılandırması ve Karlılık',
+    excerpt: 'Vergi maliyetlerini yasal yollarla optimize ederek kâr marjınızı nasıl %5 artırırsınız?',
+    category: 'Finans',
+    date: '23 Nisan 2026',
+    readTime: '5 dk',
     image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
     content: `
-      <p>Resmi Gazete'de yayımlanan kararlar ile e-ticaret sitelerindeki vergi yapılandırması değişti. Fiyatlarınızı güncellerken kâr marjınızı nasıl koruyacağınız üzerine bir rehber hazırladık.</p>
-      <h3 style="color: white; margin-top: 24px;">Mevcut Durum Analizi</h3>
-      <p>Yüksek KDV oranları karşısında tüketicilerin harcama alışkanlıkları değişebilir. Bu süreçte sepet ortalamasını artıracak kampanyalar kârlılığınızı dengeleyebilir.</p>
+      <p>Mevzuat değişiklikleri her zaman bir fırsat barındırır. Karlısın ile bu fırsatları yakalayın.</p>
+      <h3 style="color: white; margin-top: 24px;">Maliyet Analizi</h3>
+      <p>Bugün her işletmenin yapması gereken ilk şey, gizli operasyonel maliyetleri ortaya çıkarmaktır.</p>
+    `
+  },
+  {
+    id: 4,
+    title: 'Haftalık Analiz: E-ticaret Başarı İpuçları',
+    excerpt: 'Kendi markasını kurmak isteyenler için bu haftanın altın değerindeki tavsiyeleri.',
+    category: 'Özel',
+    date: '23 Nisan 2026',
+    readTime: '7 dk',
+    image: 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>Karlısın Haftalık Analiz dizisinin bu bölümünde, yeni başlayanlar için yol haritasını çiziyoruz.</p>
+      <h3 style="color: white; margin-top: 24px;">Marka Kimliği</h3>
+      <p>Siz sadece bir ürün değil, bir çözüm satıyorsunuz. Markanızın sesi, müşterinizin duymak istediği cevap olmalı.</p>
+      <h3 style="color: white; margin-top: 24px;">Lojistik Gücü</h3>
+      <p>Doğru kargo anlaşması ve hızlı teslimat, markanızı zirveye taşıyacak iki temel dayanaktır.</p>
     `
   }
 ];
@@ -59,6 +73,7 @@ export default function Blog() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedArticle, setSelectedArticle] = useState<typeof articles[0] | null>(null);
+  const [broadcastStatus, setBroadcastStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,14 +87,12 @@ export default function Blog() {
       setStatus('loading');
       setErrorMessage('');
       
-      // 1. Firebase'e kaydet
       await addDoc(collection(db, 'newsletter_subscribers'), {
         email: email,
         subscribedAt: serverTimestamp(),
         source: 'blog_newsletter'
       });
 
-      // 2. Mail gönder (Backend üzerinden)
       try {
         const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/mail';
         const isCustomDomain = window.location.hostname.includes('karlisin.com') || window.location.hostname.includes('www');
@@ -89,10 +102,7 @@ export default function Blog() {
           method: 'POST',
           mode: 'cors',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            email, 
-            type: 'newsletter' 
-          })
+          body: JSON.stringify({ email, type: 'newsletter' })
         });
       } catch (mailErr) {
         console.error('Mail trigger error:', mailErr);
@@ -107,23 +117,76 @@ export default function Blog() {
     }
   };
 
+  const handleAnnounce = async (article: typeof articles[0]) => {
+    if (!confirm(`${article.title} yazısını tüm abonelere duyurmak istiyor musunuz?`)) return;
+
+    try {
+      setBroadcastStatus('loading');
+      const subsSnap = await getDocs(query(collection(db, 'newsletter_subscribers')));
+      const subscribers = subsSnap.docs.map(doc => doc.data().email);
+
+      if (subscribers.length === 0) {
+        alert('Duyuru yapılacak abone bulunamadı.');
+        setBroadcastStatus('idle');
+        return;
+      }
+
+      const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/broadcast';
+      const isCustomDomain = window.location.hostname.includes('karlisin.com') || window.location.hostname.includes('www');
+      const apiUrl = isCustomDomain ? workingCloudRunUrl : '/api/broadcast';
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscribers,
+          articleTitle: article.title,
+          articleExcerpt: article.excerpt,
+          articleUrl: window.location.href
+        })
+      });
+
+      if (response.ok) {
+        setBroadcastStatus('success');
+        alert('Duyuru başarıyla gönderildi!');
+        setTimeout(() => setBroadcastStatus('idle'), 3000);
+      } else {
+        setBroadcastStatus('error');
+        alert('Duyuru gönderilirken bir hata oluştu.');
+      }
+    } catch (err) {
+      console.error('Broadcast error:', err);
+      setBroadcastStatus('error');
+    }
+  };
+
   if (selectedArticle) {
     return (
       <div className="pt-24 pb-20 px-6 max-w-4xl mx-auto min-h-screen">
-        <motion.button 
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          onClick={() => setSelectedArticle(null)}
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 group font-bold tracking-tight"
-        >
-          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> Geri Dön
-        </motion.button>
+        <div className="flex justify-between items-center mb-8">
+          <motion.button 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => setSelectedArticle(null)}
+            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors group font-bold tracking-tight"
+          >
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> Geri Dön
+          </motion.button>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="aspect-[21/9] rounded-[40px] overflow-hidden mb-12 border border-white/10">
+          {/* Test Duyur Butonu */}
+          <button 
+            onClick={() => handleAnnounce(selectedArticle)}
+            disabled={broadcastStatus === 'loading'}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/20 text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
+          >
+            {broadcastStatus === 'loading' ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+            Duyuru Gönder (Test)
+          </button>
+        </div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="aspect-[21/9] rounded-[40px] overflow-hidden mb-12 border border-white/10 shadow-2xl">
             <img src={selectedArticle.image} alt={selectedArticle.title} className="w-full h-full object-cover" />
           </div>
 
@@ -167,62 +230,37 @@ export default function Blog() {
     <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
         <div className="max-w-2xl">
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 text-indigo-300 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-indigo-500/20"
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 text-indigo-300 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-indigo-500/20 font-bold">
             Haberler & İpuçları
           </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-black text-white tracking-tight"
-          >
+          <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl font-black text-white tracking-tight">
             Karlısın <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Blog</span>
           </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-slate-400 font-medium mt-4 text-lg"
-          >
+          <motion.p initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="text-slate-400 font-medium mt-4 text-lg">
             E-ticaret ve finans dünyasındaki en son gelişmeleri, stratejileri ve başarı hikayelerini takip edin.
           </motion.p>
         </div>
 
         <div className="relative w-full md:w-80">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input 
-            type="text" 
-            placeholder="Yazı ara..." 
-            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium transition-all text-white"
-          />
+          <input type="text" placeholder="Yazı ara..." className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium transition-all text-white" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {articles.map((article, i) => (
           <motion.article 
-            key={article.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            onClick={() => setSelectedArticle(article)}
-            className="bg-white/5 backdrop-blur-md rounded-[32px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col shadow-sm cursor-pointer"
+            key={article.id} 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: i * 0.1 }} 
+            onClick={() => setSelectedArticle(article)} 
+            className="bg-white/5 backdrop-blur-md rounded-[32px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer"
           >
             <div className="aspect-[16/9] overflow-hidden relative">
-              <img 
-                src={article.image} 
-                alt={article.title} 
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                referrerPolicy="no-referrer"
-              />
+              <img src={article.image} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
               <div className="absolute top-4 left-4">
-                <span className="px-3 py-1 bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10">
-                  {article.category}
-                </span>
+                <span className="px-3 py-1 bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10">{article.category}</span>
               </div>
             </div>
             
@@ -232,12 +270,8 @@ export default function Blog() {
                 <span>•</span>
                 <span>{article.date}</span>
               </div>
-              <h2 className="text-xl font-bold text-white mb-4 group-hover:text-indigo-400 transition-colors leading-tight">
-                {article.title}
-              </h2>
-              <p className="text-sm text-slate-400 font-medium mb-8 line-clamp-2">
-                {article.excerpt}
-              </p>
+              <h2 className="text-xl font-bold text-white mb-4 group-hover:text-indigo-400 transition-colors leading-tight">{article.title}</h2>
+              <p className="text-sm text-slate-400 font-medium mb-8 line-clamp-2">{article.excerpt}</p>
               <div className="mt-auto pt-4 border-t border-white/5">
                 <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400 group-hover:text-white transition-colors">
                   Devamını Oku <ArrowRight size={14} />
@@ -249,12 +283,7 @@ export default function Blog() {
       </div>
 
       {/* Featured Newsletter */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="mt-20 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 backdrop-blur-xl p-12 rounded-[48px] border border-white/10 text-center relative overflow-hidden"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-20 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 backdrop-blur-xl p-12 rounded-[48px] border border-white/10 text-center relative overflow-hidden">
         <div className="relative z-10 max-w-2xl mx-auto">
           <BookOpen size={48} className="mx-auto text-indigo-400 mb-6" />
           <h2 className="text-3xl font-black text-white mb-4">Haftalık Analizler Kapınıza Gelsin</h2>
@@ -262,11 +291,7 @@ export default function Blog() {
           
           <AnimatePresence mode="wait">
             {status === 'success' ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl"
-              >
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl">
                 <div className="flex flex-col items-center gap-2">
                   <CheckCircle2 className="text-emerald-400" size={32} />
                   <p className="text-white font-bold text-lg">Bültene Abone Oldunuz!</p>
@@ -276,21 +301,10 @@ export default function Blog() {
             ) : (
               <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-grow flex flex-col items-start gap-2">
-                  <input 
-                    type="email" 
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="E-posta adresiniz" 
-                    className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 text-white font-medium"
-                  />
+                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-posta adresiniz" className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 text-white font-medium" />
                   {status === 'error' && <p className="text-rose-400 text-xs font-bold ml-2">{errorMessage}</p>}
                 </div>
-                <button 
-                  type="submit"
-                  disabled={status === 'loading'}
-                  className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center min-w-[140px]"
-                >
+                <button type="submit" disabled={status === 'loading'} className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center min-w-[140px]">
                   {status === 'loading' ? <Loader2 size={20} className="animate-spin" /> : 'Abone Ol'}
                 </button>
               </form>
