@@ -10,8 +10,8 @@
       {
         "source": "**",
         "run": {
-          "serviceId": "karlisin",
-          "region": "europe-west1"
+          "serviceId": "karl-s-n",
+          "region": "europe-west2"
         }
       }
     ],
