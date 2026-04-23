@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "gen-lang-client-0551179549",
     "public": "dist",
     "ignore": [
       "firebase.json",
@@ -11,11 +12,10 @@
         "source": "**",
         "run": {
           "serviceId": "karl-s-n",
-          "region": "europe-west2"
+          "region": "europe-west3"
         }
       }
     ],
-    "cleanUrls": true,
-    "trailingSlash": false
+    "cleanUrls": true
   }
 }
