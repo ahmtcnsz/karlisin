@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2, ArrowLeft, Share2, Send } from 'lucide-react';
+import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2, ArrowLeft, Share2 } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp, getDocs, query } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const articles = [
   {
@@ -47,7 +47,7 @@ const articles = [
     content: `
       <p>Mevzuat değişiklikleri her zaman bir fırsat barındırır. Karlısın ile bu fırsatları yakalayın.</p>
       <h3 style="color: white; margin-top: 24px;">Maliyet Analizi</h3>
-      <p>Bugün her işletmenin yapması gereken ilk şey, gizli operasyonel maliyetleri ortaya çıkarmaktır.</p>
+      <p>Bugün her işletmeyen yapması gereken ilk şey, gizli operasyonel maliyetleri ortaya çıkarmaktır.</p>
     `
   },
   {
@@ -89,7 +89,6 @@ export default function Blog() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedArticle, setSelectedArticle] = useState<typeof articles[0] | null>(null);
-  const [broadcastStatus, setBroadcastStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,50 +132,6 @@ export default function Blog() {
     }
   };
 
-  const handleAnnounce = async (article: typeof articles[0]) => {
-    if (!confirm(`${article.title} yazısını tüm abonelere duyurmak istiyor musunuz?`)) return;
-
-    try {
-      setBroadcastStatus('loading');
-      const subsSnap = await getDocs(query(collection(db, 'newsletter_subscribers')));
-      const subscribers = subsSnap.docs.map(doc => doc.data().email);
-
-      if (subscribers.length === 0) {
-        alert('Duyuru yapılacak abone bulunamadı.');
-        setBroadcastStatus('idle');
-        return;
-      }
-
-      const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/broadcast';
-      const isCustomDomain = window.location.hostname.includes('karlisin.com') || window.location.hostname.includes('www');
-      const apiUrl = isCustomDomain ? workingCloudRunUrl : '/api/broadcast';
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        mode: 'cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscribers,
-          articleTitle: article.title,
-          articleExcerpt: article.excerpt,
-          articleUrl: window.location.href
-        })
-      });
-
-      if (response.ok) {
-        setBroadcastStatus('success');
-        alert('Duyuru başarıyla gönderildi!');
-        setTimeout(() => setBroadcastStatus('idle'), 3000);
-      } else {
-        setBroadcastStatus('error');
-        alert('Duyuru gönderilirken bir hata oluştu.');
-      }
-    } catch (err) {
-      console.error('Broadcast error:', err);
-      setBroadcastStatus('error');
-    }
-  };
-
   if (selectedArticle) {
     return (
       <div className="pt-24 pb-20 px-6 max-w-4xl mx-auto min-h-screen">
@@ -189,15 +144,6 @@ export default function Blog() {
           >
             <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> Geri Dön
           </motion.button>
-
-          <button 
-            onClick={() => handleAnnounce(selectedArticle)}
-            disabled={broadcastStatus === 'loading'}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/20 text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
-          >
-            {broadcastStatus === 'loading' ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            Duyuru Gönder (Test)
-          </button>
         </div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
