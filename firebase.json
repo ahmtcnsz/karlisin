@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "gen-lang-client-0551179549",
     "public": "dist",
     "ignore": [
       "firebase.json",
@@ -15,6 +16,7 @@
         }
       }
     ],
-    "cleanUrls": true
+    "cleanUrls": true,
+    "trailingSlash": false
   }
 }
