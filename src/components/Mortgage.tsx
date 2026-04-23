@@ -47,13 +47,15 @@ export default function Mortgage() {
 
         if (!response.ok) {
           const contentType = response.headers.get('content-type');
+          console.error(`[Karlısın-Front] Hata Durumu: ${response.status}, Content-Type: ${contentType}`);
+          
           if (contentType && contentType.includes('application/json')) {
             const errorData = await response.json();
             setErrorMessage(errorData.error || `Sunucu Hatası (${response.status})`);
           } else {
             const raw = await response.text();
-            console.error('API Non-JSON Response:', raw.substring(0, 100));
-            setErrorMessage(`Mail servisi şu an meşgul (404/Not JSON). Lütfen birazdan tekrar deneyin.`);
+            console.error('API Non-JSON Response (İlk 200 karakter):', raw.substring(0, 200));
+            setErrorMessage(`Mail hatası (Kod: ${response.status}). Sunucu cevabı JSON değil. Lütfen URL'yi kontrol edin veya sunucuyu resetleyin.`);
           }
           setStatus('error');
           return;

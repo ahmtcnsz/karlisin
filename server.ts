@@ -138,10 +138,11 @@ async function startServer() {
       appType: 'spa',
     });
     
-    // API rotalarını Vite'den koru (Daha Kesin Filtreleme)
+  // API rotalarını Vite'den koru (Daha Kesin Filtreleme)
     app.use((req, res, next) => {
       // API istekleri doğrudan alttaki express rotalarına akmalı
-      if (req.url === '/api/mail' || req.url === '/api/ping' || req.url.startsWith('/api/')) {
+      // req.path kullanmak sorgu parametrelerinden etkilenmeyi önler
+      if (req.path.startsWith('/api/')) {
         return next();
       }
       vite.middlewares(req, res, next);
