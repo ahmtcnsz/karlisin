@@ -34,8 +34,18 @@ async function startServer() {
 
   // Loglama - Hangi istek nereye geliyor görelim
   app.use((req, res, next) => {
-    console.log(`[Sunucu-Log] ${req.method} ${req.url}`);
+    if (req.url.includes('api')) {
+      console.log(`[Karlısın-Sunucu] API İstek: ${req.method} ${req.url}`);
+    }
     next();
+  });
+
+  // BASİT PING TESTİ
+  app.get('/api/ping', (req, res) => {
+    res.json({ status: 'ok', time: new Date().toISOString(), env: {
+      has_resend_key: !!process.env.RESEND_API_KEY,
+      from_email: process.env.RESEND_FROM_EMAIL || 'Tanımsız'
+    }});
   });
 
   // TEST VE ANA API
@@ -44,51 +54,67 @@ async function startServer() {
     const email = req.method === 'POST' ? req.body.email : req.query.email;
     
     if (!email) {
+      console.warn('[Karlısın-API] Email adresi eksik!');
       return res.status(400).json({ error: 'E-posta adresi bulunamadı' });
     }
 
-    if (!process.env.RESEND_API_KEY) {
-      console.error('[Karlısın-API] RESEND_API_KEY tanımsız!');
-      return res.status(500).json({ error: 'Sistem hatası (API Key)' });
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey || apiKey === 're_your_api_key_here') {
+      console.error('[Karlısın-API] Geçersiz veya eksik RESEND_API_KEY!');
+      return res.status(500).json({ 
+        error: 'Sistem hatası: API Anahtarı yüklenemedi.',
+        details: 'Lütfen .env dosyasını veya ortam değişkenlerini kontrol edin.'
+      });
     }
 
     try {
       const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <info@karlisin.com>';
+      console.log(`[Karlısın-API] Gönderim yapılıyor: ${sender} -> ${email}`);
+      
       const { data, error } = await resend.emails.send({
         from: sender,
         to: [email],
         subject: 'Karlısın Temettü Takibi - Hoş Geldin! 🚀',
-        html: `<h1>Hoş Geldin!</h1><p>Bekleme listesine katıldın. En kısa sürede görüşmek üzere.</p>`
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">
+            <h1 style="color: #4f46e5;">Hoş Geldin!</h1>
+            <p style="font-size: 16px; line-height: 1.6;">Bekleme listemize başarıyla katıldın.</p>
+            <p>Finansal özgürlük yolculuğunda birlikteyiz. Uygulamamız aktif olduğunda ilk haberdar olan sen olacaksın.</p>
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+            <p style="font-size: 12px; color: #64748b;">Karlısın Ekibi</p>
+          </div>
+        `
       });
 
       if (error) {
-        console.error('[Karlısın-API] Resend hatası:', error);
+        console.error('[Karlısın-API] Resend API Hatası:', error);
         return res.status(400).json({ 
-          error: error.message || 'Resend API Hatası', 
-          details: 'Lütfen Resend panelinden domain doğrulamasını ve API key yetkilerini kontrol edin. Domain doğrulanmadıysa sadece kendi mailinize gönderim yapabilirsiniz.',
-          raw: error 
+          error: 'Mail gönderilemedi.', 
+          message: error.message,
+          details: 'Domain doğrulanmadıysa sadece kendi mailinize gönderim yapabilirsiniz. Resend panelinden kontrol edin.'
         });
       }
 
-      console.log('[Karlısın-API] Başarılı gönderim:', data?.id);
+      console.log('[Karlısın-API] Başarıyla gönderildi. ID:', data?.id);
       return res.status(200).json({ success: true, id: data?.id });
     } catch (err: any) {
-      console.error('[Karlısın-API] Beklenmedik hata:', err);
-      return res.status(500).json({ error: err.message });
+      console.error('[Karlısın-API] Kritik Hata:', err);
+      return res.status(500).json({ 
+        error: 'Sunucu hatası oluştu.', 
+        message: err.message 
+      });
     }
   };
 
-  // Hem GET hem POST destekle (Test kolaylığı için)
   app.get('/api/mail', mailHandler);
   app.post('/api/mail', mailHandler);
 
-  // API CATCH-ALL (404 JSON Hatası Dönmek İçin)
+  // API CATCH-ALL (404 JSON Hatası Dönmek İçin) - DİĞER TÜM /api/* YOLLARINI YAKALA
   app.all('/api/*', (req, res) => {
-    console.warn(`[API-404] Bulunamayan API Rotası: ${req.method} ${req.url}`);
+    console.warn(`[Karlısın-API] Bilinmeyen Rota: ${req.method} ${req.url}`);
     res.status(404).json({ 
-      error: `API rotası bulunamadı: ${req.url}`,
-      method: req.method,
-      suggestion: 'Lütfen /api/mail rotasını kullandığınızdan emin olun.'
+      error: 'Bu API rotası mevcut değil.',
+      tip: '/api/mail rotasını kullanın.'
     });
   });
 
@@ -111,7 +137,14 @@ async function startServer() {
       server: { middlewareMode: true },
       appType: 'spa',
     });
-    app.use(vite.middlewares);
+    
+    // API rotalarını Vite'den koru
+    app.use((req, res, next) => {
+      if (req.url.startsWith('/api')) {
+        return next();
+      }
+      vite.middlewares(req, res, next);
+    });
   }
 
   app.listen(PORT, '0.0.0.0', () => {
