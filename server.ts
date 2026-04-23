@@ -213,6 +213,14 @@ async function startServer() {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
     
+    // SEO DOSYALARI İÇİN AÇIK ROTALAR
+    app.get('/sitemap.xml', (req, res) => {
+      res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+    });
+    app.get('/robots.txt', (req, res) => {
+      res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+    });
+    
     // API dışındaki her şeyi index.html'e gönder
     app.get('*', (req, res) => {
       // API istekleri yukarıda catch-all ile yakalanmış olmalı, buraya düşerse 404 dön
