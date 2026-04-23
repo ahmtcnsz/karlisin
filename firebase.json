@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "karlisincom",
+    "site": "gen-lang-client-0551179549",
     "public": ".",
     "ignore": [
       "firebase.json",
