@@ -42,7 +42,7 @@ interface MonthlyCalculation {
 export default function SalaryCalculator() {
   const [calculationType, setCalculationType] = useState<'grossToNet' | 'netToGross'>('grossToNet');
   const [year, setYear] = useState(2026);
-  const [monthlyGross, setMonthlyGross] = useState<number | ''>('');
+  const [targetAmount, setTargetAmount] = useState<number | ''>('');
   const [maritalStatus, setMaritalStatus] = useState('Bekar');
   const [spouseWorks, setSpouseWorks] = useState('calisiyor');
   const [childCount, setChildCount] = useState(0);
@@ -129,13 +129,28 @@ export default function SalaryCalculator() {
     };
   };
 
-  const handleCalculate = () => {
-    if (!monthlyGross || monthlyGross === 0) {
-      setCalculations([]);
-      return;
+  const findGrossFromNet = (targetNet: number, cumulativeBase: number) => {
+    let low = targetNet;
+    let high = targetNet * 3; // Başlangıç için güvenli bir üst sınır
+    let attempts = 0;
+    
+    while (attempts < 50) {
+      const mid = (low + high) / 2;
+      const res = calculateTaxes(mid, cumulativeBase);
+      if (Math.abs(res.totalNet - targetNet) < 0.01) return mid;
+      
+      if (res.totalNet < targetNet) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+      attempts++;
     }
+    return low;
+  };
 
-    if (monthlyGross < MIN_WAGE_BRUT) {
+  const handleCalculate = () => {
+    if (!targetAmount || targetAmount === 0) {
       setCalculations([]);
       return;
     }
@@ -144,10 +159,18 @@ export default function SalaryCalculator() {
     const newCalculations: MonthlyCalculation[] = [];
 
     for (let i = 0; i < 12; i++) {
-        const res = calculateTaxes(monthlyGross, cumulativeBase);
+        let currentGross = 0;
+        
+        if (calculationType === 'grossToNet') {
+          currentGross = targetAmount;
+        } else {
+          currentGross = findGrossFromNet(targetAmount, cumulativeBase);
+        }
+
+        const res = calculateTaxes(currentGross, cumulativeBase);
         newCalculations.push({
             month: months[i],
-            gross: monthlyGross,
+            gross: currentGross,
             sgkEmployee: res.sgkEmployee,
             unemploymentEmployee: res.unemploymentEmployee,
             incomeTaxBase: res.incomeTaxBase,
@@ -170,7 +193,7 @@ export default function SalaryCalculator() {
 
   useEffect(() => {
     handleCalculate();
-  }, [monthlyGross, calculationType, maritalStatus, spouseWorks, childCount, incentive5Point, incentive2Point, year]);
+  }, [targetAmount, calculationType, maritalStatus, spouseWorks, childCount, incentive5Point, incentive2Point, year]);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(val);
@@ -209,7 +232,7 @@ export default function SalaryCalculator() {
   const averageEmployerMonthly = totalEmployerYearly / 12;
   const totalDeductions = calculations.reduce((acc, curr) => acc + (curr.gross - curr.net), 0);
   const totalEmployerAddons = calculations.reduce((acc, curr) => acc + (curr.sgkEmployer + curr.unemploymentEmployer), 0);
-  const efficiencyScore = Math.min(Math.max((averageNet / monthlyGross) * 10, 0), 10).toFixed(1);
+  const efficiencyScore = Math.min(Math.max((averageNet / (calculations[0]?.gross || 1)) * 10, 0), 10).toFixed(1);
 
   return (
     <div className="flex-grow">
@@ -265,11 +288,15 @@ export default function SalaryCalculator() {
                 BRÜTTEN NETE
               </button>
               <button
-                disabled
-                className="flex-1 py-6 flex items-center justify-center gap-3 transition-all font-black tracking-[0.2em] text-[10px] sm:text-xs text-slate-700 cursor-not-allowed bg-black/20"
+                onClick={() => setCalculationType('netToGross')}
+                className={`flex-1 py-6 flex items-center justify-center gap-3 transition-all font-black tracking-[0.2em] text-[10px] sm:text-xs ${
+                  calculationType === 'netToGross' 
+                    ? 'bg-white/5 text-white border-b-2 border-indigo-500' 
+                    : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                }`}
               >
                 <ArrowUpRight size={18} />
-                NETTEN BRÜTE (YAKINDA)
+                NETTEN BRÜTE
               </button>
             </div>
 
@@ -299,12 +326,14 @@ export default function SalaryCalculator() {
                   </div>
 
                   <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
-                    <label className="text-[10px] font-black text-slate-500 tracking-widest ml-1">AYLIK BRÜT MAAŞ (TL)</label>
+                    <label className="text-[10px] font-black text-slate-500 tracking-widest ml-1 uppercase">
+                      AYLIK {calculationType === 'grossToNet' ? 'BRÜT' : 'NET'} MAAŞ (TL)
+                    </label>
                     <div className="relative group">
                       <input 
                         type="number" 
-                        value={monthlyGross}
-                        onChange={(e) => setMonthlyGross(e.target.value === '' ? '' : Number(e.target.value))}
+                        value={targetAmount}
+                        onChange={(e) => setTargetAmount(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full h-12 bg-white/[0.03] border border-white/10 rounded-xl px-4 focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-black text-white group-hover:border-white/20" 
                         placeholder="0.00"
                       />
