@@ -1,6 +1,8 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Search, Clock, ArrowRight, BookOpen } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2 } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const articles = [
   {
@@ -33,6 +35,56 @@ const articles = [
 ];
 
 export default function Blog() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      setErrorMessage('Lütfen geçerli bir e-posta adresi girin.');
+      setStatus('error');
+      return;
+    }
+
+    try {
+      setStatus('loading');
+      setErrorMessage('');
+      
+      // 1. Firebase'e kaydet
+      await addDoc(collection(db, 'newsletter_subscribers'), {
+        email: email,
+        subscribedAt: serverTimestamp(),
+        source: 'blog_newsletter'
+      });
+
+      // 2. Mail gönder (Backend üzerinden)
+      try {
+        const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/mail';
+        const isCustomDomain = window.location.hostname.includes('karlisin.com');
+        const apiUrl = isCustomDomain ? workingCloudRunUrl : '/api/mail';
+
+        await fetch(apiUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email, 
+            type: 'newsletter' 
+          })
+        });
+      } catch (mailErr) {
+        console.error('Mail trigger error:', mailErr);
+      }
+
+      setStatus('success');
+      setEmail('');
+    } catch (err: any) {
+      console.error('Subscription error:', err);
+      setErrorMessage('Bir hata oluştu. Tekrar deneyin.');
+      setStatus('error');
+    }
+  };
   return (
     <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
@@ -50,7 +102,7 @@ export default function Blog() {
             transition={{ delay: 0.1 }}
             className="text-4xl md:text-5xl font-black text-white tracking-tight"
           >
-            FinCalc <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Blog</span>
+            Karlısın <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Blog</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, x: -20 }}
@@ -128,16 +180,43 @@ export default function Blog() {
           <BookOpen size={48} className="mx-auto text-indigo-400 mb-6" />
           <h2 className="text-3xl font-black text-white mb-4">Haftalık Analizler Kapınıza Gelsin</h2>
           <p className="text-slate-300 font-medium mb-8">E-ticaret başarısı için gereken verileri ve ipuçlarını haftalık olarak e-posta adresinize gönderelim.</p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input 
-              type="email" 
-              placeholder="E-posta adresiniz" 
-              className="flex-grow px-6 py-4 bg-white/10 border border-white/20 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 text-white font-medium"
-            />
-            <button className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95">
-              Abone Ol
-            </button>
-          </div>
+          
+          <AnimatePresence mode="wait">
+            {status === 'success' ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <CheckCircle2 className="text-emerald-400" size={32} />
+                  <p className="text-white font-bold text-lg">Bültene Abone Oldunuz!</p>
+                  <p className="text-emerald-400/80 text-sm">Analizlerimizi size ulaştırmak için sabırsızlanıyoruz.</p>
+                </div>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-grow flex flex-col items-start gap-2">
+                  <input 
+                    type="email" 
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="E-posta adresiniz" 
+                    className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 text-white font-medium"
+                  />
+                  {status === 'error' && <p className="text-rose-400 text-xs font-bold ml-2">{errorMessage}</p>}
+                </div>
+                <button 
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center min-w-[140px]"
+                >
+                  {status === 'loading' ? <Loader2 size={20} className="animate-spin" /> : 'Abone Ol'}
+                </button>
+              </form>
+            )}
+          </AnimatePresence>
         </div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#4f46e5,transparent_70%)] opacity-10 pointer-events-none" />
       </motion.div>

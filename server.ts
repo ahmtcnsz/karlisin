@@ -54,7 +54,7 @@ async function startServer() {
   // ANA MAIL API (Tüm metodları destekle)
   const mailHandler = async (req: express.Request, res: express.Response) => {
     console.log(`[Karlısın-API] Mail isteği geldi: ${req.method} ${req.path}`);
-    const email = req.method === 'POST' ? req.body.email : req.query.email;
+    const { email, type } = req.method === 'POST' ? req.body : req.query;
     
     if (!email) {
       return res.status(400).json({ error: 'E-posta adresi eksik' });
@@ -68,32 +68,60 @@ async function startServer() {
 
     try {
       const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <merhaba@karlisin.com>';
+      
+      let subject = 'Karlısın Temettü Takibi - Aramıza Hoş Geldin! 🚀';
+      let content = `
+        <p style="font-size: 16px; margin-bottom: 24px;">
+          <strong>Karlısın</strong> Temettü Takibi özelliği için bekleme listesine başarıyla katıldın. 
+          Borsa İstanbul ve Amerikan borsalarındaki yatırım yolculuğunu kolaylaştırmak için sabırsızlanıyoruz.
+        </p>
+        
+        <div style="background-color: #f8fafc; border-radius: 24px; padding: 32px; margin-bottom: 24px; border: 1px solid #f1f5f9;">
+          <h2 style="color: #4f46e5; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">Seni Neler Bekliyor?</h2>
+          <ul style="margin: 0; padding-left: 20px; color: #475569;">
+            <li style="margin-bottom: 8px;">Otomatik temettü takvimi</li>
+            <li style="margin-bottom: 8px;">Vergi ve beyanname hesaplama araçları</li>
+            <li style="margin-bottom: 8px;">10 yıllık pasif gelir projeksiyonları</li>
+          </ul>
+        </div>
+      `;
+
+      if (type === 'newsletter') {
+        subject = 'Karlısın Bülten - Haftalık Analizler Başlıyor! 📚';
+        content = `
+          <p style="font-size: 16px; margin-bottom: 24px;">
+            <strong>Karlısın Haftalık Bülten</strong>'ine başarıyla abone oldun! Artık e-ticaret ve piyasa analizleri e-posta kutuna gelecek.
+          </p>
+          
+          <div style="background-color: #f0f9ff; border-radius: 24px; padding: 32px; margin-bottom: 24px; border: 1px solid #e0f2fe;">
+            <h2 style="color: #0369a1; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">Neleri Takip Edeceğiz?</h2>
+            <ul style="margin: 0; padding-left: 20px; color: #0c4a6e;">
+              <li style="margin-bottom: 8px;">Haftalık pazaryeri analizleri</li>
+              <li style="margin-bottom: 8px;">Kârlılık artırma stratejileri</li>
+              <li style="margin-bottom: 8px;">Yeni blog yazıları ve güncel haberler</li>
+            </ul>
+          </div>
+          
+          <p style="font-size: 14px; font-weight: 600; color: #4f46e5;">
+            Yeni bir blog yazısı paylaştığımızda ilk senin haberin olacak.
+          </p>
+        `;
+      }
+
       const { data, error } = await resend.emails.send({
         from: sender,
         to: [email as string],
-        subject: 'Karlısın Temettü Takibi - Aramıza Hoş Geldin! 🚀',
+        subject: subject,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; padding: 20px; line-height: 1.6;">
             <h1 style="color: #4f46e5; font-size: 32px; font-weight: 800; margin-bottom: 24px; letter-spacing: -0.025em;">Hoş Geldin!</h1>
             
             <p style="font-size: 16px; margin-bottom: 16px;">Merhaba,</p>
             
-            <p style="font-size: 16px; margin-bottom: 24px;">
-              <strong>Karlısın</strong> Temettü Takibi özelliği için bekleme listesine başarıyla katıldın. 
-              Borsa İstanbul ve Amerikan borsalarındaki yatırım yolculuğunu kolaylaştırmak için sabırsızlanıyoruz.
-            </p>
-            
-            <div style="background-color: #f8fafc; border-radius: 24px; padding: 32px; margin-bottom: 24px; border: 1px solid #f1f5f9;">
-              <h2 style="color: #4f46e5; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">Seni Neler Bekliyor?</h2>
-              <ul style="margin: 0; padding-left: 20px; color: #475569;">
-                <li style="margin-bottom: 8px;">Otomatik temettü takvimi</li>
-                <li style="margin-bottom: 8px;">Vergi ve beyanname hesaplama araçları</li>
-                <li style="margin-bottom: 8px;">10 yıllık pasif gelir projeksiyonları</li>
-              </ul>
-            </div>
+            ${content}
             
             <p style="font-size: 14px; color: #64748b; margin-bottom: 32px;">
-              Özellik yayına girdiğinde sana buradan haber vereceğiz. O zamana kadar bizi takipte kal!
+              Tüm gelişmeleri sana buradan haber vereceğiz. O zamana kadar bizi takipte kal!
             </p>
             
             <div style="border-top: 1px solid #e2e8f0; pt: 24px; text-align: center;">
