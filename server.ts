@@ -29,7 +29,12 @@ async function startServer() {
     : {};
   const resend = new Resend(process.env.RESEND_API_KEY || 'dummy_key', resendOptions);
 
-  app.use(cors());
+  // CORS YAPILANDIRMASI
+  app.use(cors({
+    origin: '*', // Tüm domainlerden gelen isteklere (CORS) izin ver
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type']
+  }));
   app.use(express.json());
 
   // ---------------------------------------------------------

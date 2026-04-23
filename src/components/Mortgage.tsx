@@ -30,14 +30,21 @@ export default function Mortgage() {
       // Backend üzerinden hoş geldin maili gönder
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // Süreyi 10 saniyeye çıkardım
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        // Standart API yolu (Relative path çakışmaları çözer)
-        const apiUrl = '/api/mail';
-        console.log('[Karlısın-Front] İstek atılıyor:', apiUrl);
+        // ÖNEMLİ: Eğer karlisin.com gibi bir domaindeysek ve relative path çalışmıyorsa 
+        // doğrudan çalışan Cloud Run URL'sine git.
+        const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/mail';
+        const isCustomDomain = window.location.hostname.includes('karlisin.com');
+        
+        // Eğer custom domaindeysek doğrudan çalışan URL'yi dene, değilse relative yolu kullan
+        const apiUrl = isCustomDomain ? workingCloudRunUrl : '/api/mail';
+        
+        console.log('[Karlısın-Front] İstek atılıyor:', apiUrl, 'Domain:', window.location.hostname);
         
         const response = await fetch(apiUrl, {
           method: 'POST',
+          mode: 'cors', // CORS önemli
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
           signal: controller.signal
