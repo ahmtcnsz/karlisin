@@ -32,8 +32,8 @@ export default function Mortgage() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // Süreyi 10 saniyeye çıkardım
 
-        // Standart API yolu
-        const apiUrl = `${window.location.origin}/api/mail`;
+        // Standart API yolu (Relative path çakışmaları çözer)
+        const apiUrl = '/api/mail';
         console.log('[Karlısın-Front] İstek atılıyor:', apiUrl);
         
         const response = await fetch(apiUrl, {

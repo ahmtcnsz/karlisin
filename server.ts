@@ -126,9 +126,9 @@ async function startServer() {
     
     // API dışındaki her şeyi index.html'e gönder
     app.get('*', (req, res) => {
-      // API isteklerini SPA fallback'ten muaf tut
+      // API istekleri yukarıda catch-all ile yakalanmış olmalı, buraya düşerse 404 dön
       if (req.url.startsWith('/api')) {
-        return; 
+        return res.status(404).json({ error: 'API rotası bulunamadı.' });
       }
       res.sendFile(path.join(distPath, 'index.html'));
     });
@@ -138,9 +138,10 @@ async function startServer() {
       appType: 'spa',
     });
     
-    // API rotalarını Vite'den koru
+    // API rotalarını Vite'den koru (Daha Kesin Filtreleme)
     app.use((req, res, next) => {
-      if (req.url.startsWith('/api')) {
+      // API istekleri doğrudan alttaki express rotalarına akmalı
+      if (req.url === '/api/mail' || req.url === '/api/ping' || req.url.startsWith('/api/')) {
         return next();
       }
       vite.middlewares(req, res, next);
