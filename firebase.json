@@ -1,7 +1,7 @@
 {
   "hosting": {
-    "site": "gen-lang-client-0551179549",
-    "public": "dist",
+    "site": "karlisincom",
+    "public": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -12,7 +12,7 @@
         "source": "**",
         "run": {
           "serviceId": "karl-s-n",
-          "region": "europe-west3"
+          "region": "europe-west2"
         }
       }
     ],
