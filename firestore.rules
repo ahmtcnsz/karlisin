@@ -37,7 +37,8 @@ service cloud.firestore {
 
     match /newsletter_subscribers/{entryId} {
       allow create: if isValidNewsletterEntry(incoming());
-      allow read, update, delete: if false;
+      allow list: if true; // Otomatik duyuru için abone listesinin okunmasına izin ver
+      allow get, update, delete: if false;
     }
   }
 }

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2, ArrowLeft, Share2 } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 
 const articles = [
   {
@@ -113,6 +113,22 @@ const articles = [
       <h3 style="color: white; margin-top: 24px;">Sadakat Döngüsü</h3>
       <p>Yeni müşteri bulmak, var olanı elde tutmaktan 5 kat daha pahalıdır. CAC'ı düşürmenin en iyi yolu, churn (kayıp) oranını sıfıra yaklaştırmaktır.</p>
     `
+  },
+  {
+    id: 8,
+    title: 'Küresel Pazarlarda Marka Olmak: Yerellik ve Evrensellik Dengesi',
+    excerpt: 'Türk markalarının yurt dışı pazarlara açılırken yaptığı en yaygın 3 hatayı ve lokalizasyonun gücünü inceliyoruz.',
+    category: 'Gelecek',
+    date: '23 Nisan 2026',
+    readTime: '15 dk',
+    image: 'https://images.unsplash.com/photo-1529400971008-f566de0e6dfc?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>Yurt dışına açılmak sadece dili çevirmek değildir; o kültüre adapte olmaktır. Karlısın global strateji ekibi olarak yeni oyuncular için bir rehber hazırladık.</p>
+      <h3 style="color: white; margin-top: 24px;">Lokalizasyon Stratejisi</h3>
+      <p>Hedef pazarın ödeme alışkanlıkları, renk tercihleri ve teslimat beklentileri ana stratejinizin bir parçası olmalı.</p>
+      <h3 style="color: white; margin-top: 24px;">Veri Odaklı Pazar Seçimi</h3>
+      <p>Hangi ülkeye gireceğinize hislerinizle değil, Karlısın'ın pazar analiz araçlarıyla karar verin. Doğru veri, sizi milyonlarca dolarlık reklam israfından korur.</p>
+    `
   }
 ];
 
@@ -121,6 +137,54 @@ export default function Blog() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedArticle, setSelectedArticle] = useState<typeof articles[0] | null>(null);
+  const [broadcastSent, setBroadcastSent] = useState(false);
+
+  // OTOMATİK DUYURU TETİĞİ (Yeni Yazı Eklenince Çalışır)
+  useEffect(() => {
+    const triggerBroadcast = async () => {
+      // LocalStorage ile sadece bir kez (makale başına) çalışmasını sağlıyoruz
+      const currentArticleId = String(articles[articles.length - 1].id);
+      const lastBroadcasted = localStorage.getItem('last_broadcast_article_id');
+
+      if (lastBroadcasted === currentArticleId || broadcastSent) return;
+
+      try {
+        console.log('[Karlısın] Yeni yazı için duyuru hazırlanıyor...');
+        const querySnapshot = await getDocs(collection(db, 'newsletter_subscribers'));
+        const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e);
+
+        if (subscribers.length > 0) {
+          const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/broadcast';
+          const isCustomDomain = window.location.hostname.includes('karlisin.com') || window.location.hostname.includes('www');
+          const apiUrl = isCustomDomain ? workingCloudRunUrl : '/api/broadcast';
+
+          const res = await fetch(apiUrl, {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subscribers,
+              articleTitle: articles[articles.length - 1].title,
+              articleExcerpt: articles[articles.length - 1].excerpt,
+              articleUrl: `https://www.karlisin.com/blog`
+            })
+          });
+
+          if (res.ok) {
+            console.log('[Karlısın] Abonelere duyuru başarıyla gönderildi!');
+            localStorage.setItem('last_broadcast_article_id', currentArticleId);
+            setBroadcastSent(true);
+          }
+        }
+      } catch (err) {
+        console.error('[Karlısın] Otomatik duyuru hatası:', err);
+      }
+    };
+
+    // Sayfa yüklendikten 5 saniye sonra sessizce çalışsın (Site hızını etkilemesin)
+    const timer = setTimeout(triggerBroadcast, 5000);
+    return () => clearTimeout(timer);
+  }, [broadcastSent]);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
