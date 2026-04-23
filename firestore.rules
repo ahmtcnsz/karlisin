@@ -21,9 +21,22 @@ service cloud.firestore {
              data.createdAt == request.time;
     }
 
+    function isValidNewsletterEntry(data) {
+      return data.keys().hasAll(['email', 'source', 'subscribedAt']) &&
+             data.keys().size() == 3 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
+             data.source is string && data.source.size() <= 50 &&
+             data.subscribedAt == request.time;
+    }
+
     match /waitlist/{entryId} {
-      allow create: if isValidId(entryId) && isValidWaitlistEntry(incoming());
-      // Admins or internal tools would read these, but for simplicity here we deny public read.
+      allow create: if isValidWaitlistEntry(incoming());
+      allow read, update, delete: if false;
+    }
+
+    match /newsletter_subscribers/{entryId} {
+      allow create: if isValidNewsletterEntry(incoming());
       allow read, update, delete: if false;
     }
   }

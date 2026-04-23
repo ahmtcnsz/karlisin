@@ -60,11 +60,14 @@ export default function Blog() {
 
       // 2. Mail gönder (Backend üzerinden)
       try {
+        // Kesin çalışan URL yapısı (Domain yönlendirme hatalarını aşmak için)
         const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/mail';
-        const isCustomDomain = window.location.hostname.includes('karlisin.com');
+        const isCustomDomain = window.location.hostname.includes('karlisin.com') || window.location.hostname.includes('www');
         const apiUrl = isCustomDomain ? workingCloudRunUrl : '/api/mail';
 
-        await fetch(apiUrl, {
+        console.log('[Karlısın-Blog] İstek atılıyor:', apiUrl);
+
+        const response = await fetch(apiUrl, {
           method: 'POST',
           mode: 'cors',
           headers: { 'Content-Type': 'application/json' },
@@ -73,6 +76,11 @@ export default function Blog() {
             type: 'newsletter' 
           })
         });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          console.error('Newsletter mail error status:', response.status, errData);
+        }
       } catch (mailErr) {
         console.error('Mail trigger error:', mailErr);
       }

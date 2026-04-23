@@ -148,6 +148,49 @@ async function startServer() {
 
   app.all('/api/mail', mailHandler);
 
+  // TOPLU MAİL GÖNDERİMİ (Yeni Blog Yazısı Haber Ver)
+  app.post('/api/broadcast', async (req, res) => {
+    const { subscribers, articleTitle, articleExcerpt, articleUrl } = req.body;
+    
+    if (!subscribers || !Array.isArray(subscribers) || subscribers.length === 0) {
+      return res.status(400).json({ error: 'Abone listesi eksik' });
+    }
+
+    console.log(`[Karlısın-API] Broadcast başlatılıyor: ${subscribers.length} kişi`);
+    
+    const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <merhaba@karlisin.com>';
+    const results = { success: 0, fail: 0 };
+
+    // Basit seri gönderim (Hız limiti için)
+    for (const email of subscribers) {
+      try {
+        await resend.emails.send({
+          from: sender,
+          to: [email],
+          subject: `Yeni Blog Yazısı: ${articleTitle} 📚`,
+          html: `
+            <div style="font-family:sans-serif;padding:20px;color:#1e293b;max-width:600px;margin:0 auto;">
+              <h2 style="color:#4f46e5;">Yeni Bir Yazımız Var!</h2>
+              <p>Merhaba, Karlısın Blog'da yeni bir içerik paylaştık:</p>
+              <div style="background:#f8fafc;padding:24px;border-radius:20px;border:1px solid #e2e8f0;margin:20px 0;">
+                <h3 style="margin-top:0;">${articleTitle}</h3>
+                <p style="color:#64748b;">${articleExcerpt}</p>
+                <a href="${articleUrl || 'https://karlisin.com/blog'}" style="display:inline-block;background:#4f46e5;color:white;padding:12px 24px;text-decoration:none;border-radius:12px;font-weight:bold;">Şimdi Oku</a>
+              </div>
+              <p style="font-size:12px;color:#94a3b8;">Haftalık bültenimize abone olduğunuz için bu maili aldınız.</p>
+            </div>
+          `
+        });
+        results.success++;
+      } catch (err) {
+        console.error(`Broadcast hatası (${email}):`, err);
+        results.fail++;
+      }
+    }
+
+    res.json({ message: 'Broadcast tamamlandı', results });
+  });
+
   // API CATCH-ALL (API içindeki 404'ler JSON dönmeli)
   app.all('/api/*', (req, res) => {
     res.status(404).json({ error: 'API rotası bulunamadı', path: req.path });
