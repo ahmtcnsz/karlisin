@@ -71,11 +71,38 @@ async function startServer() {
       const { data, error } = await resend.emails.send({
         from: sender,
         to: [email as string],
-        subject: 'Karlısın Temettü Takibi - Hoş Geldin! 🚀',
-        html: `<div style="font-family:sans-serif;padding:20px;color:#333;">
-                <h2 style="color:#4f46e5;">Merhaba!</h2>
-                <p>Bekleme listemize katıldığın için teşekkürler. Uygulama aktif olduğunda seni haberdar edeceğiz.</p>
-              </div>`
+        subject: 'Karlısın Temettü Takibi - Aramıza Hoş Geldin! 🚀',
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; padding: 20px; line-height: 1.6;">
+            <h1 style="color: #4f46e5; font-size: 32px; font-weight: 800; margin-bottom: 24px; letter-spacing: -0.025em;">Hoş Geldin!</h1>
+            
+            <p style="font-size: 16px; margin-bottom: 16px;">Merhaba,</p>
+            
+            <p style="font-size: 16px; margin-bottom: 24px;">
+              <strong>Karlısın</strong> Temettü Takibi özelliği için bekleme listesine başarıyla katıldın. 
+              Borsa İstanbul ve Amerikan borsalarındaki yatırım yolculuğunu kolaylaştırmak için sabırsızlanıyoruz.
+            </p>
+            
+            <div style="background-color: #f8fafc; border-radius: 24px; padding: 32px; margin-bottom: 24px; border: 1px solid #f1f5f9;">
+              <h2 style="color: #4f46e5; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">Seni Neler Bekliyor?</h2>
+              <ul style="margin: 0; padding-left: 20px; color: #475569;">
+                <li style="margin-bottom: 8px;">Otomatik temettü takvimi</li>
+                <li style="margin-bottom: 8px;">Vergi ve beyanname hesaplama araçları</li>
+                <li style="margin-bottom: 8px;">10 yıllık pasif gelir projeksiyonları</li>
+              </ul>
+            </div>
+            
+            <p style="font-size: 14px; color: #64748b; margin-bottom: 32px;">
+              Özellik yayına girdiğinde sana buradan haber vereceğiz. O zamana kadar bizi takipte kal!
+            </p>
+            
+            <div style="border-top: 1px solid #e2e8f0; pt: 24px; text-align: center;">
+              <p style="font-size: 12px; color: #94a3b8; margin-top: 20px;">
+                © 2024 Karlısın — Finansal Özgürlük Yolculuğun
+              </p>
+            </div>
+          </div>
+        `
       });
 
       if (error) {
