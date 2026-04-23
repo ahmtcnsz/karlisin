@@ -24,10 +24,7 @@ async function startServer() {
   console.log('---------------------------');
 
   // Resend yapılandırması
-  const resendOptions = process.env.RESEND_REGION === 'eu' 
-    ? { baseUrl: 'https://eu.resend.com' } 
-    : {};
-  const resend = new Resend(process.env.RESEND_API_KEY || 'dummy_key', resendOptions);
+  const resend = new Resend(process.env.RESEND_API_KEY || 'dummy_key');
 
   // CORS YAPILANDIRMASI
   app.use(cors({
