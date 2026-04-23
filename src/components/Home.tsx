@@ -663,53 +663,164 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Feature Bento Grid */}
-      <section className="max-w-7xl mx-auto px-6 py-24">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div 
-            className="md:col-span-2 bg-white/5 backdrop-blur-md rounded-[32px] p-8 border border-white/10 flex flex-col justify-between group overflow-hidden relative shadow-sm transition-all"
-          >
-            <div className="relative z-10 text-white">
-              <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-indigo-400 mb-6 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300 border border-white/10">
-                <BarChart3 size={24} />
-              </div>
-              <h3 className="text-2xl font-bold mb-2">Detaylı Raporlama</h3>
-              <p className="text-slate-400 font-medium">Sadece kârı değil, gider dağılımınızı pasta grafiği ile görün.</p>
-            </div>
-          </div>
-          
-          <div 
-            className="bg-indigo-600/20 backdrop-blur-md rounded-[32px] p-8 test-white flex flex-col justify-between relative overflow-hidden shadow-sm border border-white/10 transition-all group"
-          >
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white mb-6 border border-white/20 group-hover:scale-110 transition-transform">
-                <TrendingUp size={24} />
-              </div>
-              <h3 className="text-2xl font-bold mb-2 text-white">AI Destekli Karar Analizi</h3>
-              <p className="text-indigo-200 font-medium text-white/80">En çok satan kategorileri ve rekabet oranlarını analiz edin.</p>
+      {/* SEO Optimized Content Section */}
+      <section className="max-w-7xl mx-auto px-6 py-24 border-t border-white/5 text-center">
+        <div className="flex flex-col gap-16 items-center">
+          <div className="space-y-8 max-w-4xl mx-auto">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter">
+              Brütten Nete Maaş Hesaplama ve <span className="text-indigo-400 italic">Finansal Analiz</span>
+            </h2>
+            <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
+              Karlısın olarak, finansal özgürlüğe giden yolun doğru veriden geçtiğine inanıyoruz. 
+              <strong> 2026 brütten nete maaş hesaplama</strong> aracımızla, gelir vergisi dilimleri, 
+              SGK kesintileri ve net kazancınızı saniyeler içinde analiz edin.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+              {[
+                'Güncel 2026 vergi dilimleri ile uyumlu hesaplama',
+                'Brütten nete ve netten brüte çift yönlü analiz',
+                'Pazaryeri komisyon ve kârlılık araçları',
+                'Yatırım ROI ve mortgage projeksiyonları'
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 group hover:border-indigo-500/30 transition-all">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                    <Verified size={20} />
+                  </div>
+                  <span className="text-slate-300 font-bold text-sm lg:text-base">{item}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { icon: <Smartphone size={28} />, title: 'Mobil Uyumlu', desc: 'Yoldayken bile hesabını yap.', color: 'bg-indigo-500/10 text-indigo-400' },
-              { icon: <RefreshCw size={28} />, title: 'Anlık Güncelleme', desc: 'Değişen mevzuat anında sistemde.', color: 'bg-purple-500/10 text-purple-400' },
-              { icon: <Shield size={28} />, title: 'Güvenli Veri', desc: 'Verileriniz asla kaydedilmez.', color: 'bg-slate-500/10 text-slate-400' }
-            ].map((feature, i) => (
-              <div 
-                key={i}
-                className="bg-white/5 backdrop-blur-md rounded-[32px] p-8 border border-white/10 flex items-center gap-6 shadow-sm transition-all group"
-              >
-                <div className={`w-16 h-16 ${feature.color} rounded-full flex items-center justify-center shrink-0 border border-white/10 group-hover:scale-110 transition-transform`}>
-                  {feature.icon}
-                </div>
-                <div>
-                  <h4 className="font-bold text-white transition-colors group-hover:text-indigo-300">{feature.title}</h4>
-                  <p className="text-sm font-medium text-slate-400">{feature.desc}</p>
+          <div className="w-full bg-white/5 rounded-[48px] p-10 md:p-16 border border-white/10 relative overflow-hidden group shadow-2xl text-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-30 group-hover:opacity-50 transition-opacity duration-700" />
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
+              <div className="lg:col-span-2 space-y-6 text-center lg:text-left">
+                <h3 className="text-3xl md:text-4xl font-black text-white leading-tight">Maaş Vergi Hesaplama Artık Çok Kolay</h3>
+                <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                  Karmaşık mevzuat sayfalarında kaybolmayın. Karlısın, en güncel yasal düzenlemeleri 
+                  otomatik olarak günceller, böylece siz sadece rakamlarınıza odaklanırsınız. 
+                  <strong> Maaş vergi hesaplama</strong> süreçlerinizi dijitalleştirin ve geleceğinizi kontrol altına alın.
+                </p>
+                <div className="flex flex-wrap gap-4 pt-4 justify-center lg:justify-start">
+                  <div className="px-6 py-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-xs font-black text-indigo-400 tracking-widest uppercase shadow-lg">
+                    #HIZLIHESAPLA
+                  </div>
+                  <div className="px-6 py-3 bg-purple-500/10 rounded-2xl border border-purple-500/20 text-xs font-black text-purple-400 tracking-widest uppercase shadow-lg">
+                    #GÜVENİLİRVERİ
+                  </div>
+                  <div className="px-6 py-3 bg-white/5 rounded-2xl border border-white/10 text-xs font-black text-slate-400 tracking-widest uppercase shadow-lg">
+                    #2026-UYUMLU
+                  </div>
                 </div>
               </div>
-            ))}
+              <div className="hidden lg:flex justify-center">
+                <div className="w-48 h-48 rounded-[40px] bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center p-8 shadow-[0_0_50px_rgba(99,102,241,0.3)] animate-pulse">
+                  <Calculator size={80} className="text-white" />
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section for SEO */}
+      <section className="max-w-4xl mx-auto px-6 py-24">
+        <h2 className="text-3xl font-black text-white mb-12 text-center">Sıkça Sorulan Sorular</h2>
+        <div className="space-y-6">
+          {[
+            {
+              q: "2026 brütten nete maaş hesaplama nasıl yapılır?",
+              a: "Maaşınızın brüt tutarından %14 SGK işçi payı, %1 işsizlik sigortası payı düşülür. Kalan tutar üzerinden 2026 gelir vergisi dilimlerine göre vergi ve binde 7.59 damga vergisi kesilerek net maaşınıza ulaşılır. Karlısın bu süreci otomatikleştirir."
+            },
+            {
+              q: "Maaş vergi hesaplama neden önemlidir?",
+              a: "Gelir vergisi dilimleri yıl içinde arttığı için aylık net kazancınız aylar geçtikçe değişebilir. Vergi hesaplama araçlarımız, yıl boyu alacağınız toplam ve ortalama maaşı görmenizi sağlayarak bütçe yapmanıza yardımcı olur."
+            },
+            {
+              q: "Karlısın güvenilir mi?",
+              a: "Hesaplamalarımız en güncel yasal mevzuatlara (GİB ve Sosyal Güvenlik Kurumu tebliğlerine) uygun olarak geliştirilmektedir. Sonuçlar projeksiyon amaçlı olup finansal danışmanlık yerine geçmez."
+            },
+            {
+              q: "E-ticarette 'Kaça Satayım?' sorusuna nasıl yanıt bulurum?",
+              a: "Karlılık analiz aracımız; ürün alış fiyatı, komisyon oranları, kargo maliyeti ve reklam giderlerini (ROAS) analiz ederek minimum kârlı satış fiyatınızı saniyeler içinde hesaplar."
+            }
+          ].map((item, i) => (
+            <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-indigo-500/30 transition-colors">
+              <h3 className="text-white font-bold mb-3">{item.q}</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">{item.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stacked Feature Sections */}
+      <section className="max-w-7xl mx-auto px-6 py-24 space-y-32">
+        {/* Feature 1 */}
+        <div className="flex flex-col items-center gap-12 text-center max-w-4xl mx-auto">
+          <div className="space-y-6 flex flex-col items-center">
+            <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center text-indigo-400 border border-indigo-500/20 shadow-xl">
+              <BarChart3 size={40} />
+            </div>
+            <h3 className="text-4xl md:text-5xl font-black text-white leading-tight">Detaylı Raporlama ve <span className="text-indigo-400">Gider Analizi</span></h3>
+            <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
+              Sadece kârı değil, kargo maliyetlerinden KDV'ye kadar tüm giderlerinizi pasta grafiği ile görün. 
+              Finansal tablolarınızı Excel olarak dışa aktarın ve muhasebe süreçlerinizi hızlandırın.
+            </p>
+            <div className="grid grid-cols-2 gap-6 pt-4 w-full">
+              <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                <p className="text-3xl font-black text-white">100%</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">Hassasiyet</p>
+              </div>
+              <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                <p className="text-3xl font-black text-white">Saniye</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">Hesaplama Hızı</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature 2 */}
+        <div className="flex flex-col items-center gap-12 text-center max-w-4xl mx-auto">
+          <div className="space-y-6 flex flex-col items-center">
+            <div className="w-20 h-20 bg-purple-500/10 rounded-3xl flex items-center justify-center text-purple-400 border border-purple-500/20 shadow-xl">
+              <TrendingUp size={40} />
+            </div>
+            <h3 className="text-4xl md:text-5xl font-black text-white leading-tight">AI Destekli <span className="text-purple-400">Karar Mekanizması</span></h3>
+            <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
+              Yapay zeka algoritmalarımız satış fiyatınızı ve maliyet dengenizi analiz ederek size özel tavsiyeler üretir. 
+              Piyasada kaça satacağınızı artık tahmin etmek zorunda kalmazsınız.
+            </p>
+            <div className="flex flex-wrap gap-4 pt-4 justify-center">
+              {['Kategorik Analiz', 'Fiyat Optimizasyonu', 'Rakip Dengesi'].map((tag, i) => (
+                <span key={i} className="px-6 py-3 bg-purple-500/5 rounded-full border border-purple-500/10 text-sm font-bold text-purple-300">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile & Cloud Features */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { icon: <Smartphone size={28} />, title: 'Mobil Uyumlu', desc: 'Telefonunuzdan istediğiniz her yerde anlık kar hesaplama yapın.', color: 'bg-indigo-500/10 text-indigo-400' },
+            { icon: <RefreshCw size={28} />, title: 'Anlık Güncelleme', desc: 'GİB ve Resmi Gazete duyuruları ile vergi oranları anında güncellenir.', color: 'bg-purple-500/10 text-purple-400' },
+            { icon: <Shield size={28} />, title: 'Gizlilik Odaklı', desc: 'Verileriniz sunucularımızda asla saklanmaz, her şey tarayıcınızda kalır.', color: 'bg-slate-500/10 text-slate-400' }
+          ].map((feature, i) => (
+            <div 
+              key={i}
+              className="bg-white/5 backdrop-blur-md rounded-[48px] p-10 border border-white/10 flex flex-col items-center text-center gap-6 group hover:border-indigo-500/30 transition-all hover:translate-y-[-8px]"
+            >
+              <div className={`w-20 h-20 ${feature.color} rounded-[24px] flex items-center justify-center shrink-0 border border-white/10 group-hover:scale-110 transition-transform shadow-xl`}>
+                {feature.icon}
+              </div>
+              <div>
+                <h4 className="text-xl font-black text-white mb-3 group-hover:text-indigo-300 transition-colors uppercase tracking-tight">{feature.title}</h4>
+                <p className="text-sm font-medium text-slate-400 leading-relaxed px-4">{feature.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

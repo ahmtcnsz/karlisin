@@ -254,8 +254,8 @@ export default function SalaryCalculator() {
             transition={{ delay: 0.1 }}
             className="text-5xl md:text-6xl lg:text-8xl font-black text-white mb-6 max-w-5xl mx-auto leading-[0.9] tracking-tighter text-center flex flex-col items-center justify-center px-4 font-display"
           >
-            <span>Maaşını</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-white to-purple-400 italic px-2 pb-1 drop-shadow-2xl">Hassas Hesapla</span>
+            <span>Brütten Nete Maaş Hesaplama</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-white to-purple-400 italic px-2 pb-1 drop-shadow-2xl">2026 Vergi Analizi</span>
           </motion.h1>
           
           <motion.p 
@@ -264,7 +264,7 @@ export default function SalaryCalculator() {
             transition={{ delay: 0.2 }}
             className="text-lg md:text-xl text-slate-400 max-w-xl mx-auto mb-12 font-medium"
           >
-            Brütten nete veya netten brüte; SGK, Gelir Vergisi ve tüm yasal kesintileri anında dökümleyin.
+            Karlısın <strong>maaş vergi hesaplama</strong> aracı ile Gelir Vergisi, SGK ve Damga Vergisi kesintilerini saniyeler içinde raporlayın.
           </motion.p>
 
           {/* Calculator Card */}
@@ -565,17 +565,19 @@ export default function SalaryCalculator() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="flex flex-col gap-8">
                   {/* Detailed Breakdown Card */}
-                  <div className="bg-slate-950/40 rounded-3xl border border-white/5 overflow-hidden flex flex-col shadow-2xl">
-                    <div className="px-10 py-8 border-b border-white/5 bg-white/[0.02] text-left">
-                      <h3 className="text-xs font-black text-white tracking-[0.2em] flex items-center gap-3 uppercase font-display">
-                         <Percent size={18} className="text-indigo-400" />
+                  <div className="bg-slate-950/40 rounded-[48px] border border-white/5 overflow-hidden flex flex-col shadow-2xl">
+                    <div className="px-12 py-10 border-b border-white/5 bg-white/[0.02] text-center">
+                      <h3 className="text-xl font-black text-white tracking-tight flex flex-col items-center gap-4 uppercase font-display">
+                         <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                            <Percent size={24} />
+                         </div>
                          Kesinti Dağılım Analizi
                       </h3>
-                      <p className="text-[10px] text-slate-500 mt-2 font-bold italic">Ocak ayı verilerine dayalı projeksiyon</p>
+                      <p className="text-sm text-slate-500 mt-4 font-bold italic">Ocak ayı verilerine dayalı projeksiyon</p>
                     </div>
-                    <div className="p-10 flex-grow space-y-8 text-left">
+                    <div className="p-12 flex-grow space-y-10 text-left">
                       {[
                         { label: 'SGK PRİMİ', value: calculations[0]?.sgkEmployee, color: 'bg-indigo-500' },
                         { label: 'GELİR VERGİSİ', value: calculations[0]?.incomeTax, color: 'bg-rose-500' },
@@ -584,16 +586,16 @@ export default function SalaryCalculator() {
                         { label: 'SGK İŞVEREN', value: calculations[0]?.sgkEmployer, color: 'bg-indigo-300' },
                         { label: 'İŞSİZLİK İŞV.', value: calculations[0]?.unemploymentEmployer, color: 'bg-purple-500' },
                       ] : []).map((item, idx) => (
-                        <div key={idx} className="space-y-3">
+                        <div key={idx} className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{item.label}</span>
-                            <span className="text-sm font-bold text-white font-mono">{formatCurrency(item.value || 0)}</span>
+                            <span className="text-xs font-black text-slate-400 tracking-widest uppercase">{item.label}</span>
+                            <span className="text-xl font-bold text-white font-mono">{formatCurrency(item.value || 0)}</span>
                           </div>
-                          <div className="h-2 bg-white/5 rounded-full overflow-hidden p-[1px]">
+                          <div className="h-3 bg-white/5 rounded-full overflow-hidden p-[1px]">
                             <motion.div 
                               initial={{ width: 0 }}
                               animate={{ width: `${Math.min((item.value / calculations[0]?.totalEmployerCost) * 100 * 4, 100)}%` }}
-                              className={`h-full ${item.color} rounded-full opacity-90 shadow-[0_0_10px_rgba(255,255,255,0.1)]`}
+                              className={`h-full ${item.color} rounded-full opacity-90 shadow-[0_0_15px_rgba(255,255,255,0.1)]`}
                             />
                           </div>
                         </div>
@@ -601,42 +603,46 @@ export default function SalaryCalculator() {
                     </div>
                   </div>
 
-                  {/* AI Insights Card */}
-                  <div className="bg-slate-950/40 rounded-3xl border border-white/5 p-10 flex flex-col justify-center space-y-12 shadow-2xl text-left">
-                    <div className="space-y-10">
-                      <div className="flex gap-6">
-                        <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/20 shadow-inner">
-                          <Timer size={28} />
+                  {/* Standards & Legal Card */}
+                  <div className="bg-slate-950/40 rounded-[48px] border border-white/5 p-12 flex flex-col justify-center space-y-16 shadow-2xl text-center">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                      <div className="flex flex-col items-center gap-6">
+                        <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/20 shadow-inner">
+                          <Timer size={32} />
                         </div>
-                        <div className="text-left">
-                          <p className="text-sm font-black text-white mb-2 uppercase tracking-widest font-display">Hesaplama Standartları</p>
-                          <p className="text-[11px] font-medium text-slate-400 leading-relaxed italic opacity-80">
+                        <div>
+                          <p className="text-lg font-black text-white mb-3 uppercase tracking-tight font-display">Hesaplama Standartları</p>
+                          <p className="text-sm font-medium text-slate-400 leading-relaxed italic opacity-80">
                             Yapılan maaş hesaplamalarında para birimi 2005 ve takip eden yıllarda TL değerleri esas alınmaktadır. Rakam asgari ücretin altında olduğunda hesaplama yapılmaz. 2022 Yılı ve sonrası için AGİ hesaplanmaz.
                           </p>
                         </div>
                       </div>
 
-                      <div className="flex gap-6">
-                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 shrink-0 border border-emerald-500/20 shadow-inner">
-                          <Shield size={28} />
+                      <div className="flex flex-col items-center gap-6">
+                        <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 shrink-0 border border-emerald-500/20 shadow-inner">
+                          <Shield size={32} />
                         </div>
-                        <div className="text-left">
-                          <p className="text-sm font-black text-white mb-2 uppercase tracking-widest font-display">Yasallık & Güvence</p>
-                          <p className="text-[11px] font-medium text-slate-400 leading-relaxed italic opacity-80">
+                        <div>
+                          <p className="text-lg font-black text-white mb-3 uppercase tracking-tight font-display">Yasallık & Güvence</p>
+                          <p className="text-sm font-medium text-slate-400 leading-relaxed italic opacity-80">
                             Yapılan maaş hesaplamaları ile ilgili olarak kesin bordro işlemleri öncesi uzman veya danışman bilgisine başvurulması tavsiye olunur.
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="pt-8 border-t border-white/5">
-                       <p className="text-[9px] text-slate-600 font-black tracking-widest uppercase">© KARLISIN PROFESSIONAL TOOLS - TURKEY TAX ENGINE V4.2</p>
+                    <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                       <p className="text-xs text-slate-600 font-black tracking-[0.2em] uppercase">© KARLISIN PROFESSIONAL TOOLS - TURKEY TAX ENGINE V4.2</p>
+                       <div className="flex gap-4">
+                          <div className="px-4 py-1.5 bg-white/5 rounded-full border border-white/10 text-[10px] font-black text-slate-500">2026 VERİ SETİ</div>
+                          <div className="px-4 py-1.5 bg-indigo-500/10 rounded-full border border-indigo-500/20 text-[10px] font-black text-indigo-400">GÜNCEL</div>
+                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Legal Disclaimer directly following Home.tsx pattern */}
+                {/* Legal Disclaimer directly following Home.tsx pattern */}
               <div className="mt-4 flex flex-col items-center gap-4 text-center border-t border-white/5 pt-10">
                 <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   <Calculator size={14} />

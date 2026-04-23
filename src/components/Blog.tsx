@@ -165,6 +165,77 @@ const articles = [
       <h3 style="color: white; margin-top: 24px;">Görünmeyen Giderlerin Keşfi</h3>
       <p>Yapay zeka, insanın gözden kaçıracağı küçük ama birikince büyük zarar yaratan operasyonel sızıntıları tespit etmekte ustadır. İade oranlarındaki anormalliklerden, vergi beyannamesindeki gizli indirim fırsatlarına kadar her detayı analiz eden bir dijital asistana sahip olmak, 2026'nın en büyük rekabet avantajıdır.</p>
     `
+  },
+  {
+    id: 11,
+    title: '2026 Rehberi: Brütten Nete Maaş Hesaplama Nasıl Yapılır?',
+    excerpt: 'Gelir vergisi dilimleri, SGK işçi payı ve damga vergisi... Maaş dökümünüzdeki tüm detayları uzman bakışıyla inceleyin.',
+    category: 'Maaş',
+    date: '23 Nisan 2026',
+    readTime: '15 dk',
+    image: 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>Çalışanlar ve işverenler için en kritik finansal verilerden biri olan <b>brütten nete maaş hesaplama</b>, 2026 yılındaki vergi düzenlemeleriyle daha da önemli hale geldi. Karlısın olarak, maaşınızın her kuruşunun nereye gittiğini anlamanız için bu rehberi hazırladık.</p>
+      <h3 style="color: white; margin-top: 24px;">Brüt Maaş vs. Net Maaş</h3>
+      <p>Brüt maaş, işvereninizle anlaştığınız, üzerinden kesintiler yapılmadan önceki toplam tutardır. Net maaş ise kesintiler sonrası banka hesabınıza yatan paradır. 2026 yılında asgari ücret istisnası ve vergi dilimleri bu farkı belirleyen ana unsurlardır.</p>
+      <h3 style="color: white; margin-top: 24px;">Temel Kesintiler Nelerdir?</h3>
+      <p>Bir maaş dökümünde şu kalemler yer alır:
+        <ul>
+          <li><b>SGK İşçi Payı (%14):</b> Sosyal güvenlik sistemine katkınız.</li>
+          <li><b>İşsizlik Sigortası (%1):</b> İşsizlik durumunda güvenceniz için.</li>
+          <li><b>Gelir Vergisi:</b> Kazancınıza göre %15'ten başlayıp %40'a kadar çıkan dilimler.</li>
+          <li><b>Damga Vergisi:</b> Yasal evraklar üzerinden alınan cüzi bir kesinti.</li>
+        </ul>
+      </p>
+      <h3 style="color: white; margin-top: 24px;">Maaş Vergi Hesaplama Neden Zor?</h3>
+      <p>Vergi dilimleri kümülatif olarak hesaplandığı için, yılın sonuna doğru vergi diliminiz artar ve net maaşınız azalır. Karlısın'ın <b>maaş vergi hesaplama</b> aracı, bu kümülatif artışı otomatik olarak hesaplar ve size yıl boyu alacağınız gerçek net tutarı önceden söyler.</p>
+      <h3 style="color: white; margin-top: 24px;">Karlısın ile Geleceği Planlayın</h3>
+      <p>Elinize geçecek rakamı önceden bilmek, kredi ödemelerinizi ve birikimlerinizi planlamanızın anahtarıdır. Hemen yukarıdaki hesaplayıcıyı kullanarak 2026 projeksiyonunuzu oluşturun.</p>
+    `
+  },
+  {
+    id: 12,
+    title: 'Kaça Satayım? E-Ticarette Kâr Hesaplama ve Fiyatlandırma',
+    excerpt: 'Ürününüzü kaça satmalısınız? Komisyonlar, kargo ve reklam giderleri sonrası net kârınızı nasıl korursunuz?',
+    category: 'E-Ticaret',
+    date: '23 Nisan 2026',
+    readTime: '12 dk',
+    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>E-ticarete yeni başlayanların en büyük hatası, sadece alış fiyatının üzerine kâr koyarak satış fiyatı belirlemektir. Gerçek dünyada kâr hesapla denildiğinde işin içine görünmeyen onlarca kalem girer.</p>
+      <h3 style="color: white; margin-top: 24px;">Görünmez Maliyetler: Komisyon ve Kargo</h3>
+      <p>Pazaryerlerinde satış yaptığınızda %10 ile %25 arasında değişen kategori komisyonları ile karşılaşırsınız. Bunun üzerine kargo ücreti, paketleme maliyeti ve ürün iade risk payını eklediğinizde, "kârlı" sandığınız satış aslında zarar ettiriyor olabilir.</p>
+      <h3 style="color: white; margin-top: 24px;">Psikolojik Fiyatlandırma ve Rekabet</h3>
+      <p>Rakipleriniz kaça satıyor? Sizin onlardan farkınız ne? Karlısın'ın kâr analiz araçları, size minimum satış fiyatınızı çıkarırken aynı zamanda reklam maliyetlerinizi (ROAS) de hesaba katmanızı sağlar.</p>
+      <h3 style="color: white; margin-top: 24px;">Doğal Kâr Bariyeri</h3>
+      <p>Fiyatınızı belirlerken KDV dengesini asla unutmayın. Satış fiyatınızın içindeki KDV'yi düştükten sonra kalan tutar üzerinden kârınızı hesaplamalısınız. Karlısın ile tüm bu karmaşık matematik saniyeler içinde önünüze gelir.</p>
+    `
+  },
+  {
+    id: 13,
+    title: 'E-ticarette Kar Hesapla ve Fiyat Belirle: Kaça Satayım?',
+    excerpt: 'Satış fiyatınızı belirlerken yapılan en büyük hatalar ve doğru kar hesaplama yöntemleri ile Karlısın rehberi.',
+    category: 'SEO Rehber',
+    date: '23 Nisan 2026',
+    readTime: '12 dk',
+    image: 'https://images.unsplash.com/photo-1554224155-1696413575b8?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>E-ticaret dünyasına adım atan her girişimcinin aklındaki ilk soru aynıdır: <strong>"Kaça satayım?"</strong> Bir ürünü sadece rakibinizden ucuza satmak, sizi kar etmekten uzaklaştırabilir. Doğru bir fiyatlandırma stratejisi için profesyonel bir <strong>kar hesapla</strong> yaklaşımı şarttır.</p>
+      
+      <h3 style="color: white; margin-top: 24px;">Doğru Kar Hesaplama Formülü</h3>
+      <p>Sadece alış ve satış fiyatı arasındaki farka odaklanmak büyük bir yanılgıdır. Gerçek karı görmek için şu giderleri mutlaka hesaba katmalısınız:</p>
+      <ul>
+        <li>Paryer komisyon oranları (Trendyol, Hepsiburada vb.)</li>
+        <li>Kargo ve paketleme maliyetleri</li>
+        <li>İade oranları ve operasyonel giderler</li>
+        <li>Reklam ve pazarlama bütçesi</li>
+      </ul>
+
+      <h3 style="color: white; margin-top: 24px;">Stratejik Fiyatlandırma Modelleri</h3>
+      <p>Pazarda sadece "en ucuz" olmak sürdürülebilir bir model değildir. Müşterilerinize sunduğunuz değer önerisini fiyatınıza yansıtın. Karlısın'ın gelişmiş analiz araçları ile piyasa trendlerini takip ederek <strong>kaça satayım</strong> sorusuna en karlı cevabı verebilirsiniz.</p>
+      
+      <p>Unutmayın, e-ticarette başarı matematiksel bir kesinlik gerektirir. Karlısın ile finansal verilerinizi doğru okuyun, geleceğinizi güvenle inşa edin.</p>
+    `
   }
 ];
 
@@ -340,39 +411,73 @@ export default function Blog() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {articles.map((article, i) => (
-          <motion.article 
-            key={article.id} 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: i * 0.1 }} 
-            onClick={() => setSelectedArticle(article)} 
-            className="bg-white/5 backdrop-blur-md rounded-[32px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer"
-          >
-            <div className="aspect-[16/9] overflow-hidden relative">
-              <img src={article.image} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
-              <div className="absolute top-4 left-4">
-                <span className="px-3 py-1 bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10">{article.category}</span>
-              </div>
+      <div className="flex flex-col gap-16 items-center">
+        {/* Featured Article */}
+        <motion.article 
+          initial={{ opacity: 0, y: 30 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          onClick={() => setSelectedArticle(articles[articles.length - 1])} 
+          className="bg-white/5 backdrop-blur-md rounded-[48px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer shadow-2xl max-w-5xl"
+        >
+          <div className="aspect-video overflow-hidden relative">
+            <img src={articles[articles.length - 1].image} alt={articles[articles.length - 1].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
+            <div className="absolute top-6 left-6">
+              <span className="px-4 py-1.5 bg-indigo-500 backdrop-blur-md text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg">SON YAZI</span>
             </div>
-            
-            <div className="p-8 flex flex-col flex-grow">
-              <div className="flex items-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">
-                <span className="flex items-center gap-1.5"><Clock size={12} /> {article.readTime} oku</span>
-                <span>•</span>
-                <span>{article.date}</span>
-              </div>
-              <h2 className="text-xl font-bold text-white mb-4 group-hover:text-indigo-400 transition-colors leading-tight">{article.title}</h2>
-              <p className="text-sm text-slate-400 font-medium mb-8 line-clamp-2">{article.excerpt}</p>
-              <div className="mt-auto pt-4 border-t border-white/5">
-                <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400 group-hover:text-white transition-colors">
-                  Devamını Oku <ArrowRight size={14} />
-                </button>
-              </div>
+          </div>
+          
+          <div className="p-10 md:p-16 flex flex-col items-center text-center">
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-black text-slate-500 uppercase tracking-widest mb-6">
+              <span className="px-3 py-1 bg-white/5 rounded-lg border border-white/10">{articles[articles.length - 1].category}</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="flex items-center gap-1.5"><Clock size={14} /> {articles[articles.length - 1].readTime} oku</span>
+              <span className="hidden sm:inline">•</span>
+              <span>{articles[articles.length - 1].date}</span>
             </div>
-          </motion.article>
-        ))}
+            <h2 className="text-3xl md:text-5xl font-black text-white mb-6 group-hover:text-indigo-400 transition-colors leading-tight tracking-tight">{articles[articles.length - 1].title}</h2>
+            <p className="text-lg text-slate-400 font-medium mb-10 line-clamp-3 leading-relaxed max-w-3xl">{articles[articles.length - 1].excerpt}</p>
+            <button className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-indigo-400 group-hover:text-white transition-all">
+              Hemen Oku <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+            </button>
+          </div>
+        </motion.article>
+
+        {/* Regular Articles List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-7xl">
+          {articles.slice(0, -1).reverse().map((article, i) => (
+            <motion.article 
+              key={article.id} 
+              initial={{ opacity: 0, y: 20 }} 
+              whileInView={{ opacity: 1, y: 0 }} 
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }} 
+              onClick={() => setSelectedArticle(article)} 
+              className="bg-white/5 backdrop-blur-md rounded-[40px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer text-center items-center"
+            >
+              <div className="aspect-[16/9] w-full overflow-hidden relative">
+                <img src={article.image} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
+                <div className="absolute top-4 left-4">
+                  <span className="px-3 py-1 bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10">{article.category}</span>
+                </div>
+              </div>
+              
+              <div className="p-10 flex flex-col items-center flex-grow">
+                <div className="flex items-center justify-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">
+                  <span className="flex items-center gap-1.5"><Clock size={12} /> {article.readTime} oku</span>
+                  <span>•</span>
+                  <span>{article.date}</span>
+                </div>
+                <h2 className="text-2xl font-black text-white mb-4 group-hover:text-indigo-400 transition-colors leading-tight">{article.title}</h2>
+                <p className="text-base text-slate-400 font-medium mb-8 line-clamp-2 leading-relaxed">{article.excerpt}</p>
+                <div className="mt-auto pt-6 border-t border-white/5 w-full">
+                  <button className="flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400 group-hover:text-white transition-colors w-full">
+                    Devamını Oku <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            </motion.article>
+          ))}
+        </div>
       </div>
 
       {/* Featured Newsletter */}
