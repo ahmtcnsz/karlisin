@@ -26,6 +26,17 @@ async function startServer() {
   // Resend yapılandırması
   const resend = new Resend(process.env.RESEND_API_KEY || 'dummy_key');
 
+  // WWW -> Non-WWW Redirect (Canonical Domain)
+  app.use((req, res, next) => {
+    const host = req.headers.host;
+    if (host && host.startsWith('www.')) {
+      const newHost = host.replace(/^www\./, '');
+      console.log(`[Karlısın-Redirect] Redirecting ${host} to ${newHost}`);
+      return res.redirect(301, `https://${newHost}${req.url}`);
+    }
+    next();
+  });
+
   // CORS YAPILANDIRMASI
   app.use(cors({
     origin: '*', // Tüm domainlerden gelen isteklere (CORS) izin ver
