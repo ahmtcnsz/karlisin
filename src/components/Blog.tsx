@@ -81,6 +81,38 @@ const articles = [
       <h3 style="color: white; margin-top: 24px;">Fiyatlandırma Psikolojisi</h3>
       <p>Maliyet artışlarını fiyata yansıtırken müşteri sadakatini bozmamak için kullanabileceğiniz psikolojik modeller.</p>
     `
+  },
+  {
+    id: 6,
+    title: '2026\'da Pasif Gelir Modelleri: Nereden Başlamalı?',
+    excerpt: 'Finansal özgürlük yolunda pasif gelir inşa etmek için 2026 yılının en kârlı ve sürdürülebilir modellerini keşfedin.',
+    category: 'Strateji',
+    date: '23 Nisan 2026',
+    readTime: '10 dk',
+    image: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>Gerçek finansal özgürlük, siz uyurken bile çalışan sistemler kurmaktan geçer. Karlısın olarak 2026 projeksiyonlarımızda öne çıkan modelleri sizin için derledik.</p>
+      <h3 style="color: white; margin-top: 24px;">Dijital Varlık Yatırımcılığı</h3>
+      <p>Artık sadece hisse senedi değil, yapay zeka tarafından yönetilen dijital gelir kapıları da portföylerin vazgeçilmezi haline geldi.</p>
+      <h3 style="color: white; margin-top: 24px;">Otomatik E-Ticaret Kanalları</h3>
+      <p>Stoksuz satışın ötesinde, marka sadakati üzerine kurulu ve tam otomatize edilmiş niş mağazalar, 2026'nın en yüksek ROI (Geri Dönüş) oranına sahip.</p>
+    `
+  },
+  {
+    id: 7,
+    title: 'B2B E-ticarette Müşteri Edinme Maliyeti (CAC) Nasıl Düşürülür?',
+    excerpt: 'Artan reklam maliyetleri karşısında, B2B sektöründe müşteri başına maliyeti optimize etmenin 5 stratejik yolu.',
+    category: 'Analiz',
+    date: '23 Nisan 2026',
+    readTime: '12 dk',
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>B2B dünyasında rekabet artık sadece fiyatta değil, operasyonel verimlilikte yaşanıyor. CAC değerlerinizi nasıl tek haneli yüzdelere indirirsiniz?</p>
+      <h3 style="color: white; margin-top: 24px;">Hesap Odaklı Pazarlama (ABM)</h3>
+      <p>Geniş kitlelere reklam vermek yerine, Karlısın verileriyle nokta atışı yaparak potansiyeli en yüksek müşterilere odaklanın.</p>
+      <h3 style="color: white; margin-top: 24px;">Sadakat Döngüsü</h3>
+      <p>Yeni müşteri bulmak, var olanı elde tutmaktan 5 kat daha pahalıdır. CAC'ı düşürmenin en iyi yolu, churn (kayıp) oranını sıfıra yaklaştırmaktır.</p>
+    `
   }
 ];
 
