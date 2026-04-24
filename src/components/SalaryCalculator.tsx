@@ -25,7 +25,18 @@ import {
   ListFilter
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  ResponsiveContainer, 
+  Tooltip as RechartsTooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from 'recharts';
 
 interface MonthlyCalculation {
   month: string;
@@ -57,6 +68,7 @@ export default function SalaryCalculator() {
   const [incentive5Point, setIncentive5Point] = useState(true);
   const [incentive2Point, setIncentive2Point] = useState(false);
   const [calculations, setCalculations] = useState<MonthlyCalculation[]>([]);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(new Date().getMonth());
   const [savingsRate, setSavingsRate] = useState(20);
   
   // Real-time rates state
@@ -121,8 +133,8 @@ export default function SalaryCalculator() {
     fetchRates();
   }, []);
 
-  const MIN_WAGE_BRUT = 26002.50; 
-  const TAX_BRACKETS = [158000, 330000, 1200000, 4300000];
+  const MIN_WAGE_BRUT = 30002.50; 
+  const TAX_BRACKETS = [230000, 580000, 3000000, 12000000];
   const TAX_RATES = [0.15, 0.20, 0.27, 0.35, 0.40];
   const STAMP_TAX_RATE = 0.00759;
 
@@ -274,13 +286,79 @@ export default function SalaryCalculator() {
   const totalTaxes = calculations.reduce((acc, curr) => acc + curr.incomeTax + curr.stampTax, 0);
   const totalSGK = calculations.reduce((acc, curr) => acc + curr.sgkEmployee + curr.unemploymentEmployee, 0);
   
+  const nextBracketInfo = (() => {
+    // If no calculations yet, return a skeleton/placeholder state
+    if (!calculations.length || !targetAmount) {
+      return {
+        limit: TAX_BRACKETS[0],
+        remaining: null,
+        progress: 0,
+        progressInBracket: 0,
+        hitMonth: null,
+        netDrop: 0,
+        currentRate: 15,
+        nextRate: 20,
+        bracketIndex: 0,
+        isEmpty: true
+      };
+    }
+    
+    const currentMonthData = calculations[selectedMonthIndex] || calculations[0];
+    const prevCumulative = currentMonthData.cumulativeIncomeTaxBase - currentMonthData.incomeTaxBase;
+    
+    let nextLimit = TAX_BRACKETS[0];
+    let bracketIndex = 0;
+    for (let i = 0; i < TAX_BRACKETS.length; i++) {
+      if (prevCumulative >= TAX_BRACKETS[i]) {
+        nextLimit = TAX_BRACKETS[i+1];
+        bracketIndex = i + 1;
+      } else {
+        break;
+      }
+    }
+
+    if (!nextLimit) return null;
+
+    const remaining = nextLimit - prevCumulative;
+    const totalBracketCapacity = nextLimit - (bracketIndex > 0 ? TAX_BRACKETS[bracketIndex - 1] : 0);
+    const progressInCurrentBracket = Math.min(((prevCumulative - (bracketIndex > 0 ? TAX_BRACKETS[bracketIndex - 1] : 0)) / totalBracketCapacity) * 100, 100);
+    const overallProgress = Math.min((prevCumulative / nextLimit) * 100, 100);
+    
+    const transitionMonth = calculations.find(c => c.cumulativeIncomeTaxBase > nextLimit);
+    
+    let netDrop = 0;
+    if (transitionMonth) {
+        const mIndex = calculations.indexOf(transitionMonth);
+        if (mIndex > 0) {
+            netDrop = calculations[mIndex - 1].totalNet - transitionMonth.totalNet;
+        }
+    }
+
+    return {
+      limit: nextLimit,
+      remaining,
+      progress: overallProgress,
+      progressInBracket: progressInCurrentBracket,
+      hitMonth: transitionMonth?.month,
+      netDrop,
+      currentRate: TAX_RATES[bracketIndex] * 100,
+      nextRate: TAX_RATES[bracketIndex + 1] * 100,
+      bracketIndex,
+      isEmpty: false
+    };
+  })();
+
   const chartData = [
     { name: 'Net Maaş', value: totalTakeHome, color: '#10B981' },
     { name: 'Gelir Vergisi', value: totalTaxes, color: '#F43F5E' },
     { name: 'SGK Primi', value: totalSGK, color: '#6366F1' },
   ];
 
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(new Date().getMonth());
+  const barChartData = calculations.map(calc => ({
+    month: calc.month,
+    net: calc.totalNet,
+    tax: calc.incomeTax + calc.stampTax
+  }));
 
   // Purchasing Power Estimates based on selected month
   const currentMonthCalc = calculations[selectedMonthIndex] || calculations[0];
@@ -533,15 +611,143 @@ export default function SalaryCalculator() {
 
               {/* Chart and Breakdown Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                <div className="lg:col-span-2 bg-slate-950/40 rounded-[40px] border border-white/5 p-8 flex flex-col items-center justify-center">
-                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Maaş Kesinti Dağılımı</h4>
+                {/* Akıllı Vergi Takvimi Card (New) */}
+                {nextBracketInfo && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="lg:col-span-5 bg-gradient-to-br from-indigo-500/10 to-purple-500/5 backdrop-blur-md border border-indigo-500/20 rounded-[40px] p-8 overflow-hidden relative group"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 bg-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400">
+                            <AlertCircle size={22} className={nextBracketInfo.isEmpty ? "" : "animate-pulse"} />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black text-white uppercase tracking-widest leading-none">Vergi Dilimi Dedektifi</h4>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Sizin için geleceği takip ediyoruz</p>
+                          </div>
+                          <span className="ml-2 px-2 py-0.5 bg-indigo-400 text-black text-[8px] font-black rounded uppercase tracking-tighter shadow-lg shadow-indigo-500/20">PRO AKTİF</span>
+                        </div>
+                      </div>
+
+                      {nextBracketInfo.hitMonth ? (
+                        <div className="px-6 py-4 bg-white/5 border border-white/10 rounded-3xl flex items-center gap-4 group-hover:border-indigo-500/30 transition-colors">
+                          <Calendar size={24} className="text-indigo-400" />
+                          <div>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Kritik Eşik Ayı</p>
+                            <p className="text-xl font-black text-white leading-none">{nextBracketInfo.hitMonth}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="px-6 py-4 bg-white/5 border border-white/10 rounded-3xl flex items-center gap-4">
+                          <Shield size={24} className={nextBracketInfo.isEmpty ? "text-slate-600" : "text-emerald-400"} />
+                          <div>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Durum</p>
+                            <p className="text-xl font-black text-white leading-none">{nextBracketInfo.isEmpty ? "--" : "Güvenli Bölge"}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-8 space-y-4 relative z-10">
+                      <div className="flex justify-between items-end text-[10px] font-black uppercase tracking-widest">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-slate-500">Mevcut Oran</span>
+                          <span className="text-white text-sm">%{nextBracketInfo.currentRate}</span>
+                        </div>
+                        <div className="text-center">
+                          <span className="text-indigo-400 block mb-1">Yıl Sonu Yolculuğu</span>
+                          <span className="text-white text-[10px] block">İlerleme: %{nextBracketInfo.isEmpty ? "0.0" : nextBracketInfo.progress.toFixed(1)}</span>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-slate-500">Sonraki Oran</span>
+                          <span className="text-white text-sm">%{nextBracketInfo.nextRate}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="h-4 bg-black/40 rounded-full border border-white/5 p-1 relative">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${nextBracketInfo.progress}%` }}
+                          className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_auto] animate-gradient-x rounded-full shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                        />
+                        {/* Target Marker */}
+                        <div className="absolute top-1/2 -translate-y-1/2 right-0 w-1 h-3 bg-white/20 rounded-full blur-[1px]" />
+                      </div>
+                      <div className="flex justify-center">
+                        <p className="text-[11px] font-medium text-slate-400">
+                          Üst dilime <span className="text-white font-black">{nextBracketInfo.remaining ? formatCurrency(nextBracketInfo.remaining) : "--"}</span> kaldı
+                        </p>
+                      </div>
+                    </div>
+
+                    {nextBracketInfo.netDrop > 0 && !nextBracketInfo.isEmpty && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-6 flex items-start gap-4 p-5 bg-rose-500/10 border border-rose-500/20 rounded-[30px]"
+                      >
+                         <div className="w-10 h-10 bg-rose-500/20 rounded-2xl flex items-center justify-center text-rose-400 shrink-0">
+                           <TrendingUp className="rotate-180" size={20} />
+                         </div>
+                         <div>
+                            <p className="text-sm font-black text-white mb-1">Net Maaş Kaybı Uyarısı</p>
+                            <p className="text-xs font-medium text-slate-400 leading-relaxed">
+                              Dikkat! <span className="text-white font-black">{nextBracketInfo.hitMonth}</span> ayında kümülatif matrahınız <span className="text-white font-black">{formatCurrency(nextBracketInfo.limit)}</span> sınırını aşacağı için vergi diliminiz <span className="text-rose-400 font-bold">%{nextBracketInfo.nextRate}</span>'e yükselecek. Ay bazında net kazancınız <span className="text-rose-400 font-black">{formatCurrency(nextBracketInfo.netDrop)}</span> azalacak.
+                            </p>
+                         </div>
+                      </motion.div>
+                    )}
+
+                    <AlertCircle className="absolute -right-16 -bottom-16 opacity-[0.03] -rotate-12 text-white" size={320} />
+                  </motion.div>
+                )}
+
+                {/* Maaş Seyri (New) */}
+                <div className="lg:col-span-2 bg-slate-950/40 rounded-[40px] border border-white/5 p-8">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Aylık Net Maaş Seyri</h4>
                   <div className="w-full h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={barChartData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis 
+                          dataKey="month" 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: '#64748b', fontSize: 8, fontWeight: 700 }}
+                        />
+                        <YAxis hide />
+                        <RechartsTooltip 
+                          contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                          labelStyle={{ color: '#94a3b8', fontWeight: 900, fontSize: 10, marginBottom: 4 }}
+                          itemStyle={{ fontSize: '11px', fontWeight: '900' }}
+                          formatter={(value: number) => [formatCurrency(value), 'Net Maaş']}
+                        />
+                        <Bar 
+                          dataKey="net" 
+                          fill="#10B981" 
+                          radius={[4, 4, 0, 0]}
+                          barSize={20}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-600 mt-4 text-center uppercase tracking-tighter">
+                    Yıl boyu net maaş değişim grafiği
+                  </p>
+                </div>
+
+                <div className="lg:col-span-1 bg-slate-950/40 rounded-[40px] border border-white/5 p-8 flex flex-col items-center justify-center">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Dağılım</h4>
+                  <div className="w-full h-40">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={chartData}
-                          innerRadius={60}
-                          outerRadius={80}
+                          innerRadius={45}
+                          outerRadius={65}
                           paddingAngle={8}
                           dataKey="value"
                           stroke="none"
@@ -557,17 +763,17 @@ export default function SalaryCalculator() {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 mt-6 w-full">
-                    {chartData.map((item, idx) => (
+                  <div className="flex flex-col gap-2 mt-4 w-full">
+                    {chartData.slice(0, 2).map((item, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{item.name}</span>
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-[8px] font-black text-slate-500 uppercase">{item.name}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="lg:col-span-3 bg-slate-950/40 rounded-[40px] border border-white/5 p-8">
+                <div className="lg:col-span-2 bg-slate-950/40 rounded-[40px] border border-white/5 p-8">
                    <div className="space-y-6">
                       <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
                         <ArrowUpRight className="text-indigo-400" size={18} />
