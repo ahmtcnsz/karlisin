@@ -236,6 +236,27 @@ const articles = [
       
       <p>Unutmayın, e-ticarette başarı matematiksel bir kesinlik gerektirir. Karlısın ile finansal verilerinizi doğru okuyun, geleceğinizi güvenle inşa edin.</p>
     `
+  },
+  {
+    id: 14,
+    title: '2026\'da Borsa İstanbul: Temettü Emekliliği Hayal mi?',
+    excerpt: 'Enflasyon ve faiz sarmalında temettü yatırımcılığının 2026 yılındaki rolünü ve Karlısın ile nasıl pasif gelir inşa edilebileceğini tartışıyoruz.',
+    category: 'Yatırım',
+    date: '24 Nisan 2026',
+    readTime: '10 dk',
+    image: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=800',
+    content: `
+      <p>2026 yılına geldiğimizde ekonomi dünyası artık çok daha hızlı kararlar gerektiriyor. Birçok yatırımcı için ise en güvenli liman hala aynı: <strong>Temettü Yatırımcılığı</strong>. Peki, bugünün koşullarında gerçekten bir 'Temettü Emeklisi' olmak mümkün mü?</p>
+      
+      <h3 style="color: white; margin-top: 24px;">Enflasyon Koruması Olarak Temettü</h3>
+      <p>Hisse senetlerinin sunduğu temettü verimi, sadece nakit akışı sağlamakla kalmaz, aynı zamanda şirketin büyüme potansiyeliyle birlikte enflasyona karşı doğal bir koruma kalkanı oluşturur. Karlısın ekibi olarak hazırladığımız bu analizde, doğru şirketlerin reel getiride nasıl fark yarattığını inceliyoruz.</p>
+      
+      <h3 style="color: white; margin-top: 24px;">Karlısın ile Gelecek Projeksiyonu</h3>
+      <p>Bir temettü portföyü kurarken en büyük hata, sadece yüksek verime odaklanmaktır. Önemli olan süreklilik ve büyümedir. Karlısın'ın özel projeksiyon araçları sayesinde, aldığınız her bir temettü ödemesinin portföyünüze olan bileşik etkisini 10, 20 ve hatta 30 yıllık vadelerde simüle edebilirsiniz.</p>
+      
+      <h3 style="color: white; margin-top: 24px;">Disiplinli Yatırım</h3>
+      <p>Temettü emekliliği bir hayal değil, disiplinli bir matematik oyunudur. Karlısın ile hedeflerinizi belirleyin ve her ay bu hedefe ne kadar yaklaştığınızı takip edin.</p>
+    `
   }
 ];
 
