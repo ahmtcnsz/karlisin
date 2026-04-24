@@ -377,9 +377,9 @@ export default function SalaryCalculator() {
     { name: 'Gelir Vergisi', value: currentMonthCalc?.incomeTax || 0, color: '#F43F5E' },
     { name: 'SGK Primi', value: totalSGK / 12, color: '#6366F1' },
   ] : [
-    { name: 'Net Maaş', value: 70, color: '#10B981' },
-    { name: 'Gelir Vergisi', value: 20, color: '#F43F5E' },
-    { name: 'SGK Primi', value: 10, color: '#6366F1' },
+    { name: 'Net Maaş', value: 70, color: '#334155' },
+    { name: 'Gelir Vergisi', value: 20, color: '#475569' },
+    { name: 'SGK Primi', value: 10, color: '#1e293b' },
   ];
 
   const isDataEmpty = !targetAmount || calculations.length === 0;
@@ -781,18 +781,60 @@ export default function SalaryCalculator() {
                         <YAxis hide />
                         {!isDataEmpty && (
                           <RechartsTooltip 
-                            contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                            labelStyle={{ color: '#94a3b8', fontWeight: 900, fontSize: 10, marginBottom: 4 }}
-                            itemStyle={{ fontSize: '11px', fontWeight: '900' }}
-                            formatter={(value: number) => [formatCurrency(value), 'Net Maaş']}
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                const index = barChartData.findIndex(d => d.month === label);
+                                const prevNet = index > 0 ? barChartData[index - 1].net : data.net;
+                                const drop = prevNet - data.net;
+                                
+                                return (
+                                  <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-2xl">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">{label}</p>
+                                    <div className="space-y-1">
+                                      <div className="flex items-center justify-between gap-4">
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase">Net Maaş:</span>
+                                        <span className="text-xs font-black text-emerald-400">{formatCurrency(data.net)}</span>
+                                      </div>
+                                      {drop > 0 && (
+                                        <div className="flex items-center justify-between gap-4 pt-1 border-t border-white/5">
+                                          <span className="text-[10px] font-bold text-rose-500/80 uppercase">Kayıp:</span>
+                                          <span className="text-xs font-black text-rose-400">-{formatCurrency(drop)}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
                           />
                         )}
                         <Bar 
                           dataKey="net" 
-                          fill="#10B981" 
                           radius={[6, 6, 0, 0]}
                           barSize={12}
-                        />
+                        >
+                          {barChartData.map((entry, index) => {
+                            const maxNet = Math.max(...barChartData.map(d => d.net));
+                            const prevNet = index > 0 ? barChartData[index - 1].net : entry.net;
+                            const isMax = entry.net === maxNet && !isDataEmpty;
+                            const isDropped = entry.net < prevNet && !isDataEmpty;
+                            
+                            let fillColor = "#6366F1"; // Sabit maaş (Indigo)
+                            if (isDataEmpty) fillColor = "#334155";
+                            else if (isDropped) fillColor = "#F43F5E"; // Düşüş (Kırmızı)
+                            else if (isMax) fillColor = "#10B981"; // En Yüksek (Yeşil)
+
+                            return (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={fillColor}
+                                className={isDropped ? "animate-pulse" : ""}
+                              />
+                            );
+                          })}
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -853,7 +895,7 @@ export default function SalaryCalculator() {
                 </div>
 
                 {/* Detaylı Analiz */}
-                <div className="md:col-span-1 bg-slate-950/40 rounded-[40px] border border-white/5 p-8 h-full group hover:border-indigo-500/20 transition-all">
+                <div className={`md:col-span-1 bg-slate-950/40 rounded-[40px] border border-white/5 p-8 h-full group hover:border-indigo-500/20 transition-all ${isDataEmpty ? 'opacity-40' : ''}`}>
                    <div className="space-y-8 h-full flex flex-col">
                       <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
                         <ArrowUpRight className="text-indigo-400" size={14} />
@@ -861,21 +903,32 @@ export default function SalaryCalculator() {
                       </h4>
                       
                       <div className="space-y-6 flex-grow">
-                        {[
-                          { label: 'SGK + İşsizlik İşçİ', value: (calculations[0]?.sgkEmployee + calculations[0]?.unemploymentEmployee) || 0, color: '#6366F1' },
-                          { label: 'Gelir Vergisİ', value: calculations[0]?.incomeTax || 0, color: '#F43F5E' },
-                          { label: 'Damga Vergisİ', value: calculations[0]?.stampTax || 0, color: '#F59E0B' },
-                          { label: 'Vergİ İstisnaları', value: (calculations[0]?.minWageIncomeTaxExemption + calculations[0]?.minWageStampTaxExemption) || 0, color: '#10B981' }
-                        ].map((item, idx) => (
+                        {(isDataEmpty ? [
+                          { label: 'SGK + İŞSİZLİK İŞÇİ', value: 15, color: '#334155', dummyValue: '15000' },
+                          { label: 'GELİR VERGİSİ', value: 12, color: '#475569', dummyValue: '12750' },
+                          { label: 'DAMGA VERGİSİ', value: 3, color: '#1e293b', dummyValue: '759' },
+                          { label: 'VERGİ İSTİSNALARI', value: 8, color: '#0f172a', dummyValue: '4053' }
+                        ] : [
+                          { label: 'SGK + İŞSİZLİK İŞÇİ', value: (calculations[0]?.sgkEmployee + calculations[0]?.unemploymentEmployee) || 0, color: '#6366F1' },
+                          { label: 'GELİR VERGİSİ', value: calculations[0]?.incomeTax || 0, color: '#F43F5E' },
+                          { label: 'DAMGA VERGİSİ', value: calculations[0]?.stampTax || 0, color: '#F59E0B' },
+                          { label: 'VERGİ İSTİSNALARI', value: (calculations[0]?.minWageIncomeTaxExemption + calculations[0]?.minWageStampTaxExemption) || 0, color: '#10B981' }
+                        ]).map((item, idx) => (
                           <div key={idx} className="space-y-2">
                             <div className="flex justify-between items-end">
                               <span className="text-[9px] font-black text-slate-500 tracking-wider uppercase">{item.label}</span>
-                              <span className="text-xs font-black text-white">{formatCurrency(item.value)}</span>
+                              <span className="text-xs font-black text-white">
+                                {isDataEmpty ? (item as any).dummyValue ? `₺0` : '--' : formatCurrency(item.value)}
+                              </span>
                             </div>
                             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                               <motion.div 
                                 initial={{ width: 0 }}
-                                animate={{ width: `${Math.min((item.value / (calculations[0]?.gross || 1)) * 100 * 5, 100)}%` }}
+                                animate={{ 
+                                  width: isDataEmpty 
+                                    ? `${item.value}%` 
+                                    : `${Math.min((item.value / (calculations[0]?.gross || 1)) * 100 * 5, 100)}%` 
+                                }}
                                 className="h-full rounded-full"
                                 style={{ backgroundColor: item.color }}
                               />
