@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './components/Home';
@@ -14,74 +15,71 @@ import Blog from './components/Blog';
 import SalaryCalculator from './components/SalaryCalculator';
 import Policy from './components/Policy';
 import FeedbackOverlay from './components/FeedbackOverlay';
+import Landing from './components/Landing';
+import Sitemap from './components/Sitemap';
 import { motion, AnimatePresence } from 'motion/react';
 
-export default function App() {
-  const [currentView, setCurrentView] = useState('calculators');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // Simple scroll to top on view change
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (currentView === 'dashboard') {
-      setIsLoggedIn(true);
-    }
-  }, [currentView]);
+  }, [pathname]);
+  return null;
+}
 
-  const renderView = () => {
-    switch (currentView) {
-      case 'calculators':
-        return <Home />;
-      case 'mortgage':
-        return <Mortgage />;
-      case 'dashboard':
-        return <Dashboard />;
-      case 'about':
-        return <About />;
-      case 'blog':
-        return <Blog />;
-      case 'salary':
-        return <SalaryCalculator />;
-      case 'privacy':
-        return <Policy type="privacy" />;
-      case 'terms':
-        return <Policy type="terms" />;
-      default:
-        return <Home />;
-    }
-  };
+export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200">
-      <div className="fixed inset-0 z-0 opacity-40 frosted-bg pointer-events-none" />
-      
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <Navbar 
-          currentView={currentView} 
-          onViewChange={setCurrentView} 
-          isLoggedIn={isLoggedIn}
-        />
+    <Router>
+      <ScrollToTop />
+      <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200">
+        <div className="fixed inset-0 z-0 opacity-40 frosted-bg pointer-events-none" />
         
-        <main className="flex-grow">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentView}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.02 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            >
-              {renderView()}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+        <div className="relative z-10 flex flex-col min-h-screen">
+          <Navbar isLoggedIn={isLoggedIn} />
+          
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
+              <Route path="/anasayfa" element={<PageWrapper><Landing /></PageWrapper>} />
+              <Route path="/pazar-kar-hesaplama" element={<PageWrapper><Home /></PageWrapper>} />
+              <Route path="/pazar-kar" element={<PageWrapper><Home /></PageWrapper>} />
+              <Route path="/maas-vergi-hesaplama" element={<PageWrapper><SalaryCalculator /></PageWrapper>} />
+              <Route path="/temettu-takibi" element={<PageWrapper><Mortgage /></PageWrapper>} />
+              <Route path="/dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
+              <Route path="/blog" element={<PageWrapper><Blog /></PageWrapper>} />
+              <Route path="/hakkimizda" element={<PageWrapper><About /></PageWrapper>} />
+              <Route path="/gizlilik-politikasi" element={<PageWrapper><Policy type="privacy" /></PageWrapper>} />
+              <Route path="/kullanim-kosullari" element={<PageWrapper><Policy type="terms" /></PageWrapper>} />
+              <Route path="/site-haritasi" element={<PageWrapper><Sitemap /></PageWrapper>} />
+              {/* Fallback to landing */}
+              <Route path="*" element={<PageWrapper><Landing /></PageWrapper>} />
+            </Routes>
+          </main>
 
-        <Footer 
-          onViewChange={setCurrentView}
-        />
-        
-        <FeedbackOverlay />
+          <Footer />
+          <FeedbackOverlay />
+        </div>
       </div>
-    </div>
+    </Router>
+  );
+}
+
+function PageWrapper({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 1.02 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
   );
 }

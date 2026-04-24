@@ -165,11 +165,19 @@ export default function SalaryCalculator() {
     socialAid += childCount * 600; 
 
     const net = gross - sgkEmployee - unemploymentEmployee - incomeTax - stampTax;
-    const totalNet = net + mwIncomeTaxExemption + mwStampTaxExemption + socialAid;
+    
+    // Correct application of minimum wage tax exemptions (Exemptions cannot exceed calculated tax)
+    const appliedIncomeTaxExemption = Math.min(incomeTax, mwIncomeTaxExemption);
+    const appliedStampTaxExemption = Math.min(stampTax, mwStampTaxExemption);
+
+    const totalNet = net + appliedIncomeTaxExemption + appliedStampTaxExemption + socialAid;
 
     let sgkEmployerRate = 0.205;
-    if (incentive5Point) sgkEmployerRate -= 0.05;
-    if (incentive2Point) sgkEmployerRate -= 0.02;
+    if (incentive5Point) {
+      sgkEmployerRate = 0.155; // 5 Puanlık indirim (Hazine Teşviki)
+    } else if (incentive2Point) {
+      sgkEmployerRate = 0.185; // 2 Puanlık ek indirim senaryosu (veya ilgili mevzuat oranı)
+    }
 
     const sgkEmployer = gross * sgkEmployerRate;
     const unemploymentEmployer = gross * 0.02;
@@ -291,17 +299,28 @@ export default function SalaryCalculator() {
   const usdSavingsEquivalent = (yearlySavings / usdPrice).toFixed(0); // Using live rate
 
   const exportToExcel = () => {
-    const data = calculations.map((calc) => ({
-      'Ay': calc.month,
-      'Brüt Maaş': calc.gross,
-      'SGK İşçi': calc.sgkEmployee,
-      'İşsizlik Primi': calc.unemploymentEmployee,
-      'Gelir Vergisi': calc.incomeTax,
-      'Damga Vergisi': calc.stampTax,
-      'Kümülatif Matrah': calc.cumulativeIncomeTaxBase,
-      'Net Maaş': calc.totalNet,
-      'Toplam İşveren Maliyeti': calc.totalEmployerCost
-    }));
+    const data = calculations.map((calc) => {
+      const row: any = {
+        'Ay': calc.month,
+        'Brüt Maaş': calc.gross,
+        'SGK İşçi': calc.sgkEmployee,
+        'İşsizlik Primi': calc.unemploymentEmployee,
+        'Gelir Vergisi': calc.incomeTax,
+        'Damga Vergisi': calc.stampTax,
+        'Kümülatif Matrah': calc.cumulativeIncomeTaxBase,
+        'Net Maaş': calc.totalNet,
+      };
+
+      if (showEmployerCost) {
+        row['SSK İşveren'] = calc.sgkEmployer;
+        row['İşsizlik İşveren'] = calc.unemploymentEmployer;
+        row['Toplam İşveren Maliyeti'] = calc.totalEmployerCost;
+      } else {
+        row['Toplam İşveren Maliyeti'] = calc.totalEmployerCost;
+      }
+
+      return row;
+    });
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Maaş Hesaplama');
@@ -436,20 +455,34 @@ export default function SalaryCalculator() {
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10 grid grid-cols-2 gap-2"
+                      className="p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10"
                     >
-                      <button 
-                        onClick={() => setIncentive5Point(!incentive5Point)}
-                        className={`py-2 px-3 rounded-lg text-[9px] font-black tracking-tighter uppercase transition-all ${incentive5Point ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-black/20 text-slate-600'}`}
-                      >
-                        5 Puanlık İndirim
-                      </button>
-                      <button 
-                         onClick={() => setIncentive2Point(!incentive2Point)}
-                         className={`py-2 px-3 rounded-lg text-[9px] font-black tracking-tighter uppercase transition-all ${incentive2Point ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-black/20 text-slate-600'}`}
-                      >
-                        Ek 2 Puan İndirim
-                      </button>
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <button 
+                          onClick={() => {
+                            setIncentive5Point(!incentive5Point);
+                            setIncentive2Point(false);
+                          }}
+                          className={`py-2 px-3 rounded-lg text-[9px] font-black tracking-tighter uppercase transition-all ${incentive5Point ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-black/20 text-slate-600'}`}
+                        >
+                          5 Puanlık İndirim
+                        </button>
+                        <button 
+                           onClick={() => {
+                             setIncentive2Point(!incentive2Point);
+                             setIncentive5Point(false);
+                           }}
+                           className={`py-2 px-3 rounded-lg text-[9px] font-black tracking-tighter uppercase transition-all ${incentive2Point ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-black/20 text-slate-600'}`}
+                        >
+                          Ek 2 Puan İndirim
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">SGK İşveren Oranı:</span>
+                        <span className="text-[10px] font-black text-white">
+                          %{incentive5Point ? '15.5' : incentive2Point ? '18.5' : '20.5'}
+                        </span>
+                      </div>
                     </motion.div>
                   )}
                 </div>
@@ -595,6 +628,13 @@ export default function SalaryCalculator() {
                     <th className="px-4 py-5 border-b border-white/5">Damga Vergisi</th>
                     <th className="px-4 py-5 border-b border-white/5">Küm. Matrah</th>
                     <th className="px-4 py-5 border-b border-white/5 font-bold text-slate-300">Net</th>
+                    {showEmployerCost && (
+                      <>
+                        <th className="px-4 py-5 border-b border-white/5 text-amber-400">SSK İşveren</th>
+                        <th className="px-4 py-5 border-b border-white/5 text-amber-400">İşsizlik İşveren</th>
+                        <th className="px-4 py-5 border-b border-white/5 text-amber-400">Toplam Maliyet</th>
+                      </>
+                    )}
                     <th className="px-4 py-5 border-b border-white/5">A.G.İ / Sosyal</th>
                     <th className="px-4 py-5 border-b border-white/5">GV İstisnası</th>
                     <th className="px-4 py-5 border-b border-white/5">DV İstisnası</th>
@@ -611,6 +651,13 @@ export default function SalaryCalculator() {
                       <td className="px-4 py-4 text-xs font-mono text-amber-400/80">{formatCurrency(calc.stampTax)}</td>
                       <td className="px-4 py-4 text-xs font-mono text-slate-400">{formatCurrency(calc.cumulativeIncomeTaxBase)}</td>
                       <td className="px-4 py-4 text-xs font-mono text-slate-300 font-black">{formatCurrency(calc.net)}</td>
+                      {showEmployerCost && (
+                        <>
+                          <td className="px-4 py-4 text-xs font-mono text-amber-400/80">{formatCurrency(calc.sgkEmployer)}</td>
+                          <td className="px-4 py-4 text-xs font-mono text-amber-400/80">{formatCurrency(calc.unemploymentEmployer)}</td>
+                          <td className="px-4 py-4 text-xs font-mono text-amber-400 font-black">{formatCurrency(calc.totalEmployerCost)}</td>
+                        </>
+                      )}
                       <td className="px-4 py-4 text-xs font-mono text-emerald-400/70">{formatCurrency(calc.agi)}</td>
                       <td className="px-4 py-4 text-xs font-mono text-indigo-400/70">{formatCurrency(calc.minWageIncomeTaxExemption)}</td>
                       <td className="px-4 py-4 text-xs font-mono text-indigo-400/70">{formatCurrency(calc.minWageStampTaxExemption)}</td>

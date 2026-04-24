@@ -1,100 +1,136 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, Menu, X } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 interface NavbarProps {
-  currentView: string;
-  onViewChange: (view: string) => void;
   isLoggedIn?: boolean;
 }
 
-export default function Navbar({ currentView, onViewChange, isLoggedIn = false }: NavbarProps) {
+export default function Navbar({ isLoggedIn = false }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
   const navItems = [
-    { id: 'calculators', label: 'Hesaplayıcılar' },
-    { id: 'salary', label: 'Maaş Vergi Hesapla', badge: 'YENİ' },
-    { id: 'blog', label: 'Blog' },
-    { id: 'mortgage', label: 'Temettü', badge: 'YAKINDA' },
+    { id: 'landing', path: '/anasayfa', label: 'Anasayfa' },
+    { id: 'calculators', path: '/pazar-kar-hesaplama', label: 'Pazar Kâr' },
+    { id: 'salary', path: '/maas-vergi-hesaplama', label: 'Maaş & Vergi', badge: 'YENİ' },
+    { id: 'mortgage', path: '/temettu-takibi', label: 'Temettü', badge: 'YAKINDA' },
+    { id: 'blog', path: '/blog', label: 'Blog' },
   ];
 
-  const handleNavClick = (id: string) => {
-    onViewChange(id);
-    setIsMobileMenuOpen(false);
+  const isActive = (path: string) => {
+    if (path === '/anasayfa' && location.pathname === '/') return true;
+    return location.pathname === path;
   };
 
   return (
-    <nav className="sticky top-0 w-full z-50 bg-white/5 backdrop-blur-xl border-b border-white/10 transition-all">
-      <div className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
-        <div className="flex items-center gap-8">
-          <button 
-            onClick={() => handleNavClick('calculators')}
-            className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 cursor-pointer"
+    <nav className="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5 transition-all">
+      <div className="relative flex items-center h-16 px-6 max-w-7xl mx-auto">
+        
+        {/* Logo - Left */}
+        <div className="flex-shrink-0">
+          <Link 
+            to="/"
+            className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 hover:opacity-80 transition-opacity"
           >
-            Karlısın
-          </button>
-          
-          <div className="hidden md:flex items-center gap-6">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => onViewChange(item.id)}
-                className={`text-sm font-black transition-all duration-200 relative pb-1 flex items-center gap-2 ${
-                  currentView === item.id 
-                    ? 'text-indigo-400' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {item.label.toLocaleUpperCase('tr-TR')}
-                {item.badge && (
-                  <div className="relative overflow-hidden px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">
-                    <motion.div
-                      animate={{
-                        x: ['-100%', '200%'],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "linear",
-                        repeatDelay: 1
-                      }}
-                      className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 pointer-events-none"
-                    />
-                    <span className="relative z-10">{item.badge}</span>
-                  </div>
-                )}
-                {currentView === item.id && (
-                  <motion.div 
-                    layoutId="navbar-active"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+            KARLISIN
+          </Link>
+        </div>
+        
+        {/* Navigation - Perfectly Centered Single Line */}
+        <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-1 whitespace-nowrap">
+          {navItems.map((item) => (
+            <Link
+              key={item.id}
+              to={item.path}
+              className={`px-4 py-2 text-[11px] font-black tracking-[0.15em] uppercase transition-all duration-300 relative group flex items-center gap-2 ${
+                isActive(item.path)
+                  ? 'text-white' 
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <span className="relative z-10">{item.label}</span>
+              
+              {isActive(item.path) && (
+                <motion.div 
+                  layoutId="nav-glow"
+                  className="absolute inset-0 bg-white/5 rounded-lg border border-white/10 -z-0"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              
+              {item.badge && (
+                <div className={`relative overflow-hidden px-1.5 py-0.5 text-[8px] rounded font-black leading-none shrink-0 border ${
+                  item.badge === 'YENİ' 
+                    ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' 
+                    : 'bg-amber-500/10 text-amber-500/60 border-amber-500/20'
+                }`}>
+                  <motion.div
+                    animate={{ x: ['-100%', '200%'] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear",
+                      repeatDelay: 1
+                    }}
+                    className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 pointer-events-none"
                   />
-                )}
-              </button>
-            ))}
-          </div>
+                  <span className="relative z-10">{item.badge}</span>
+                </div>
+              )}
+            </Link>
+          ))}
         </div>
 
-        <div className="flex items-center gap-4">
-          {isLoggedIn && (
-            <div className="hidden md:flex items-center gap-4">
-              <button className="p-2 text-slate-400 hover:bg-white/10 rounded-full transition-all">
-                <Bell size={20} />
-              </button>
-              <button 
-                onClick={() => onViewChange('dashboard')}
-                className="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20 hover:opacity-90 transition-opacity"
-              >
-                JD
-              </button>
+        {/* Right Actions */}
+        <div className="ml-auto flex items-center gap-4">
+          <div className="relative group">
+            <button className="flex items-center gap-2 px-4 py-2 text-[10px] font-black text-white hover:text-indigo-400 transition-colors uppercase tracking-widest border border-white/10 rounded-lg cursor-default">
+              Kurumsal
+              <motion.div
+                animate={{ rotate: 0 }}
+                whileHover={{ rotate: 180 }}
+                className="w-2 h-2 border-r border-b border-white/40 rotate-45 mb-1"
+              />
+            </button>
+            
+            {/* Dropdown Menu */}
+            <div className="absolute right-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300">
+              <div className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 min-w-[200px] shadow-2xl">
+                <Link 
+                  to="/hakkimizda" 
+                  className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest"
+                >
+                  Hakkımızda
+                </Link>
+                <Link 
+                  to="/gizlilik-politikasi" 
+                  className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest"
+                >
+                  Gizlilik Politikası
+                </Link>
+                <Link 
+                  to="/kullanim-kosullari" 
+                  className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest"
+                >
+                  Kullanım Şartları
+                </Link>
+                <Link 
+                  to="/site-haritasi" 
+                  className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest border-t border-white/5 mt-1 pt-4"
+                >
+                  Site Haritası
+                </Link>
+              </div>
             </div>
-          )}
+          </div>
           
-          {/* Mobile Menu Button */}
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="p-2 md:hidden text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
           >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            <Menu size={24} />
           </button>
         </div>
       </div>
@@ -110,11 +146,12 @@ export default function Navbar({ currentView, onViewChange, isLoggedIn = false }
           >
             <div className="flex flex-col p-4 gap-2">
               {navItems.map((item) => (
-                <button
+                <Link
                   key={item.id}
-                  onClick={() => handleNavClick(item.id)}
+                  to={item.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center justify-between p-4 rounded-2xl transition-all font-black text-sm tracking-widest ${
-                    currentView === item.id
+                    isActive(item.path)
                       ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/20'
                       : 'text-slate-400 hover:text-white hover:bg-white/5'
                   }`}
@@ -137,7 +174,7 @@ export default function Navbar({ currentView, onViewChange, isLoggedIn = false }
                       <span className="relative z-10">{item.badge}</span>
                     </div>
                   )}
-                </button>
+                </Link>
               ))}
               
               {isLoggedIn && (
