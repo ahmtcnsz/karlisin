@@ -8,9 +8,9 @@ const db = getFirestore(app);
 
 async function runBroadcast() {
   const article = {
-    title: "2026'da Pasif Gelir Modelleri: Nereden Başlamalı?",
-    excerpt: "Finansal özgürlük yolunda pasif gelir inşa etmek için 2026 yılının en kârlı ve sürdürülebilir modellerini keşfedin.",
-    url: "https://karlisin.com/blog"
+    title: "Karlı Bir E-ticaret Markası İnşası: 2026 Yol Haritası",
+    excerpt: "Sıfırdan kârlı bir marka yaratmanın matematiği, lojistik stratejileri ve 2026 yılındaki büyüme fırsatları.",
+    url: "https://www.karlisin.com/blog"
   };
 
   console.log("Aboneler çekiliyor...");
