@@ -49,7 +49,7 @@ interface MonthlyCalculation {
 export default function SalaryCalculator() {
   const [calculationType, setCalculationType] = useState<'grossToNet' | 'netToGross'>('grossToNet');
   const [year, setYear] = useState(2026);
-  const [targetAmount, setTargetAmount] = useState<number | ''>(55000);
+  const [targetAmount, setTargetAmount] = useState<number | ''>('');
   const [maritalStatus, setMaritalStatus] = useState('Bekar');
   const [spouseWorks, setSpouseWorks] = useState('calisiyor');
   const [childCount, setChildCount] = useState(0);
@@ -254,6 +254,11 @@ export default function SalaryCalculator() {
     return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(val);
   };
 
+  const displayCurrency = (val: number) => {
+    if (!targetAmount || targetAmount === 0) return '---';
+    return formatCurrency(val);
+  };
+
   const totalTakeHome = calculations.reduce((acc, curr) => acc + curr.totalNet, 0);
   const averageNet = totalTakeHome / 12;
   const totalEmployerYearly = calculations.reduce((acc, curr) => acc + curr.totalEmployerCost, 0);
@@ -387,7 +392,8 @@ export default function SalaryCalculator() {
                       type="number"
                       value={targetAmount}
                       onChange={(e) => setTargetAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-full h-16 bg-black/40 border border-white/10 rounded-2xl px-6 outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 text-white font-black text-xl transition-all"
+                      placeholder="Örn: 55000"
+                      className="w-full h-16 bg-black/40 border border-white/10 rounded-2xl px-6 outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 text-white font-black text-xl transition-all placeholder:text-slate-700"
                     />
                     <span className="absolute right-6 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-600">₺</span>
                   </div>
@@ -462,7 +468,7 @@ export default function SalaryCalculator() {
                   <div className="relative z-10">
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80 block mb-2">YILLIK NET KAZANÇ</span>
                     <div className="text-4xl md:text-5xl font-black tracking-tighter mb-4 group-hover:scale-105 transition-transform origin-left">
-                      {formatCurrency(totalTakeHome)}
+                      {displayCurrency(totalTakeHome)}
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full w-fit backdrop-blur-md">
                       <TrendingUp size={14} />
@@ -481,7 +487,7 @@ export default function SalaryCalculator() {
                   <div className="relative z-10">
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80 block mb-2">AYLIK ORTALAMA (NET)</span>
                     <div className="text-4xl md:text-5xl font-black tracking-tighter mb-4 group-hover:scale-105 transition-transform origin-left">
-                      {formatCurrency(averageNet)}
+                      {displayCurrency(averageNet)}
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full w-fit backdrop-blur-md">
                       <Target size={14} />
@@ -630,7 +636,7 @@ export default function SalaryCalculator() {
                     Anlık Alım Gücü Analizi
                   </h3>
                   <p className="text-xs font-bold text-slate-500 mt-1 max-w-lg leading-relaxed">
-                    Seçili ayın (<span className="text-white">{months[selectedMonthIndex]}</span>) net kazancı olan <span className="text-emerald-400">{formatCurrency(monthlyNet)}</span> tutarının, <span className="text-white italic">bugünkü canlı piyasa kurları</span> karşısındaki değeridir.
+                    Seçili ayın (<span className="text-white">{months[selectedMonthIndex]}</span>) net kazancı olan <span className="text-emerald-400">{targetAmount ? formatCurrency(monthlyNet) : '---'}</span> tutarının, <span className="text-white italic">bugünkü canlı piyasa kurları</span> karşısındaki değeridir.
                   </p>
                 </div>
               </div>
@@ -699,11 +705,11 @@ export default function SalaryCalculator() {
                 <div className="mt-6 relative z-10">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Gram Altın</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-white">{gramsOfGold}</span>
+                    <span className="text-4xl font-black text-white">{targetAmount ? gramsOfGold : '---'}</span>
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Adet</span>
                   </div>
                   <p className="text-[9px] text-slate-400 mt-4 font-bold border-t border-white/5 pt-4">
-                    Birim: <span className="text-amber-500/80">{formatCurrency(gramAltinPrice)}</span>
+                    Birim: <span className="text-amber-500/80">{rates.loading ? '...' : formatCurrency(gramAltinPrice)}</span>
                   </p>
                 </div>
               </div>
@@ -722,10 +728,10 @@ export default function SalaryCalculator() {
                 <div className="mt-6 relative z-10">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Amerikan Doları</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-white">${dollars}</span>
+                    <span className="text-4xl font-black text-white">{targetAmount ? `$${dollars}` : '---'}</span>
                   </div>
                   <p className="text-[9px] text-slate-400 mt-4 font-bold border-t border-white/5 pt-4">
-                    Kur: <span className="text-emerald-500/80">{formatCurrency(usdPrice)}</span>
+                    Kur: <span className="text-emerald-500/80">{rates.loading ? '...' : formatCurrency(usdPrice)}</span>
                   </p>
                 </div>
               </div>
@@ -744,7 +750,7 @@ export default function SalaryCalculator() {
                 <div className="mt-6 relative z-10">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Bardak Kahve</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-white">{coffees}</span>
+                    <span className="text-4xl font-black text-white">{targetAmount ? coffees : '---'}</span>
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Bardak</span>
                   </div>
                   <p className="text-[9px] text-slate-400 mt-4 font-bold border-t border-white/5 pt-4">
@@ -813,7 +819,7 @@ export default function SalaryCalculator() {
                       </div>
                       <div className="text-center">
                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 uppercase">Yıllık Birikim (TRY)</span>
-                        <span className="text-3xl font-black text-white leading-none tracking-tighter">{formatCurrency(yearlySavings)}</span>
+                        <span className="text-3xl font-black text-white leading-none tracking-tighter">{displayCurrency(yearlySavings)}</span>
                       </div>
                    </div>
 
@@ -823,7 +829,7 @@ export default function SalaryCalculator() {
                       </div>
                       <div className="text-center">
                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 uppercase">Altın Karşılığı</span>
-                        <span className="text-3xl font-black text-white leading-none tracking-tighter">{goldSavingsEquivalent} <span className="text-sm opacity-50 uppercase tracking-widest text-slate-400">Gram</span></span>
+                        <span className="text-3xl font-black text-white leading-none tracking-tighter">{targetAmount ? `${goldSavingsEquivalent} Gram` : '---'}</span>
                       </div>
                    </div>
 
@@ -833,7 +839,7 @@ export default function SalaryCalculator() {
                       </div>
                       <div className="text-center">
                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 uppercase">USD Karşılığı</span>
-                        <span className="text-3xl font-black text-white leading-none tracking-tighter">{usdSavingsEquivalent} <span className="text-sm opacity-50 uppercase tracking-widest text-slate-400">Dolar</span></span>
+                        <span className="text-3xl font-black text-white leading-none tracking-tighter">{targetAmount ? `${usdSavingsEquivalent} Dolar` : '---'}</span>
                       </div>
                    </div>
                 </div>
