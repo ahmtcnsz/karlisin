@@ -196,17 +196,17 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl lg:text-7xl font-black text-white mb-6 max-w-4xl mx-auto leading-[1.1] tracking-tighter text-center flex flex-col items-center justify-center px-4"
+            className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 max-w-4xl mx-auto leading-[1.3] md:leading-[1.2] tracking-tight text-center flex flex-col items-center justify-center px-4"
           >
             {activeTab === 'profit' ? (
-              <>
-                <span>Net kârını</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 italic px-2 pb-1">5 saniyede hesapla</span>
+               <>
+                <span className="py-2">Net kârını</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 italic px-2 py-2">5 saniyede hesapla</span>
               </>
             ) : (
               <>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 italic px-2 pb-1">Kaça Satmalıyım?</span>
-                <span>diye düşünme</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 italic px-2 py-2">Kaça Satmalıyım?</span>
+                <span className="py-2">diye düşünme</span>
               </>
             )}
           </motion.h1>
@@ -667,7 +667,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-6 py-24 border-t border-white/5 text-center">
         <div className="flex flex-col gap-16 items-center">
           <div className="space-y-8 max-w-4xl mx-auto">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.2] tracking-tight">
               Brütten Nete Maaş Hesaplama ve <span className="text-indigo-400 italic">Finansal Analiz</span>
             </h2>
             <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">

@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "gen-lang-client-0551179549",
     "public": "dist",
     "ignore": [
       "firebase.json",
@@ -9,8 +10,12 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "run": {
+          "serviceId": "ais-pre-afao5v6r5xx4cyhxfwteb2",
+          "region": "europe-west3"
+        }
       }
-    ]
+    ],
+    "cleanUrls": true
   }
 }

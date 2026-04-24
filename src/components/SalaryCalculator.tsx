@@ -252,10 +252,10 @@ export default function SalaryCalculator() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl md:text-6xl lg:text-8xl font-black text-white mb-6 max-w-5xl mx-auto leading-[0.9] tracking-tighter text-center flex flex-col items-center justify-center px-4 font-display"
+            className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-6 max-w-5xl mx-auto leading-[1.4] md:leading-[1.3] tracking-normal text-center flex flex-col items-center justify-center px-4 font-display overflow-visible"
           >
-            <span>Brütten Nete Maaş Hesaplama</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-white to-purple-400 italic px-2 pb-1 drop-shadow-2xl">2026 Vergi Analizi</span>
+            <span className="block py-6 leading-none">Brütten Nete Maaş Hesaplama</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-white to-purple-400 italic px-4 py-4 drop-shadow-2xl leading-tight">2026 Vergi Analizi</span>
           </motion.h1>
           
           <motion.p 
