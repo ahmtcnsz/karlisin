@@ -344,8 +344,8 @@ export default function SalaryCalculator() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-end mb-16">
                 <div>
                   <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-[0.9] tracking-tighter">
-                    Yeni Nesil <br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Vergi Analizi.</span>
+                    Maaş Vergi <br/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Hesaplama.</span>
                   </h1>
                   <div className="flex flex-wrap items-center gap-4">
                     <p className="text-xl text-slate-400 font-medium max-w-lg leading-relaxed">

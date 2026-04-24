@@ -85,7 +85,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
 
         {/* Right Actions */}
         <div className="ml-auto flex items-center gap-4">
-          <div className="relative group">
+          <div className="relative group hidden md:block">
             <button className="flex items-center gap-2 px-4 py-2 text-[10px] font-black text-white hover:text-indigo-400 transition-colors uppercase tracking-widest border border-white/10 rounded-lg cursor-default">
               Kurumsal
               <motion.div
@@ -176,6 +176,38 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
                   )}
                 </Link>
               ))}
+
+              <div className="mt-4 pt-4 border-t border-white/5 space-y-1">
+                <p className="px-4 py-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Kurumsal</p>
+                <Link 
+                  to="/hakkimizda" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-xs font-bold text-slate-400 hover:text-white transition-all uppercase tracking-widest"
+                >
+                  Hakkımızda
+                </Link>
+                <Link 
+                  to="/gizlilik-politikasi" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-xs font-bold text-slate-400 hover:text-white transition-all uppercase tracking-widest"
+                >
+                  Gizlilik Politikası
+                </Link>
+                <Link 
+                  to="/kullanim-kosullari" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-xs font-bold text-slate-400 hover:text-white transition-all uppercase tracking-widest"
+                >
+                  Kullanım Şartları
+                </Link>
+                <Link 
+                  to="/site-haritasi" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-xs font-bold text-slate-400 hover:text-white transition-all uppercase tracking-widest"
+                >
+                  Site Haritası
+                </Link>
+              </div>
               
               {isLoggedIn && (
                 <div className="flex items-center justify-between p-4 mt-2 border-t border-white/5 pt-6">

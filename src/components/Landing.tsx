@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import BlogSnippet from './BlogSnippet';
 import { 
   Calculator, 
   TrendingUp, 
@@ -18,8 +19,8 @@ export default function Landing() {
     {
       id: 'salary',
       path: '/maas-vergi-hesaplama',
-      title: 'Maaş & Vergi',
-      description: '2026 güncel vergi dilimlerine göre brütten nete maaş ve işveren maliyeti hesaplayın.',
+      title: 'Maaş Vergi Hesaplama',
+      description: '2026 güncel vergi dilimlerine göre brütten nete maaş ve gelir vergisi hesaplayın.',
       icon: <Calculator className="text-indigo-400" size={28} />,
       badge: 'GÜNCEL',
       color: 'from-indigo-500/20 to-indigo-600/5',
@@ -28,7 +29,7 @@ export default function Landing() {
     {
       id: 'calculators',
       path: '/pazar-kar-hesaplama',
-      title: 'Pazaryeri Kâr',
+      title: 'Pazaryeri Kar Hesaplama',
       description: 'Trendyol, Hepsiburada ve Amazon için komisyon, kargo ve KDV dahil net kâr analizi yapın.',
       icon: <Smartphone className="text-emerald-400" size={28} />,
       badge: 'POPÜLER',
@@ -76,12 +77,12 @@ export default function Landing() {
     },
     {
       q: 'Pazaryeri komisyonları nasıl belirleniyor?',
-      a: 'Trendyol, Amazon ve Hepsiburada gibi platformların en güncel kategori bazlı komisyon ve kargo baremlerini takip ediyoruz.'
+      a: 'Trendyol, Amazon ve Hepsiburada gibi platformların en güncel kategori bazlı komisyon oranlarını takip ediyoruz.'
     }
   ];
 
   return (
-    <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto flex flex-col gap-32">
+    <div className="pt-24 pb-0 px-6 max-w-7xl mx-auto flex flex-col gap-24">
       {/* Hero Section */}
       <section className="text-center space-y-8 max-w-4xl mx-auto relative px-4">
         <motion.div 
@@ -134,9 +135,9 @@ export default function Landing() {
 
       {/* Tools Grid - Centered & Refined */}
       <section className="space-y-12">
-        <div className="text-center space-y-4">
+        <div className="text-left space-y-4">
           <h2 className="text-3xl font-black text-white uppercase tracking-[0.2em]">Finansal Araçlar</h2>
-          <div className="w-20 h-1 bg-gradient-to-r from-indigo-500 to-transparent mx-auto rounded-full" />
+          <div className="w-20 h-1 bg-gradient-to-r from-indigo-500 to-transparent rounded-full" />
         </div>
         
         <div className="flex flex-wrap justify-center gap-8">
@@ -193,7 +194,7 @@ export default function Landing() {
             </div>
             
             <p className="text-xl text-slate-400 font-medium leading-relaxed max-w-lg">
-              Mevzuat değişimlerini anlık takip ediyoruz. Asgari ücret güncellemeleri, gelir vergisi dilimleri ve kargo baremleri sisteme otomatik işlenir.
+              Mevzuat değişimlerini anlık takip ediyoruz. Asgari ücret güncellemeleri ve gelir vergisi dilimleri sisteme otomatik işlenir.
             </p>
             
             <div className="grid grid-cols-2 gap-8">
@@ -208,7 +209,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[48px] p-8 shadow-2xl relative">
+          <div className="bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[48px] p-6 md:p-8 shadow-2xl relative w-full overflow-hidden">
             <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
               <div className="flex gap-2">
                 <div className="w-3 h-3 rounded-full bg-rose-500/50" />
@@ -236,14 +237,14 @@ export default function Landing() {
                 <span className="text-sm font-black text-emerald-400">GÜNCELLENDİ</span>
               </div>
               
-              <div className="p-6 bg-indigo-500/10 rounded-3xl border border-indigo-500/20">
-                <div className="flex gap-4 items-center">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg">
-                    <Calculator size={24} />
+              <div className="p-4 sm:p-6 bg-indigo-500/10 rounded-3xl border border-indigo-500/20 overflow-hidden">
+                <div className="flex gap-3 sm:gap-4 items-center">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shrink-0">
+                    <Calculator size={20} className="sm:w-6 sm:h-6" />
                   </div>
-                  <div>
-                    <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hesaplanan</div>
-                    <div className="text-xl font-black text-white">₺32,450.00</div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 truncate">Hesaplanan</div>
+                    <div className="text-lg sm:text-xl font-black text-white truncate">₺32,450.00</div>
                   </div>
                 </div>
               </div>
@@ -255,7 +256,7 @@ export default function Landing() {
       {/* FAQ Section (New Section) */}
       <section className="max-w-4xl mx-auto w-full space-y-16">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl font-black text-white uppercase tracking-[0.2em]">Sıkça Sorulan Sorular</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-[0.1em] sm:tracking-[0.2em] whitespace-nowrap">Sıkça Sorulan Sorular</h2>
           <p className="text-slate-500 font-medium">Karlısın hakkında merak edilenler</p>
         </div>
         
@@ -279,25 +280,42 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Blog Snippet Section */}
+      <BlogSnippet />
+
       {/* Final CTA Section */}
-      <section className="text-center py-32 border-t border-white/5 space-y-12 relative overflow-hidden px-4">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.1),transparent)] pointer-events-none" />
+      <section className="relative pt-32 pb-24 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden border-t border-white/5 bg-slate-950/30">
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl h-full bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.15),transparent_70%)] pointer-events-none" />
         
-        <h2 className="text-4xl md:text-6xl font-black text-white max-w-3xl mx-auto leading-tight italic">
-          Rakamlarla Barışma <br />
-          Zamanı Geldi.
-        </h2>
-        
-        <div className="flex flex-col md:flex-row justify-center items-center gap-6">
-           <Link 
-             to="/maas-vergi-hesaplama"
-             className="w-full md:w-auto px-12 py-6 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white rounded-3xl font-black text-sm uppercase tracking-widest shadow-[0_20px_50px_rgba(99,102,241,0.3)] hover:scale-105 active:scale-95 transition-all"
-           >
-             Hemen Ücretsiz Deneyin
-           </Link>
-           <p className="text-slate-500 font-bold text-xs uppercase tracking-widest shrink-0">
-             Kayıt Zorunlu Değildir
-           </p>
+        <div className="relative z-10 space-y-16 text-center px-6">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-4xl md:text-8xl font-black text-white max-w-5xl mx-auto leading-[1.1] italic"
+          >
+            Rakamlarla Barışma <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Zamanı Geldi.</span>
+          </motion.h2>
+          
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="flex flex-col sm:flex-row justify-center items-center gap-10"
+          >
+            <Link 
+              to="/maas-vergi-hesaplama"
+              className="w-full sm:w-auto px-16 py-7 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white rounded-3xl font-black text-sm uppercase tracking-[0.3em] shadow-[0_20px_60px_rgba(99,102,241,0.4)] hover:scale-105 active:scale-95 transition-all group relative overflow-hidden text-center"
+            >
+              <span className="relative z-10">Hemen Ücretsiz Deneyin</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+            </Link>
+            <p className="text-slate-500 font-bold text-[11px] uppercase tracking-[0.4em] shrink-0">
+              Kayıt Zorunlu Değildir
+            </p>
+          </motion.div>
         </div>
       </section>
     </div>

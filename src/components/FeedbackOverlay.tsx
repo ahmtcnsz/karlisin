@@ -54,7 +54,7 @@ const FeedbackOverlay: React.FC = () => {
 
   return (
     <div 
-      className="fixed right-6 z-[90] transition-all duration-500 ease-out"
+      className="fixed right-4 sm:right-6 z-[90] transition-all duration-500 ease-out"
       style={{ bottom: `${feedbackBottom}px` }}
     >
       <AnimatePresence>
@@ -65,7 +65,7 @@ const FeedbackOverlay: React.FC = () => {
             exit={{ opacity: 0, scale: 0.8 }}
             className="absolute bottom-20 right-0 whitespace-nowrap bg-indigo-600 text-white px-4 py-2 rounded-2xl shadow-xl text-sm font-bold flex items-center gap-2"
           >
-            <span>Geri bildirimleriniz bizim için değerli</span>
+            <span className="max-w-[180px] sm:max-w-none truncate sm:whitespace-normal">Geri bildirimleriniz bizim için değerli</span>
             <div className="absolute -bottom-1.5 right-8 w-3 h-3 bg-indigo-600 rotate-45" />
           </motion.div>
         )}
@@ -75,7 +75,7 @@ const FeedbackOverlay: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9, y: 20, transformOrigin: 'bottom right' }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="absolute bottom-20 right-0 w-[350px] sm:w-[400px] bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden"
+            className="absolute bottom-20 right-0 w-[calc(100vw-32px)] sm:w-[400px] bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden"
           >
             <div className="p-6 pb-0 flex justify-between items-start">
               <div className="flex gap-4">
@@ -163,11 +163,11 @@ const FeedbackOverlay: React.FC = () => {
           setShowFeedbackTooltip(false);
         }}
         id="feedback-toggle"
-        className="flex items-center gap-3 px-6 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all relative overflow-hidden"
+        className="flex items-center gap-3 px-4 sm:px-6 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity" />
-        <MessageSquare size={24} className="fill-white/20" />
-        <span className="text-lg">Geri Bildirim</span>
+        <MessageSquare size={24} className="fill-white/20 shrink-0" />
+        <span className="text-lg hidden sm:inline">Geri Bildirim</span>
       </motion.button>
     </div>
   );

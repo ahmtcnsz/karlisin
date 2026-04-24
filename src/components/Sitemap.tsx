@@ -82,18 +82,7 @@ export default function Sitemap() {
         ))}
       </div>
 
-      <div className="p-12 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-[48px] border border-white/10 text-center space-y-6">
-        <h3 className="text-2xl font-black text-white">Aradığınızı bulamadınız mı?</h3>
-        <p className="text-slate-400 font-medium max-w-md mx-auto italic">
-          Platformumuzu sürekli geliştiriyoruz. Yeni bir özellik öneriniz varsa bize bildirin!
-        </p>
-        <button 
-          onClick={() => (window as any).toggleFeedback?.()}
-          className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/10"
-        >
-          Öneri Gönder
-        </button>
-      </div>
+
     </div>
   );
 }

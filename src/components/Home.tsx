@@ -217,7 +217,7 @@ export default function Home() {
             transition={{ delay: 0.2 }}
             className="text-lg md:text-xl text-slate-400 max-w-xl mx-auto mb-12 font-medium"
           >
-            Pazaryeri komisyonları, kargo maliyetleri ve ürün maliyeti sonrası cebine ne kalacağını anında öğrenin.
+            Trendyol, Amazon ve Hepsiburada için en güncel Pazaryeri Kar ve Komisyon Hesaplama aracı. Net kârınızı anında analiz edin.
           </motion.p>
 
           {/* Calculator Card */}

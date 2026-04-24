@@ -417,6 +417,34 @@ export default function Blog() {
             />
           </div>
 
+          <div className="mt-16 pt-8 border-t border-white/10">
+            <h3 className="text-2xl font-black text-white mb-8 italic uppercase tracking-wider">İlginizi Çekebilir</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {articles
+                .filter(a => a.id !== selectedArticle.id)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 2)
+                .map(related => (
+                  <motion.div
+                    key={related.id}
+                    onClick={() => {
+                      setSelectedArticle(related);
+                      window.scrollTo(0, 0);
+                    }}
+                    className="group bg-white/5 rounded-3xl border border-white/5 hover:border-indigo-500/30 overflow-hidden cursor-pointer transition-all"
+                  >
+                    <div className="aspect-[21/9] overflow-hidden">
+                      <img src={related.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={related.title} />
+                    </div>
+                    <div className="p-6">
+                      <h4 className="text-white font-bold group-hover:text-indigo-400 transition-colors line-clamp-1">{related.title}</h4>
+                      <p className="text-slate-400 text-xs mt-2 line-clamp-2">{related.excerpt}</p>
+                    </div>
+                  </motion.div>
+                ))}
+            </div>
+          </div>
+
           <div className="mt-16 pt-8 border-t border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white">K</div>
