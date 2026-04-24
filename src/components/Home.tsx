@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bolt, ChevronDown, Verified, Timer, BarChart3, Smartphone, RefreshCw, Shield, ArrowUpRight, TrendingUp, AlertCircle, FileSpreadsheet, Percent, Info, Calculator, Truck, Wrench, MessageSquare, X, Mail, Send } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -178,8 +179,50 @@ export default function Home() {
 
   const marginCat = getMarginCategory(result.margin);
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Pazaryeri kâr hesaplama nasıl yapılır?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ürün alış fiyatı üzerine pazaryeri komisyonu, kargo ücreti, KDV ve diğer operasyonel giderler eklenerek net kâr marjınız hesaplanır. Karlısın aracı tüm bu kalemleri 2026 güncel oranlarıyla otomatik hesaplar."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Trendyol ve Hepsiburada komisyon oranları 2026'da ne kadar?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Komisyon oranları kategori bazlı değişmekle birlikte genellikle %5 ile %25 arasındadır. Karlısın üzerinden güncel listeye ulaşabilir ve anlık hesaplama yapabilirsiniz."
+        }
+      }
+    ]
+  };
+
+  const softwareSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Karlısın Pazaryeri Kâr Hesaplayıcı",
+    "operatingSystem": "All",
+    "applicationCategory": "BusinessApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "TRY"
+    }
+  };
+
   return (
     <div className="flex-grow">
+      <Helmet>
+        <title>Pazaryeri Kâr Hesaplama 2026 - Trendyol & Hepsiburada Komisyon</title>
+        <meta name="description" content="Trendyol, Hepsiburada ve Amazon için kargo, komisyon ve KDV dahil net kâr hesaplayın. En doğru fiyatlandırma stratejisi için ücretsiz araç." />
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify(softwareSchema)}</script>
+      </Helmet>
       {/* Hero Section */}
       <section className="relative pt-20 pb-16 px-6 overflow-hidden">
         <div className="max-w-7xl mx-auto text-center relative z-10">
@@ -196,19 +239,10 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 max-w-4xl mx-auto leading-[1.3] md:leading-[1.2] tracking-tight text-center flex flex-col items-center justify-center px-4"
+            className="text-4xl md:text-5xl lg:text-7xl font-black text-white mb-6 max-w-5xl mx-auto leading-[1.3] md:leading-[1.2] tracking-tight text-center flex flex-col items-center justify-center px-4"
           >
-            {activeTab === 'profit' ? (
-               <>
-                <span className="py-2">Net kârını</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 italic px-2 py-2">5 saniyede hesapla</span>
-              </>
-            ) : (
-              <>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 italic px-2 py-2">Kaça Satmalıyım?</span>
-                <span className="py-2">diye düşünme</span>
-              </>
-            )}
+            Pazaryeri Kâr Hesaplama 2026: <br/>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 italic px-2 py-2">Trendyol & Hepsiburada.</span>
           </motion.h1>
           
           <motion.p 
@@ -668,7 +702,7 @@ export default function Home() {
         <div className="flex flex-col gap-16 items-center">
           <div className="space-y-8 max-w-4xl mx-auto">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.2] tracking-tight">
-              Brütten Nete Maaş Hesaplama ve <span className="text-indigo-400 italic">Finansal Analiz</span>
+              2026 Vergi Dilimleri ve <span className="text-indigo-400 italic">Maaş Hesaplama</span>
             </h2>
             <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
               Karlısın olarak, finansal özgürlüğe giden yolun doğru veriden geçtiğine inanıyoruz. 
@@ -868,6 +902,29 @@ export default function Home() {
           </div>
         )}
       </AnimatePresence>
+
+      <section className="py-24 px-6 border-t border-white/5 bg-slate-950/20">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 text-slate-400">
+            <div className="space-y-8">
+              <h2 className="text-3xl font-black text-white uppercase tracking-tight">Trendyol Komisyon Oranları Listesi 2026</h2>
+              <p className="text-lg leading-relaxed text-left">
+                2026 yılında Trendyol satışlarınızda doğru fiyatlandırma yapmak için kategori bazlı komisyon oranlarını, 
+                operasyonel giderleri ve KDV kalemlerini doğru hesaplamalısınız. Karlısın ile e-ticaret net kâr marjı analizi yaparak, 
+                ürününüzün gerçek kârlılığını saniyeler içinde görebilirsiniz.
+              </p>
+            </div>
+            <div className="space-y-8">
+              <h2 className="text-3xl font-black text-white uppercase tracking-tight">Pazaryeri Kargo Maliyeti Hesaplama</h2>
+              <p className="text-lg leading-relaxed text-left">
+                Hepsiburada ve Amazon gibi pazaryerlerinde satış yaparken ürün maliyet analizi sadece ürünın alış fiyatı değildir. 
+                Kargo maliyetleri, kampanya katılım payları ve reklam giderleri kârınızı doğrudan etkiler. 
+                Ücretsiz aracımızla her ürün için en doğru fiyatı belirleyin ve rekabette öne geçin.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

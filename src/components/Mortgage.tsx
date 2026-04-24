@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { TrendingUp, PieChart, Bell, Wallet, LineChart, CheckCircle2, Loader2 } from 'lucide-react';
 import { db } from '../lib/firebase';
@@ -85,6 +86,10 @@ export default function Mortgage() {
 
   return (
     <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto min-h-[80vh] flex flex-col items-center justify-center text-center text-sans">
+      <Helmet>
+        <title>2026 Temettü Takibi - Temettü Verimi & Portföy Yönetimi</title>
+        <meta name="description" content="Hangi hisse ne zaman temettü veriyor? Temettü verimi ve yıllık pasif gelir hesaplama aracımız çok yakında. Hemen bekleme listesine katılın." />
+      </Helmet>
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}

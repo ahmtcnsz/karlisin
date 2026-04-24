@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
 import BlogSnippet from './BlogSnippet';
 import { 
@@ -83,6 +84,10 @@ export default function Landing() {
 
   return (
     <div className="pt-24 pb-0 px-6 max-w-7xl mx-auto flex flex-col gap-24">
+      <Helmet>
+        <title>Karlısın - 2026 Ücretsiz Finansal Hesaplama Araçları</title>
+        <meta name="description" content="2026 Maaş hesaplama, Trendyol & Hepsiburada kâr analizi ve yatırım araçları. Finansal kararlarınızı veriye dayalı, hızlı ve ücretsiz alın." />
+      </Helmet>
       {/* Hero Section */}
       <section className="text-center space-y-8 max-w-4xl mx-auto relative px-4">
         <motion.div 

@@ -72,7 +72,7 @@ export default function About() {
             className="p-12 md:p-16 bg-white/5 backdrop-blur-md rounded-[48px] border border-white/10 hover:border-indigo-500/30 transition-all group flex flex-col items-center gap-10 text-center max-w-5xl w-full"
           >
             <div className="w-24 h-24 bg-white/5 rounded-[32px] flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform shrink-0 shadow-lg">
-              {React.cloneElement(section.icon as React.ReactElement, { size: 40 })}
+              {React.cloneElement(section.icon as React.ReactElement<any>, { size: 40 })}
             </div>
             <div className="space-y-6">
               <h3 className="text-3xl md:text-4xl font-black text-white group-hover:text-indigo-400 transition-colors uppercase tracking-tight">

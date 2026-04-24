@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Calculator, 
@@ -135,7 +136,7 @@ export default function SalaryCalculator() {
   }, []);
 
   const MIN_WAGE_BRUT = 30002.50; 
-  const TAX_BRACKETS = [230000, 580000, 3000000, 12000000];
+  const TAX_BRACKETS = [190000, 400000, 1500000, 5300000];
   const TAX_RATES = [0.15, 0.20, 0.27, 0.35, 0.40];
   const STAMP_TAX_RATE = 0.00759;
 
@@ -425,8 +426,50 @@ export default function SalaryCalculator() {
     XLSX.writeFile(wb, `Karlisin_Dashboard_${year}.xlsx`);
   };
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Maaş nasıl hesaplanır?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Maaşınızın brüt tutarından %14 SGK işçi payı ve %1 işsizlik sigortası payı düşülür. Kalan gelir vergisi matrahı üzerinden, 2026 gelir vergisi dilimlerine göre (sırasıyla %15, %20, %27, %35, %40) vergi ve damga vergisi kesilerek net maaşınıza ulaşılır."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Vergi dilimi nedir?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yıl içinde elde ettiğiniz kümülatif gelir vergisi matrahına göre uygulanan farklı vergi oranlarıdır. 2026 yılında dilimler 190.000 TL'den başlayarak kademeli olarak artmaktadır."
+        }
+      }
+    ]
+  };
+
+  const softwareSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Karlısın Maaş Hesaplama",
+    "operatingSystem": "All",
+    "applicationCategory": "FinancialApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "TRY"
+    }
+  };
+
   return (
     <div className="flex-grow">
+      <Helmet>
+        <title>2026 Bürütten Nete Maaş Hesaplama - Vergi Dilimi Takibi</title>
+        <meta name="description" content="2026 güncel vergi dilimlerine göre net maaşınızı kuruşu kuruşuna hesaplayın. %20 ve %27'lik dilimlere hangi ay gireceğinizi anında görün." />
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify(softwareSchema)}</script>
+      </Helmet>
       {/* Dashboard Header */}
       <section className="relative pt-24 pb-12 px-6 overflow-hidden">
         <div className="max-w-7xl mx-auto text-left relative z-10">
@@ -442,15 +485,15 @@ export default function SalaryCalculator() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-end mb-16">
                 <div>
                   <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-[0.9] tracking-tighter">
-                    Maaş Vergi <br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Hesaplama.</span>
+                    2026 Maaş Hesaplama: <br/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Bürütten Nete Vergi Dilimi Analizi.</span>
                   </h1>
                   <div className="flex flex-wrap items-center gap-4">
                     <p className="text-xl text-slate-400 font-medium max-w-lg leading-relaxed">
-                      2026 vergi mevzuatı ve güncel ekonomik verilere göre optimize edilmiş maaş yönetim sistemi.
+                      2026 vergi mevzuatı ve güncel kümülatif matrah verilerine göre optimize edilmiş asgari ücret net hesaplama ve maaş yönetim sistemi.
                     </p>
                     <div className="px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center gap-2">
-                       <Shield size={12} className="text-indigo-400" />
+                       <Shield size={12} className="text-indigo-400" aria-label="Güvenlik İkonu - Karlısın" />
                        <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">2026 Mevzuatı</span>
                     </div>
                   </div>
@@ -643,7 +686,9 @@ export default function SalaryCalculator() {
                             <AlertCircle size={22} className={nextBracketInfo.isEmpty ? "" : "animate-pulse"} />
                           </div>
                           <div>
-                            <h4 className="text-sm font-black text-white uppercase tracking-widest leading-none">Vergi Dilimi Dedektifi</h4>
+                            <h2 className="text-2xl font-black text-white tracking-tighter">
+                      Vergi Dilimleri Öngörüsü & Maaş Kaybı Analizi
+                    </h2>
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Sizin için geleceği takip ediyoruz</p>
                           </div>
                           <span className="ml-2 px-2 py-0.5 bg-indigo-400 text-black text-[8px] font-black rounded uppercase tracking-tighter shadow-lg shadow-indigo-500/20">PRO AKTİF</span>
@@ -1257,7 +1302,29 @@ export default function SalaryCalculator() {
               </p>
             </div>
           </div>
-        </div>
+            <div className="mt-24 border-t border-white/5 pt-16">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-slate-400">
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">Vergi Dilimleri Nasıl Hesaplanır?</h2>
+                  <p className="text-sm leading-relaxed text-left">
+                    2026 yılı gelir vergisi tarifesi, kümülatif gelir matrahınız üzerinden kademeli olarak hesaplanır. 
+                    Maaşınızdan SGK ve İşsizlik primi düşüldükten sonra kalan tutar vergi matrahınızı oluşturur. 
+                    Bu matrah yıl boyunca toplandıkça (kümülatif matrah), girdiğiniz dilime göre vergi oranınız %15'ten %40'a kadar çıkabilir. 
+                    Karlısın ile kümülatif matrah hesapla işlemini kuruşu kuruşuna gerçekleştirebilirsiniz.
+                  </p>
+                </div>
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">Maaş Kesintileri Listesi</h2>
+                  <p className="text-sm leading-relaxed text-left">
+                    Bordronuzda yer alan temel kalemler şunlardır: SGK İşçi Payı (%14), İşsizlik Sigortası (%1), 
+                    Gelir Vergisi ve Damga Vergisi. Asgari ücret net hesaplama 2026 verilerine göre, 
+                    asgari ücretli her çalışanın maaşında gelir ve damga vergisi istisnası uygulanmaktadır. 
+                    Bu hesaplamada yasal tüm istisnalar anlık olarak uygulanmaktadır.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
       </section>
     </div>
   );
