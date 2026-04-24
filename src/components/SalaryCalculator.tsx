@@ -15,6 +15,7 @@ import {
   Target,
   PiggyBank,
   TrendingUp,
+  ShieldCheck,
   Coins,
   Coffee,
   Wallet,
@@ -348,21 +349,40 @@ export default function SalaryCalculator() {
     };
   })();
 
-  const chartData = [
-    { name: 'Net Maaş', value: totalTakeHome, color: '#10B981' },
-    { name: 'Gelir Vergisi', value: totalTaxes, color: '#F43F5E' },
-    { name: 'SGK Primi', value: totalSGK, color: '#6366F1' },
-  ];
-
-  const barChartData = calculations.map(calc => ({
-    month: calc.month,
-    net: calc.totalNet,
-    tax: calc.incomeTax + calc.stampTax
-  }));
-
   // Purchasing Power Estimates based on selected month
   const currentMonthCalc = calculations[selectedMonthIndex] || calculations[0];
   const monthlyNet = currentMonthCalc?.totalNet || 0;
+
+  const barChartData = calculations.length > 0 ? calculations.map(calc => ({
+    month: calc.month,
+    net: calc.totalNet,
+    tax: calc.incomeTax + calc.stampTax
+  })) : [
+    { month: 'Oca', net: 100, tax: 20 },
+    { month: 'Şub', net: 95, tax: 25 },
+    { month: 'Mar', net: 90, tax: 30 },
+    { month: 'Nis', net: 85, tax: 35 },
+    { month: 'May', net: 80, tax: 40 },
+    { month: 'Haz', net: 80, tax: 40 },
+    { month: 'Tem', net: 75, tax: 45 },
+    { month: 'Ağu', net: 75, tax: 45 },
+    { month: 'Eyl', net: 75, tax: 45 },
+    { month: 'Eki', net: 70, tax: 50 },
+    { month: 'Kas', net: 70, tax: 50 },
+    { month: 'Ara', net: 70, tax: 50 },
+  ];
+
+  const chartData = calculations.length > 0 ? [
+    { name: 'Net Maaş', value: currentMonthCalc?.totalNet || 0, color: '#10B981' },
+    { name: 'Gelir Vergisi', value: currentMonthCalc?.incomeTax || 0, color: '#F43F5E' },
+    { name: 'SGK Primi', value: totalSGK / 12, color: '#6366F1' },
+  ] : [
+    { name: 'Net Maaş', value: 70, color: '#10B981' },
+    { name: 'Gelir Vergisi', value: 20, color: '#F43F5E' },
+    { name: 'SGK Primi', value: 10, color: '#6366F1' },
+  ];
+
+  const isDataEmpty = !targetAmount || calculations.length === 0;
   
   const gramAltinPrice = rates.gramAltin;
   const coffeePrice = 110;
@@ -462,7 +482,7 @@ export default function SalaryCalculator() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-16">
             {/* Input Card */}
             <motion.div 
-              className="xl:col-span-1 bg-slate-900/60 backdrop-blur-2xl p-8 rounded-[40px] border border-white/5 shadow-2xl space-y-8"
+              className="xl:col-span-1 bg-slate-900/60 backdrop-blur-2xl p-8 rounded-[40px] border border-white/5 shadow-2xl space-y-8 h-full"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
             >
@@ -568,7 +588,7 @@ export default function SalaryCalculator() {
             </motion.div>
 
             {/* Main Result Area */}
-            <div className="xl:col-span-2 space-y-8">
+            <div className="xl:col-span-2 flex flex-col gap-8">
               {/* Top Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <motion.div 
@@ -609,16 +629,14 @@ export default function SalaryCalculator() {
                 </motion.div>
               </div>
 
-              {/* Chart and Breakdown Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                {/* Akıllı Vergi Takvimi Card (New) */}
-                {nextBracketInfo && (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="lg:col-span-5 bg-gradient-to-br from-indigo-500/10 to-purple-500/5 backdrop-blur-md border border-indigo-500/20 rounded-[40px] p-8 overflow-hidden relative group"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              {/* Akıllı Vergi Takvimi Card (Full Width) */}
+              {nextBracketInfo && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-gradient-to-br from-indigo-500/10 to-purple-500/5 backdrop-blur-md border border-indigo-500/20 rounded-[40px] p-8 overflow-hidden relative group h-full flex flex-col justify-between"
+                >
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <div className="w-10 h-10 bg-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400">
@@ -683,119 +701,183 @@ export default function SalaryCalculator() {
                       </div>
                     </div>
 
-                    {nextBracketInfo.netDrop > 0 && !nextBracketInfo.isEmpty && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-6 flex items-start gap-4 p-5 bg-rose-500/10 border border-rose-500/20 rounded-[30px]"
-                      >
-                         <div className="w-10 h-10 bg-rose-500/20 rounded-2xl flex items-center justify-center text-rose-400 shrink-0">
+                    {/* Kritik Uyarı Alanı (Her Zaman Sabit) */}
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`mt-6 flex items-start gap-4 p-5 rounded-[30px] border transition-all duration-500 ${
+                        nextBracketInfo.isEmpty 
+                          ? 'bg-white/5 border-white/5 opacity-40' 
+                          : nextBracketInfo.netDrop > 0 
+                            ? 'bg-rose-500/10 border-rose-500/20' 
+                            : 'bg-emerald-500/10 border-emerald-500/20'
+                      }`}
+                    >
+                       <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
+                         nextBracketInfo.isEmpty 
+                           ? 'bg-white/10 text-slate-500' 
+                           : nextBracketInfo.netDrop > 0 
+                             ? 'bg-rose-500/20 text-rose-400' 
+                             : 'bg-emerald-500/20 text-emerald-400'
+                       }`}>
+                         {nextBracketInfo.isEmpty || nextBracketInfo.netDrop > 0 ? (
                            <TrendingUp className="rotate-180" size={20} />
-                         </div>
-                         <div>
-                            <p className="text-sm font-black text-white mb-1">Net Maaş Kaybı Uyarısı</p>
+                         ) : (
+                           <ShieldCheck size={20} />
+                         )}
+                       </div>
+                       <div>
+                          <p className={`text-sm font-black mb-1 ${
+                            nextBracketInfo.isEmpty ? 'text-slate-500' : 'text-white'
+                          }`}>
+                            {nextBracketInfo.isEmpty 
+                              ? 'Net Maaş Kaybı Analizi' 
+                              : nextBracketInfo.netDrop > 0 
+                                ? 'Net Maaş Kaybı Uyarısı' 
+                                : 'Maaş Koruma Durumu'}
+                          </p>
+                          
+                          {nextBracketInfo.isEmpty ? (
+                            <p className="text-xs font-medium text-slate-600 leading-relaxed italic">
+                              Maaş bilginizi girdiğinizde; yıl içindeki vergi dilimi geçişlerini, hangi ayda ne kadar net maaş kaybı yaşayacağınızı burada proaktif olarak görebileceksiniz.
+                            </p>
+                          ) : nextBracketInfo.netDrop > 0 ? (
                             <p className="text-xs font-medium text-slate-400 leading-relaxed">
                               Dikkat! <span className="text-white font-black">{nextBracketInfo.hitMonth}</span> ayında kümülatif matrahınız <span className="text-white font-black">{formatCurrency(nextBracketInfo.limit)}</span> sınırını aşacağı için vergi diliminiz <span className="text-rose-400 font-bold">%{nextBracketInfo.nextRate}</span>'e yükselecek. Ay bazında net kazancınız <span className="text-rose-400 font-black">{formatCurrency(nextBracketInfo.netDrop)}</span> azalacak.
                             </p>
-                         </div>
-                      </motion.div>
-                    )}
+                          ) : (
+                            <p className="text-xs font-medium text-slate-400 leading-relaxed">
+                              Tebrikler! Mevcut maaş profilinizle yıl boyunca <span className="text-emerald-400 font-black">%{nextBracketInfo.currentRate}</span> vergi diliminde kalıyorsunuz. Herhangi bir net maaş kaybı öngörülmemektedir.
+                            </p>
+                          )}
+                       </div>
+                    </motion.div>
 
                     <AlertCircle className="absolute -right-16 -bottom-16 opacity-[0.03] -rotate-12 text-white" size={320} />
                   </motion.div>
                 )}
+            </div>
+          </div>
 
-                {/* Maaş Seyri (New) */}
-                <div className="lg:col-span-2 bg-slate-950/40 rounded-[40px] border border-white/5 p-8">
-                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Aylık Net Maaş Seyri</h4>
-                  <div className="w-full h-48">
+          {/* Yeni: Aylık Analiz Grid (Sola doğru genişleyen ve tam genişlikte olan alan) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 w-full">
+                {/* Maaş Seyri */}
+                <div className={`md:col-span-1 bg-slate-950/40 rounded-[40px] border border-white/5 p-8 flex flex-col h-full group hover:border-indigo-500/20 transition-all ${isDataEmpty ? 'opacity-40' : ''}`}>
+                  <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+                    <ArrowUpRight className="text-emerald-400" size={14} />
+                    Aylık Net Maaş Seyri
+                  </h4>
+                  <div className="w-full h-56 mt-auto">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={barChartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
                         <XAxis 
                           dataKey="month" 
                           axisLine={false} 
                           tickLine={false} 
-                          tick={{ fill: '#64748b', fontSize: 8, fontWeight: 700 }}
+                          tick={{ fill: '#475569', fontSize: 7, fontWeight: 800 }}
+                          interval={1}
                         />
                         <YAxis hide />
-                        <RechartsTooltip 
-                          contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                          labelStyle={{ color: '#94a3b8', fontWeight: 900, fontSize: 10, marginBottom: 4 }}
-                          itemStyle={{ fontSize: '11px', fontWeight: '900' }}
-                          formatter={(value: number) => [formatCurrency(value), 'Net Maaş']}
-                        />
+                        {!isDataEmpty && (
+                          <RechartsTooltip 
+                            contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                            labelStyle={{ color: '#94a3b8', fontWeight: 900, fontSize: 10, marginBottom: 4 }}
+                            itemStyle={{ fontSize: '11px', fontWeight: '900' }}
+                            formatter={(value: number) => [formatCurrency(value), 'Net Maaş']}
+                          />
+                        )}
                         <Bar 
                           dataKey="net" 
                           fill="#10B981" 
-                          radius={[4, 4, 0, 0]}
-                          barSize={20}
+                          radius={[6, 6, 0, 0]}
+                          barSize={12}
                         />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-[9px] font-bold text-slate-600 mt-4 text-center uppercase tracking-tighter">
-                    Yıl boyu net maaş değişim grafiği
+                  <p className="text-[8px] font-bold text-slate-700 mt-6 text-center uppercase tracking-[0.2em]">
+                    {isDataEmpty ? 'Girdi Bekleniyor...' : 'YIL BOYU NET MAAŞ DEĞİŞİM GRAFİĞİ'}
                   </p>
                 </div>
 
-                <div className="lg:col-span-1 bg-slate-950/40 rounded-[40px] border border-white/5 p-8 flex flex-col items-center justify-center">
-                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Dağılım</h4>
-                  <div className="w-full h-40">
+                {/* Dağılım */}
+                <div className={`md:col-span-1 bg-slate-950/40 rounded-[40px] border border-white/5 p-8 flex flex-col items-center h-full group hover:border-indigo-500/20 transition-all ${isDataEmpty ? 'opacity-40' : ''}`}>
+                  <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-12 flex items-center gap-2 self-start">
+                    <ArrowUpRight className="text-amber-400" size={14} />
+                    DAĞILIM
+                  </h4>
+                  <div className="w-full h-56 relative flex items-center justify-center">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={chartData}
-                          innerRadius={45}
-                          outerRadius={65}
-                          paddingAngle={8}
+                          innerRadius={55}
+                          outerRadius={85}
+                          paddingAngle={10}
                           dataKey="value"
                           stroke="none"
+                          cornerRadius={10}
                         >
                           {chartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip 
-                          contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                          itemStyle={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }}
-                        />
+                        {!isDataEmpty && (
+                          <RechartsTooltip 
+                            contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                            itemStyle={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }}
+                            formatter={(value: number) => [formatCurrency(value), '']}
+                          />
+                        )}
                       </PieChart>
                     </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">Gider Dağılımı</span>
+                      <span className="text-sm font-black text-white">{isDataEmpty ? '--' : '%100'}</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-2 mt-4 w-full">
-                    {chartData.slice(0, 2).map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
-                        <span className="text-[8px] font-black text-slate-500 uppercase">{item.name}</span>
+                  <div className="flex flex-col gap-3 mt-auto w-full max-w-[140px]">
+                    {chartData.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between group/item">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="text-[9px] font-black text-slate-500 uppercase group-hover/item:text-slate-300 transition-colors">{item.name}</span>
+                        </div>
+                        <span className="text-[9px] font-black text-white">
+                          {isDataEmpty ? '--' : `%${((item.value / (chartData.reduce((a, b) => a + b.value, 0) || 1)) * 100).toFixed(0)}`}
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="lg:col-span-2 bg-slate-950/40 rounded-[40px] border border-white/5 p-8">
-                   <div className="space-y-6">
-                      <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                        <ArrowUpRight className="text-indigo-400" size={18} />
+                {/* Detaylı Analiz */}
+                <div className="md:col-span-1 bg-slate-950/40 rounded-[40px] border border-white/5 p-8 h-full group hover:border-indigo-500/20 transition-all">
+                   <div className="space-y-8 h-full flex flex-col">
+                      <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
+                        <ArrowUpRight className="text-indigo-400" size={14} />
                         DETAYLI ANALİZ
                       </h4>
-                      <div className="space-y-4">
+                      
+                      <div className="space-y-6 flex-grow">
                         {[
-                          { label: 'SGK + İşsizlik İşçi', value: (calculations[0]?.sgkEmployee + calculations[0]?.unemploymentEmployee), color: 'bg-indigo-500' },
-                          { label: 'Gelir Vergisi', value: calculations[0]?.incomeTax, color: 'bg-rose-500' },
-                          { label: 'Damga Vergisi', value: calculations[0]?.stampTax, color: 'bg-amber-500' },
-                          { label: 'Vergi İstisnaları', value: (calculations[0]?.minWageIncomeTaxExemption + calculations[0]?.minWageStampTaxExemption), color: 'bg-emerald-500' },
+                          { label: 'SGK + İşsizlik İşçİ', value: (calculations[0]?.sgkEmployee + calculations[0]?.unemploymentEmployee) || 0, color: '#6366F1' },
+                          { label: 'Gelir Vergisİ', value: calculations[0]?.incomeTax || 0, color: '#F43F5E' },
+                          { label: 'Damga Vergisİ', value: calculations[0]?.stampTax || 0, color: '#F59E0B' },
+                          { label: 'Vergİ İstisnaları', value: (calculations[0]?.minWageIncomeTaxExemption + calculations[0]?.minWageStampTaxExemption) || 0, color: '#10B981' }
                         ].map((item, idx) => (
                           <div key={idx} className="space-y-2">
-                            <div className="flex justify-between text-[10px] font-black">
-                              <span className="text-slate-500 uppercase tracking-widest">{item.label}</span>
-                              <span className="text-white font-mono">{formatCurrency(item.value || 0)}</span>
+                            <div className="flex justify-between items-end">
+                              <span className="text-[9px] font-black text-slate-500 tracking-wider uppercase">{item.label}</span>
+                              <span className="text-xs font-black text-white">{formatCurrency(item.value)}</span>
                             </div>
                             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                               <motion.div 
                                 initial={{ width: 0 }}
-                                animate={{ width: `${Math.min((item.value / calculations[0]?.gross) * 100 * 5, 100)}%` }}
-                                className={`h-full ${item.color} rounded-full`}
+                                animate={{ width: `${Math.min((item.value / (calculations[0]?.gross || 1)) * 100 * 5, 100)}%` }}
+                                className="h-full rounded-full"
+                                style={{ backgroundColor: item.color }}
                               />
                             </div>
                           </div>
@@ -804,8 +886,6 @@ export default function SalaryCalculator() {
                    </div>
                 </div>
               </div>
-            </div>
-          </div>
 
           {/* Detailed Monthly Table */}
           <motion.div 
@@ -813,14 +893,20 @@ export default function SalaryCalculator() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-16 bg-slate-900/60 backdrop-blur-2xl rounded-[40px] border border-white/5 overflow-hidden shadow-2xl"
           >
-            <div className="p-8 border-b border-white/5 flex items-center justify-between">
-              <h3 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
-                <ListFilter className="text-indigo-400" size={24} />
-                Aylık Detay Bordro Cetveli
-              </h3>
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10">
-                <Table size={16} className="text-slate-500" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tam Liste</span>
+            <div className="p-8 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400">
+                    <ListFilter size={18} />
+                  </div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-wider">Aylık Detay Bordro Cetveli</h3>
+                </div>
+                <div className="flex items-center gap-2 mt-1 px-1">
+                  <AlertCircle size={12} className="text-slate-500 shrink-0" />
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
+                    Bu veriler tahminidir. Şirketinizden maaş bordronuzu almayı unutmayın.
+                  </p>
+                </div>
               </div>
             </div>
             <div className="overflow-x-auto">
