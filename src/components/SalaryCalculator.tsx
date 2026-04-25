@@ -75,8 +75,9 @@ export default function SalaryCalculator() {
   
   // Real-time rates state
   const [rates, setRates] = useState({
-    usd: 36.5,
-    gramAltin: 3300,
+    usd: 36.42,
+    gramAltin: 3280,
+    updateTime: '',
     loading: true
   });
 
@@ -89,13 +90,12 @@ export default function SalaryCalculator() {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        // We use a high-fidelity Turkish finance API for accurate local market rates
+        // TR piyasası için güvenilir bir endpoint
         const res = await fetch('https://finans.truncgil.com/v3/today.json');
         const data = await res.json();
         
         const parseValue = (val: string) => {
           if (!val) return 0;
-          // Turkish format: dots for thousands, commas for decimals
           return parseFloat(val.replace(/\./g, '').replace(',', '.'));
         };
 
@@ -106,24 +106,25 @@ export default function SalaryCalculator() {
           setRates({
             usd: usdRate,
             gramAltin: gramAltinRate,
+            updateTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
             loading: false
           });
         } else {
-          // Fallback if specific fields are missing
-          throw new Error("Missing data in API response");
+          throw new Error("API data incomplete");
         }
       } catch (error) {
         console.error("Rates fetch error:", error);
-        // Fallback calculation if specialized API fails
+        // Fallback: Global API
         try {
           const res = await fetch('https://open.er-api.com/v6/latest/USD');
           const data = await res.json();
           const usdRate = data.rates.TRY;
-          const approximateGoldUsd = 2750; 
+          const approximateGoldUsd = 2735; // Güncel ONS yaklaşık
           const calculatedGramAltin = (approximateGoldUsd / 31.1035) * usdRate;
           setRates({
             usd: usdRate,
             gramAltin: calculatedGramAltin,
+            updateTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
             loading: false
           });
         } catch (innerError) {
@@ -133,6 +134,9 @@ export default function SalaryCalculator() {
     };
 
     fetchRates();
+    // 5 dakikada bir güncelle
+    const interval = setInterval(fetchRates, 300000);
+    return () => clearInterval(interval);
   }, []);
 
   const MIN_WAGE_BRUT = 30002.50; 
@@ -272,8 +276,13 @@ export default function SalaryCalculator() {
     handleCalculate();
   }, [targetAmount, calculationType, maritalStatus, spouseWorks, childCount, incentive5Point, incentive2Point, year]);
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number, decimals: number = 0) => {
+    return new Intl.NumberFormat('tr-TR', { 
+      style: 'currency', 
+      currency: 'TRY', 
+      maximumFractionDigits: decimals,
+      minimumFractionDigits: decimals 
+    }).format(val);
   };
 
   const displayCurrency = (val: number) => {
@@ -1145,8 +1154,9 @@ export default function SalaryCalculator() {
                     <span className="text-4xl font-black text-white">{targetAmount ? gramsOfGold : '---'}</span>
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Adet</span>
                   </div>
-                  <p className="text-[9px] text-slate-400 mt-4 font-bold border-t border-white/5 pt-4">
-                    Birim: <span className="text-amber-500/80">{rates.loading ? '...' : formatCurrency(gramAltinPrice)}</span>
+                  <p className="text-[9px] text-slate-400 mt-4 font-bold border-t border-white/5 pt-4 flex justify-between items-center">
+                    <span>Birim: <span className="text-amber-500/80">{rates.loading ? '...' : formatCurrency(gramAltinPrice, 2)}</span></span>
+                    {!rates.loading && <span className="text-[8px] opacity-50">{rates.updateTime}</span>}
                   </p>
                 </div>
               </div>
@@ -1167,8 +1177,9 @@ export default function SalaryCalculator() {
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-black text-white">{targetAmount ? `$${dollars}` : '---'}</span>
                   </div>
-                  <p className="text-[9px] text-slate-400 mt-4 font-bold border-t border-white/5 pt-4">
-                    Kur: <span className="text-emerald-500/80">{rates.loading ? '...' : formatCurrency(usdPrice)}</span>
+                  <p className="text-[9px] text-slate-400 mt-4 font-bold border-t border-white/5 pt-4 flex justify-between items-center">
+                    <span>Kur: <span className="text-emerald-500/80">{rates.loading ? '...' : formatCurrency(usdPrice, 2)}</span></span>
+                    {!rates.loading && <span className="text-[8px] opacity-50">{rates.updateTime}</span>}
                   </p>
                 </div>
               </div>
