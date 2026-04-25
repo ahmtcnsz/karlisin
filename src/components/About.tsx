@@ -22,7 +22,7 @@ export default function About() {
     {
       icon: <TrendingUp className="text-purple-400" size={24} />,
       title: "Misyonumuz",
-      text: "Amacımız; sade, hızlı ve güvenilir bir deneyim sunarak, e-ticaret satıcılarının günlük kararlarını veri odaklı hale getirmek."
+      text: "Amacımız; e-ticaret satıcılarının günlük kâr analizlerinden, çalışanların maaş ve vergi hesaplamalarına kadar finansal her adımda rehberlik etmektir. Vizyonumuzun bir parçası olarak, yatırımcılar için Türkiye'nin en gelişmiş temettü takip ve analiz araçlarını inşa etmeyi hedefliyoruz."
     },
     {
       icon: <Users className="text-rose-400" size={24} />,

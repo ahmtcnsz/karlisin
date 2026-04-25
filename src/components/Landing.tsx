@@ -114,7 +114,7 @@ export default function Landing() {
           transition={{ delay: 0.1 }}
           className="text-lg md:text-2xl text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed border-l-2 border-indigo-500/30 pl-6"
         >
-          Maaş hesaplamadan pazaryeri analizine kadar profesyonel finansal araçlar. Üyelik gerektirmez, %100 gizli ve ücretsiz.
+          Maaş ve vergi hesaplamadan pazaryeri kâr analizine, temettü takibinden yatırım projeksiyonlarına geniş kapsamlı finansal araçlar. Üyelik gerektirmez, %100 gizli ve ücretsiz.
         </motion.p>
 
         <motion.div 
