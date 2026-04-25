@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageSquare, X, Mail, ChevronDown } from 'lucide-react';
 
@@ -9,7 +10,11 @@ const FeedbackOverlay: React.FC = () => {
   const [userEmail, setUserEmail] = useState('');
   const [showFeedbackTooltip, setShowFeedbackTooltip] = useState(true);
   const [feedbackBottom, setFeedbackBottom] = useState(32);
+  const location = useLocation();
 
+  // Blog detay sayfasında gizle
+  const isBlogDetailPage = location.pathname.startsWith('/blog/') && location.pathname !== '/blog';
+  
   const handleFeedbackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const subject = `Karlisin Geri Bildirim: ${feedbackType}`;
@@ -52,9 +57,11 @@ const FeedbackOverlay: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  if (isBlogDetailPage) return null;
+
   return (
     <div 
-      className="fixed left-4 sm:left-auto sm:right-6 z-[90] transition-all duration-500 ease-out"
+      className="fixed right-4 sm:right-6 z-[90] transition-all duration-500 ease-out"
       style={{ bottom: `${feedbackBottom}px` }}
     >
       <AnimatePresence>
@@ -63,19 +70,19 @@ const FeedbackOverlay: React.FC = () => {
             initial={{ opacity: 0, y: 10, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute bottom-20 left-0 sm:left-auto sm:right-0 whitespace-nowrap bg-indigo-600 text-white px-4 py-2 rounded-2xl shadow-xl text-sm font-bold flex items-center gap-2"
+            className="absolute bottom-20 right-0 whitespace-nowrap bg-indigo-600 text-white px-4 py-2 rounded-2xl shadow-xl text-sm font-bold flex items-center gap-2"
           >
             <span className="max-w-[180px] sm:max-w-none truncate sm:whitespace-normal">Geri bildirimleriniz bizim için değerli</span>
-            <div className="absolute -bottom-1.5 left-8 sm:left-auto sm:right-8 w-3 h-3 bg-indigo-600 rotate-45" />
+            <div className="absolute -bottom-1.5 right-8 w-3 h-3 bg-indigo-600 rotate-45" />
           </motion.div>
         )}
 
         {isFeedbackOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20, transformOrigin: 'bottom left' }}
+            initial={{ opacity: 0, scale: 0.9, y: 20, transformOrigin: 'bottom right' }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="absolute bottom-20 left-0 sm:left-auto sm:right-0 w-[calc(100vw-32px)] sm:w-[400px] bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden"
+            className="absolute bottom-20 right-0 w-[calc(100vw-32px)] sm:w-[400px] bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden"
           >
             <div className="p-6 pb-0 flex justify-between items-start">
               <div className="flex gap-4">
