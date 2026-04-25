@@ -8,9 +8,9 @@ const db = getFirestore(app);
 
 async function runBroadcast() {
   const article = {
-    title: "2026 Maaş Hesaplama Rehberi: Vergi Dilimi, Dolar ve Altın Karşılığı Analizi",
-    excerpt: "2026 güncel maaş vergi dilimlerini öğrenin. Net maaşınızın dolar ve altın karşılığını anlık görün. Karlısın ile finansal planlamanızı yapın.",
-    url: "https://www.karlisin.com/blog?id=16"
+    title: "Pazaryeri Satıcıları İçin Kâr Rehberi: Trendyol, Hepsiburada ve Amazon’da Zarar Etmekten Nasıl Kurtulursunuz?",
+    excerpt: "E-ticarette 'kaça satmalıyım?' sorusuna profesyonel bir cevap. 2026 kâr marjı yönetimi, komisyon ve kargo baremleri rehberi.",
+    url: "https://www.karlisin.com/blog?id=17"
   };
 
   console.log("Aboneler çekiliyor...");

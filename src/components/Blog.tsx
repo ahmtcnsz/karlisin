@@ -326,6 +326,53 @@ const articles = [
       <p>2026 yılında finansal okuryazarlık bir tercih değil, zorunluluktur. Maaşınızın vergi yükünü, döviz karşılığını ve yatırım potansiyelini bilmek sizi bir adım öne taşır.</p>
       <p>Siz de hemen Karlısın <a href="/maas-vergi-hesaplama" style="color: #818cf8; text-decoration: underline;">Maaş Hesaplama</a> sayfamızı ziyaret edin ve gerçek kazancınızı keşfedin!</p>
     `
+  },
+  {
+    id: 17,
+    title: 'Pazaryeri Satıcıları İçin Kâr Rehberi: Trendyol, Hepsiburada ve Amazon’da Zarar Etmekten Nasıl Kurtulursunuz?',
+    excerpt: 'E-ticarette "kaça satmalıyım?" sorusuna profesyonel bir cevap. 2026 kâr marjı yönetimi, komisyon ve kargo baremleri rehberi.',
+    category: 'E-Ticaret',
+    date: '25 Nisan 2026',
+    readTime: '12 dk',
+    image: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>E-ticaret dünyasında ciro yapmak harikadır, ancak günün sonunda cebinizde kalan "net kâr" gerçek başarınızı belirler. Çoğu satıcı, sadece ürün maliyetine bakarak fiyat belirlediği için gizli giderlerin altında eziliyor. Karlısın olarak, 2026 e-ticaret dinamiklerinde kâr marjınızı nasıl koruyacağınızı ve yeni nesil <a href="/pazaryeri-kar-hesaplama" style="color: #818cf8; text-decoration: underline;">hesaplama aracımızın</a> size nasıl zaman (ve para) kazandıracağını anlatıyoruz.</p>
+
+      <h2 style="color: white; margin-top: 32px; font-weight: 900;">1. Gizli Giderlerin Farkında mısınız? Komisyon ve Kargo Denklemi</h2>
+      <p>Pazaryerlerinde satış yaparken en büyük yanılgı, komisyon oranını sadece ürün fiyatından düşmektir. Oysa gerçek kâr hesabı çok daha karmaşıktır:</p>
+      <ul>
+        <li><strong>Kategori Bazlı Komisyonlar:</strong> 2026 güncel komisyon oranları kategoriden kategoriye (Tekstil, Elektronik, Gıda) ciddi farklar gösterir.</li>
+        <li><strong>Kargo Baremleri:</strong> Ürününüzün desisi ve satış fiyatı, ödeyeceğiniz kargo ücretini doğrudan etkiler.</li>
+        <li><strong>Hizmet Bedelleri:</strong> Pazaryerlerinin her sipariş başına kestiği küçük ama kümülatifte devleşen işlem ücretlerini asla unutmayın.</li>
+      </ul>
+
+      <h2 style="color: white; margin-top: 32px; font-weight: 900;">2. Karlısın ile "Kaça Satmalıyım?" Sorusuna Son!</h2>
+      <p>Sitemizdeki <a href="/pazaryeri-kar-hesaplama" style="color: #818cf8; text-decoration: underline;">Pazaryeri Kâr Hesaplama</a> aracı, sizi karmaşık Excel tablolarından kurtarmak için tasarlandı. Apple-esque sadeliğiyle çalışan aracımızda şunları saniyeler içinde görebilirsiniz:</p>
+      <ul>
+        <li><strong>Brüt Kâr vs. Net Kâr:</strong> KDV, komisyon ve kargo sonrası cebine kalacak net nakit.</li>
+        <li><strong>KDV Yönetimi:</strong> %1, %10 veya %20 KDV dilimlerine göre maliyet simülasyonu.</li>
+        <li><strong>Fiyatlandırma Stratejisi:</strong> Ürünü zararına satmamak için "Minimum Satış Fiyatı" önerileri.</li>
+      </ul>
+
+      <h2 style="color: white; margin-top: 32px; font-weight: 900;">3. Platformlar Arası Kıyaslama: Hangi Pazaryeri Daha Karlı?</h2>
+      <p>Trendyol'da çok satmak mı, Amazon'da yüksek marjla satmak mı? Karlısın'ın Bento-Grid yapısındaki modern kartları sayesinde platformları yan yana getirebilirsiniz.</p>
+      <ul>
+        <li><strong>Trendyol:</strong> Yüksek trafik, sıkı rekabet, detaylı komisyon yapısı.</li>
+        <li><strong>Hepsiburada:</strong> Kampanya odaklı satış stratejileri ve lojistik avantajlar.</li>
+        <li><strong>Amazon TR:</strong> Global standartlarda iade politikaları ve FBA maliyetleri.</li>
+      </ul>
+
+      <h2 style="color: white; margin-top: 32px; font-weight: 900;">4. E-Ticarette Sürdürülebilir Büyüme İçin 3 İpucu</h2>
+      <ol>
+        <li><strong>Dinamik Fiyatlandırma:</strong> Rakipler fiyat kırdığında kâr marjınızın hangi noktada "kırmızı bölgeye" girdiğini saniyeler içinde hesaplayın.</li>
+        <li><strong>Paketleme ve Desi Optimizasyonu:</strong> Kargo maliyetlerini düşürmek için ürün boyutlarınızı Karlısın simülatöründe test edin.</li>
+        <li><strong>Finansal Okuryazarlık:</strong> Satış verilerinizi düzenli analiz edin. Karlısın'ın Inter fontuyla hazırlanan net grafiklerini kullanarak operasyonel giderlerinizi minimize edin.</li>
+      </ol>
+
+      <h3 style="color: white; margin-top: 32px; font-weight: 900;">Sonuç: Hesabını Bilmeyen Satıcı, Pazaryerine Çalışır!</h3>
+      <p>2026 e-ticaret rekabetinde ayakta kalmak için sadece iyi ürün bulmak yetmez; matematiği iyi yönetmek gerekir. Karlısın, e-ticaret satıcılarının en yakın finansal dostu olmak için burada.</p>
+      <p>Siz de hemen <a href="/pazaryeri-kar-hesaplama" style="color: #818cf8; text-decoration: underline;">Pazaryeri Kâr Hesaplama</a> aracımızı deneyin, sürpriz kesintilere veda edin!</p>
+    `
   }
 ];
 
