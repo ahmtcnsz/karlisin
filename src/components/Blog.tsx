@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2, ArrowLeft, Share2 } from 'lucide-react';
 import { db } from '../lib/firebase';
@@ -492,6 +493,10 @@ export default function Blog() {
   if (selectedArticle) {
     return (
       <div className="pt-24 pb-20 px-6 max-w-4xl mx-auto min-h-screen">
+        <Helmet>
+          <title>{selectedArticle.title} | Karlısın Blog</title>
+          <meta name="description" content={selectedArticle.excerpt} />
+        </Helmet>
         <div className="flex justify-between items-center mb-8">
           <motion.button 
             initial={{ opacity: 0, x: -10 }}
@@ -574,6 +579,10 @@ export default function Blog() {
 
   return (
     <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto min-h-screen">
+      <Helmet>
+        <title>Blog - Karlısın | Finansal Stratejiler ve Pazar Analizleri</title>
+        <meta name="description" content="E-ticaret başarısı, 2026 maaş hesaplamaları ve yatırım stratejileri üzerine güncel Karlısın blog yazıları." />
+      </Helmet>
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
         <div className="max-w-2xl">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 text-indigo-300 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-indigo-500/20 font-bold">

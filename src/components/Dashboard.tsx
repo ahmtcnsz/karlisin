@@ -1,10 +1,15 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
 import { LayoutDashboard, FileText, Settings, HelpCircle, LogOut, Search, PlusCircle, ExternalLink, Calendar } from 'lucide-react';
 
 export default function Dashboard() {
   return (
     <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto flex flex-col md:flex-row gap-8 min-h-screen">
+      <Helmet>
+        <title>Dashboard - Karlısın Finansal Yönetim Paneli</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       {/* Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 shrink-0 gap-8">
         <div className="bg-white/5 backdrop-blur-xl p-6 rounded-[32px] border border-white/10 shadow-sm flex flex-col gap-2">

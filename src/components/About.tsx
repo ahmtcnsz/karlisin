@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
 import { Target, Zap, ShieldCheck, Users, TrendingUp, Sparkles } from 'lucide-react';
 
@@ -33,6 +34,10 @@ export default function About() {
 
   return (
     <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto min-h-screen">
+      <Helmet>
+        <title>Hakkımızda - Karlısın | Şeffaf Finansal Gelecek</title>
+        <meta name="description" content="Karlısın, e-ticaret satıcıları ve yatırımcılar için geliştirilmiş yeni nesil SaaS çözümüdür. Misyonumuz finansal şeffaflık sağlamaktır." />
+      </Helmet>
       <div className="text-center mb-20">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
