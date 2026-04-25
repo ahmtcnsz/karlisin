@@ -8,9 +8,9 @@ const db = getFirestore(app);
 
 async function runBroadcast() {
   const article = {
-    title: "Karlı Bir E-ticaret Markası İnşası: 2026 Yol Haritası",
-    excerpt: "Sıfırdan kârlı bir marka yaratmanın matematiği, lojistik stratejileri ve 2026 yılındaki büyüme fırsatları.",
-    url: "https://www.karlisin.com/blog"
+    title: "2026 Maaş Hesaplama Rehberi: Vergi Dilimi, Dolar ve Altın Karşılığı Analizi",
+    excerpt: "2026 güncel maaş vergi dilimlerini öğrenin. Net maaşınızın dolar ve altın karşılığını anlık görün. Karlısın ile finansal planlamanızı yapın.",
+    url: "https://www.karlisin.com/blog?id=16"
   };
 
   console.log("Aboneler çekiliyor...");

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2, ArrowLeft, Share2 } from 'lucide-react';
 import { db } from '../lib/firebase';
@@ -334,18 +335,37 @@ export default function Blog() {
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedArticle, setSelectedArticle] = useState<typeof articles[0] | null>(null);
   const [broadcastSent, setBroadcastSent] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  // URL'den makale ID'sini oku (örn: /blog?id=16)
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id) {
+      const article = articles.find(a => String(a.id) === id);
+      if (article) {
+        setSelectedArticle(article);
+      }
+    }
+  }, [searchParams]);
 
   // OTOMATİK DUYURU TETİĞİ (Yeni Yazı Eklenince Çalışır)
   useEffect(() => {
     const triggerBroadcast = async () => {
       // LocalStorage ile sadece bir kez (makale başına) çalışmasını sağlıyoruz
-      const currentArticleId = String(articles[articles.length - 1].id);
+      const lastArticle = articles[articles.length - 1];
+      const currentArticleId = String(lastArticle.id);
       const lastBroadcasted = localStorage.getItem('last_broadcast_article_id');
 
       if (lastBroadcasted === currentArticleId || broadcastSent) return;
 
       try {
-        console.log('[Karlısın] Yeni yazı için duyuru hazırlanıyor...');
+        console.log(`[Karlısın] Yeni yazı (${currentArticleId}) için 5 dakikalık geri sayım başladı...`);
+        
+        // 5 Dakika Geciktirme (User Request: Yazı paylaşıldıktan 5 dk sonra gitsin)
+        // Not: Bu basit implementasyon tarayıcı açık kaldığı sürece çalışır.
+        await new Promise(resolve => setTimeout(resolve, 300000));
+
+        console.log('[Karlısın] Abonelere duyuru gönderiliyor...');
         const querySnapshot = await getDocs(collection(db, 'newsletter_subscribers'));
         const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e);
 
@@ -360,14 +380,14 @@ export default function Blog() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               subscribers,
-              articleTitle: articles[articles.length - 1].title,
-              articleExcerpt: articles[articles.length - 1].excerpt,
-              articleUrl: `https://www.karlisin.com/blog`
+              articleTitle: lastArticle.title,
+              articleExcerpt: lastArticle.excerpt,
+              articleUrl: `https://www.karlisin.com/blog?id=${currentArticleId}`
             })
           });
 
           if (res.ok) {
-            console.log('[Karlısın] Abonelere duyuru başarıyla gönderildi!');
+            console.log('[Karlısın] Abonelere özel link başarıyla gönderildi!');
             localStorage.setItem('last_broadcast_article_id', currentArticleId);
             setBroadcastSent(true);
           }
@@ -377,9 +397,7 @@ export default function Blog() {
       }
     };
 
-    // Sayfa yüklendikten 5 saniye sonra sessizce çalışsın (Site hızını etkilemesin)
-    const timer = setTimeout(triggerBroadcast, 5000);
-    return () => clearTimeout(timer);
+    triggerBroadcast();
   }, [broadcastSent]);
 
   const handleSubscribe = async (e: React.FormEvent) => {
