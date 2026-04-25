@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2, ArrowLeft, Share2 } from 'lucide-react';
@@ -383,18 +383,40 @@ export default function Blog() {
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedArticle, setSelectedArticle] = useState<typeof articles[0] | null>(null);
   const [broadcastSent, setBroadcastSent] = useState(false);
+  const { id: pathId } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // URL'den makale ID'sini oku (örn: /blog?id=16)
+  // URL'den makale ID'sini oku (örn: /blog/16 veya /blog?id=16)
   useEffect(() => {
-    const id = searchParams.get('id');
+    const id = pathId || searchParams.get('id');
     if (id) {
       const article = articles.find(a => String(a.id) === id);
       if (article) {
         setSelectedArticle(article);
       }
     }
-  }, [searchParams]);
+  }, [pathId, searchParams]);
+
+  const handleShare = async (article: typeof articles[0]) => {
+    const shareUrl = `https://www.karlisin.com/blog/${article.id}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: article.title,
+          text: article.excerpt,
+          url: shareUrl,
+        });
+      } catch (err) {
+        console.error('Sharing failed', err);
+      }
+    } else {
+      // Fallback to clipboard
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Link kopyalandı!');
+    }
+  };
 
   // OTOMATİK DUYURU TETİĞİ (Yeni Yazı Eklenince Çalışır)
   useEffect(() => {
@@ -508,71 +530,75 @@ export default function Blog() {
           </motion.button>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="aspect-[21/9] rounded-[40px] overflow-hidden mb-12 border border-white/10 shadow-2xl">
-            <img src={selectedArticle.image} alt={selectedArticle.title} className="w-full h-full object-cover" />
-          </div>
-
-          <div className="flex items-center gap-4 text-xs font-black text-indigo-400 uppercase tracking-widest mb-6">
-            <span className="px-3 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/20">{selectedArticle.category}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1.5"><Clock size={14} /> {selectedArticle.readTime} oku</span>
-            <span>•</span>
-            <span>{selectedArticle.date}</span>
-          </div>
-
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-8 tracking-tight leading-[1.1]">
-            {selectedArticle.title}
-          </h1>
-
-          <div className="prose prose-invert prose-indigo max-w-none">
-            <div 
-              className="text-slate-300 text-lg leading-relaxed space-y-6 font-medium"
-              dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
-            />
-          </div>
-
-          <div className="mt-16 pt-8 border-t border-white/10">
-            <h3 className="text-2xl font-black text-white mb-8 italic uppercase tracking-wider">İlginizi Çekebilir</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {articles
-                .filter(a => a.id !== selectedArticle.id)
-                .sort(() => Math.random() - 0.5)
-                .slice(0, 2)
-                .map(related => (
-                  <motion.div
-                    key={related.id}
-                    onClick={() => {
-                      setSelectedArticle(related);
-                      window.scrollTo(0, 0);
-                    }}
-                    className="group bg-white/5 rounded-3xl border border-white/5 hover:border-indigo-500/30 overflow-hidden cursor-pointer transition-all"
-                  >
-                    <div className="aspect-[21/9] overflow-hidden">
-                      <img src={related.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={related.title} />
-                    </div>
-                    <div className="p-6">
-                      <h4 className="text-white font-bold group-hover:text-indigo-400 transition-colors line-clamp-1">{related.title}</h4>
-                      <p className="text-slate-400 text-xs mt-2 line-clamp-2">{related.excerpt}</p>
-                    </div>
-                  </motion.div>
-                ))}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="aspect-[21/9] rounded-[40px] overflow-hidden mb-12 border border-white/10 shadow-2xl">
+              <img src={selectedArticle.image} alt={selectedArticle.title} className="w-full h-full object-cover" />
             </div>
-          </div>
 
-          <div className="mt-16 pt-8 border-t border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white">K</div>
-              <div>
-                <p className="text-white font-bold">Karlısın Ekibi</p>
-                <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Finans Editörü</p>
+            <div className="flex items-center gap-4 text-xs font-black text-indigo-400 uppercase tracking-widest mb-6">
+              <span className="px-3 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/20">{selectedArticle.category}</span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5"><Clock size={14} /> {selectedArticle.readTime} oku</span>
+              <span>•</span>
+              <span>{selectedArticle.date}</span>
+            </div>
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-8 tracking-tight leading-[1.1]">
+              {selectedArticle.title}
+            </h1>
+
+            <div className="prose prose-invert prose-indigo max-w-none">
+              <div 
+                className="text-slate-300 text-lg leading-relaxed space-y-6 font-medium"
+                dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+              />
+            </div>
+
+            <div className="mt-16 pt-8 border-t border-white/10">
+              <h3 className="text-2xl font-black text-white mb-8 italic uppercase tracking-wider">İlginizi Çekebilir</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {articles
+                  .filter(a => a.id !== selectedArticle.id)
+                  .sort(() => Math.random() - 0.5)
+                  .slice(0, 2)
+                  .map(related => (
+                    <motion.div
+                      key={related.id}
+                      onClick={() => {
+                        navigate(`/blog/${related.id}`);
+                        window.scrollTo(0, 0);
+                      }}
+                      className="group bg-white/5 rounded-3xl border border-white/5 hover:border-indigo-500/30 overflow-hidden cursor-pointer transition-all"
+                    >
+                      <div className="aspect-[21/9] overflow-hidden">
+                        <img src={related.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={related.title} />
+                      </div>
+                      <div className="p-6">
+                        <h4 className="text-white font-bold group-hover:text-indigo-400 transition-colors line-clamp-1">{related.title}</h4>
+                        <p className="text-slate-400 text-xs mt-2 line-clamp-2">{related.excerpt}</p>
+                      </div>
+                    </motion.div>
+                  ))}
               </div>
             </div>
-            <button className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 text-white transition-all">
-              <Share2 size={20} />
-            </button>
-          </div>
-        </motion.div>
+
+            <div className="mt-16 pt-8 border-t border-white/10 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white">K</div>
+                <div>
+                  <p className="text-white font-bold">Karlısın Ekibi</p>
+                  <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Finans Editörü</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => handleShare(selectedArticle)}
+                className="p-3 bg-indigo-500 hover:bg-indigo-600 rounded-2xl border border-indigo-400/20 text-white transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center gap-2 px-6"
+              >
+                <Share2 size={20} />
+                <span className="font-bold text-sm uppercase tracking-widest">Paylaş</span>
+              </button>
+            </div>
+          </motion.div>
       </div>
     );
   }
@@ -607,7 +633,7 @@ export default function Blog() {
         <motion.article 
           initial={{ opacity: 0, y: 30 }} 
           animate={{ opacity: 1, y: 0 }} 
-          onClick={() => setSelectedArticle(articles[articles.length - 1])} 
+          onClick={() => navigate(`/blog/${articles[articles.length - 1].id}`)} 
           className="bg-white/5 backdrop-blur-md rounded-[48px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer shadow-2xl max-w-5xl"
         >
           <div className="aspect-video overflow-hidden relative">
@@ -642,7 +668,7 @@ export default function Blog() {
               whileInView={{ opacity: 1, y: 0 }} 
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }} 
-              onClick={() => setSelectedArticle(article)} 
+              onClick={() => navigate(`/blog/${article.id}`)} 
               className="bg-white/5 backdrop-blur-md rounded-[40px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer text-center items-center"
             >
               <div className="aspect-[16/9] w-full overflow-hidden relative">

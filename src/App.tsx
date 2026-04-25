@@ -50,6 +50,7 @@ export default function App() {
               <Route path="/temettu-takibi" element={<PageWrapper><Mortgage /></PageWrapper>} />
               <Route path="/dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
               <Route path="/blog" element={<PageWrapper><Blog /></PageWrapper>} />
+              <Route path="/blog/:id" element={<PageWrapper><Blog /></PageWrapper>} />
               <Route path="/hakkimizda" element={<PageWrapper><About /></PageWrapper>} />
               <Route path="/gizlilik-politikasi" element={<PageWrapper><Policy type="privacy" /></PageWrapper>} />
               <Route path="/kullanim-kosullari" element={<PageWrapper><Policy type="terms" /></PageWrapper>} />
