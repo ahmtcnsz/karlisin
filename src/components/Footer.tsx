@@ -59,9 +59,9 @@ export default function Footer() {
               </Link>
               <Link to="/borsa/nabiz" className="text-sm text-slate-400 font-medium hover:text-white transition-colors flex items-center gap-2">
                 Piyasanın Nabzı
-                <div className="relative overflow-hidden px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">
+                <div className="relative overflow-hidden px-1.5 py-0.5 bg-rose-500/10 text-rose-400 text-[10px] font-black tracking-tighter rounded-md border border-rose-500/20">
                   {badgeGlint}
-                  <span className="relative z-10">YENİ</span>
+                  <span className="relative z-10">YAKINDA</span>
                 </div>
               </Link>
             </nav>

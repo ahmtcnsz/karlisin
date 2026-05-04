@@ -151,7 +151,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
                         <Activity className="w-4 h-4" />
                         PİYASANIN NABZI
                       </div>
-                      <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded text-[7px] border border-indigo-500/30">YENİ</span>
+                      <span className="px-1.5 py-0.5 bg-rose-500/20 text-rose-400 rounded text-[7px] border border-rose-500/30 font-bold uppercase tracking-widest">YAKINDA</span>
                     </Link>
                   </div>
                 </motion.div>
@@ -242,7 +242,8 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
                 TEMETTÜ TAKİBİ <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded text-[8px] border border-emerald-500/30 font-black">AKTİF</span>
               </Link>
               <Link to="/borsa/nabiz" className={cn("flex items-center justify-between px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", isActive('/borsa/nabiz') ? "bg-indigo-600 text-white" : "text-slate-400")} onClick={() => setIsMobileMenuOpen(false)}>
-                PİYASANIN NABZI <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded text-[8px] border border-indigo-500/30 font-black">YENİ</span>
+                PİYASANIN NABZI 
+                <span className="px-1.5 py-0.5 bg-rose-500/20 text-rose-400 rounded text-[8px] border border-rose-500/30 font-black">YAKINDA</span>
               </Link>
               
               <div className="mx-4 my-2 h-px bg-white/5" />
