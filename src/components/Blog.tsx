@@ -622,9 +622,13 @@ export default function Blog() {
           </motion.p>
         </div>
 
-        <div className="relative w-full md:w-80">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input type="text" placeholder="Yazı ara..." className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium transition-all text-white" />
+        <div className="relative w-full md:w-80 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 group-focus-within:text-indigo-400 transition-colors" />
+          <input 
+            type="text" 
+            placeholder="Yazı ara..." 
+            className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-11 pr-5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-white placeholder:text-slate-500 transition-all font-medium" 
+          />
         </div>
       </div>
 

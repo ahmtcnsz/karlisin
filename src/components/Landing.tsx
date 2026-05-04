@@ -38,12 +38,22 @@ export default function Landing() {
       borderColor: 'border-emerald-500/20'
     },
     {
-      id: 'mortgage',
+      id: 'dividend',
       path: '/temettu-takibi',
       title: 'Temettü Takibi',
       description: 'Borsa pasif gelirinizi takip edin, vergi süreçlerini ve gelecek ödemeleri planlayın.',
+      icon: <PieChart className="text-indigo-400" size={28} />,
+      badge: 'AKTİF',
+      color: 'from-indigo-500/20 to-purple-600/5',
+      borderColor: 'border-indigo-500/20'
+    },
+    {
+      id: 'market-pulse',
+      path: '/borsa/nabiz',
+      title: 'Piyasanın Nabzı',
+      description: 'Global makro veriler ve borsa analiz motoru ile piyasanın ritmini yakalayın.',
       icon: <TrendingUp className="text-amber-400" size={28} />,
-      badge: 'YAKINDA',
+      badge: 'YENİ',
       color: 'from-amber-500/20 to-amber-600/5',
       borderColor: 'border-amber-500/20'
     },
@@ -61,9 +71,9 @@ export default function Landing() {
       icon: <Zap size={20} />
     },
     {
-      title: 'Gelişmiş Analiz',
-      desc: 'Karmaşık finansal verileri basit ve anlaşılır grafiklere dönüştürün.',
-      icon: <PieChart size={20} />
+      title: 'Borsa Analiz',
+      desc: 'Şirketlerin finansal sağlığını ve temettü gücünü profesyonelce analiz edin.',
+      icon: <Globe size={20} />
     }
   ];
 
@@ -104,8 +114,8 @@ export default function Landing() {
           animate={{ opacity: 1, y: 0 }}
           className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-[0.95]"
         >
-          Geleceği <br />
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-amber-400">Hesapla.</span>
+          Geleceğini <br />
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-amber-400">Hesapla</span>
         </motion.h1>
         
         <motion.p 
@@ -253,6 +263,64 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Dividend Spotlight Section */}
+      <section className="bg-slate-900 border border-white/5 rounded-[64px] p-12 md:p-24 relative overflow-hidden group">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-purple-600/10 blur-[120px] rounded-full -ml-40 -mt-40 group-hover:bg-purple-600/20 transition-colors" />
+        <div className="relative z-10 flex flex-col lg:flex-row items-center gap-16">
+          <div className="flex-1 space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
+              <TrendingUp className="w-4 h-4 text-indigo-400" />
+              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest italic">YENİ ÖZELLİK</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black text-white italic tracking-tighter leading-none">
+              Pasif Gelirini <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-indigo-400">Canlı Takip Et.</span>
+            </h2>
+            <p className="text-xl text-slate-400 font-medium leading-relaxed">
+              Borsa İstanbul (BİST) ve Amerikan Borsası (Nasdaq/NYSE) hisselerini global finansal veri entegrasyonu ile tek merkezden yönet. 
+              2026 yılı tüm temettü hakediş tarihlerini ve tahmini ödemelerini anında gör.
+            </p>
+            <div className="flex gap-4 pt-4">
+              <Link 
+                to="/temettu-takibi"
+                className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:scale-105 transition-all"
+              >
+                2026 Takvimini Gör
+              </Link>
+            </div>
+          </div>
+          <div className="flex-1 w-full">
+            <div className="bg-slate-950/50 backdrop-blur-xl border border-white/10 rounded-[48px] p-10 shadow-3xl space-y-8">
+               <div className="flex items-center justify-between">
+                 <h4 className="text-lg font-black text-white italic">Yaklaşan Ödemeler</h4>
+                 <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">2026 Sezonu</div>
+               </div>
+               <div className="space-y-4">
+                  {[
+                    { s: 'EREGL', n: 'Erdemir', i: '4.20%', d: '29.04.2026' },
+                    { s: 'EBEBK', n: 'Ebebek', i: '1.20%', d: '15.10.2026' },
+                    { s: 'AAPL', n: 'Apple', i: '0.48%', d: '08.11.2026' }
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-5 bg-white/5 rounded-3xl border border-white/5 hover:bg-white/10 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center font-black text-indigo-400 text-xs">{item.s}</div>
+                        <div>
+                          <p className="text-sm font-black text-white">{item.n}</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">{item.d}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-emerald-400 font-black text-sm">%{item.i}</p>
+                        <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest italic">Beklenen</p>
+                      </div>
+                    </div>
+                  ))}
+               </div>
             </div>
           </div>
         </div>

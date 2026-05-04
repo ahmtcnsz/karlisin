@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, Mail } from 'lucide-react';
+import { Globe, Mail, BarChart3 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 
@@ -24,7 +24,15 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12 text-left">
           <div className="col-span-1 md:col-span-1">
-            <h3 className="text-xl font-black text-white mb-4 tracking-tighter">Karlısın</h3>
+            <Link to="/" className="group flex flex-col items-start mb-6">
+              <div className="text-2xl font-black tracking-tighter leading-none select-none flex items-baseline">
+                <span className="text-white group-hover:text-indigo-400 transition-colors">KARLI</span>
+                <span className="text-slate-300 group-hover:text-slate-100 transition-colors">SIN</span>
+              </div>
+              <div className="text-[7px] font-black tracking-[0.35em] uppercase text-slate-500 group-hover:text-indigo-400/60 transition-colors mt-1 whitespace-nowrap">
+                GELECEĞİNİ HESAPLA
+              </div>
+            </Link>
             <p className="text-sm text-slate-400 leading-relaxed font-medium">
               Yatırımcılar ve girişimciler için akıllı, hızlı ve şeffaf finansal hesaplama süreçleri sunan yeni nesil SaaS çözümü.
             </p>
@@ -46,7 +54,14 @@ export default function Footer() {
                 Temettü Takibi
                 <div className="relative overflow-hidden px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">
                   {badgeGlint}
-                  <span className="relative z-10">YAKINDA</span>
+                  <span className="relative z-10">AKTİF</span>
+                </div>
+              </Link>
+              <Link to="/borsa/nabiz" className="text-sm text-slate-400 font-medium hover:text-white transition-colors flex items-center gap-2">
+                Piyasanın Nabzı
+                <div className="relative overflow-hidden px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">
+                  {badgeGlint}
+                  <span className="relative z-10">YENİ</span>
                 </div>
               </Link>
             </nav>

@@ -1,7 +1,9 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ArrowRight, Home, Calculator, ShoppingBag, PieChart, BookOpen, Shield, FileText, Info } from 'lucide-react';
+import { cn } from '../lib/utils';
+import { ChevronRight, ArrowRight, Home, Calculator, ShoppingBag, PieChart, BookOpen, Shield, FileText, Info, TrendingUp } from 'lucide-react';
 
 export default function Sitemap() {
   const sections = [
@@ -9,9 +11,10 @@ export default function Sitemap() {
       title: 'Hesaplama Araçları',
       icon: <Calculator size={20} className="text-indigo-400" />,
       links: [
-        { name: 'Maaş ve Vergi Hesaplama (2026)', path: '/maas-vergi-hesaplama', icon: <Calculator size={16} /> },
-        { name: 'Pazar Kâr Analizi (Trendyol & Amazon)', path: '/pazar-kar-hesaplama', icon: <ShoppingBag size={16} /> },
-        { name: 'Temettü Verimi Takibi', path: '/temettu-takibi', icon: <PieChart size={16} /> },
+        { name: 'Maaş ve Vergi Hesaplama (2026)', path: '/maas-vergi-hesaplama', icon: <Calculator size={16} />, badge: 'YENİ' },
+        { name: 'Pazar Kâr Analizi (Trendyol & Amazon)', path: '/pazar-kar-hesaplama', icon: <ShoppingBag size={16} />, badge: 'POPÜLER' },
+        { name: 'Temettü Verimi Takibi', path: '/temettu-takibi', icon: <PieChart size={16} />, badge: 'AKTİF' },
+        { name: 'Piyasanın Nabzı (Borsa Analiz)', path: '/borsa/nabiz', icon: <TrendingUp size={16} />, badge: 'YENİ' },
       ]
     },
     {
@@ -35,6 +38,10 @@ export default function Sitemap() {
 
   return (
     <div className="pt-32 pb-20 px-6 max-w-4xl mx-auto space-y-16">
+      <Helmet>
+        <title>Site Haritası - Karlısın</title>
+        <meta name="description" content="Karlısın platformundaki maaş hesaplama, pazar kâr analizi, temettü takibi ve blog içeriklerine hızlı erişim." />
+      </Helmet>
       <div className="space-y-4">
         <div className="flex items-center gap-4 text-slate-500 text-xs font-black uppercase tracking-[0.2em]">
           <Link to="/" className="hover:text-white transition-colors">Ana Sayfa</Link>
@@ -73,6 +80,16 @@ export default function Sitemap() {
                     <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">
                       {link.name}
                     </span>
+                    {link.badge && (
+                      <span className={cn(
+                        "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border shrink-0",
+                        link.badge === 'YENİ' ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" :
+                        link.badge === 'AKTİF' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                        "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                      )}>
+                        {link.badge}
+                      </span>
+                    )}
                   </div>
                   <ArrowRight size={16} className="text-slate-600 group-hover:text-indigo-400 transform group-hover:translate-x-1 transition-all" />
                 </Link>

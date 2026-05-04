@@ -5,12 +5,20 @@ import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
+import YahooFinance from 'yahoo-finance2';
+const yahooFinance = new (YahooFinance as any)();
+import NodeCache from 'node-cache';
 
 // .env dosyasını yükle
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Cache instance (1 hour default TTL)
+const cache = new NodeCache({ stdTTL: 3600 });
+const AV_CACHE_TTL = 86400; // 24 hours for Alpha Vantage
+const YAHOO_CACHE_TTL = 14400; // 4 hours for Yahoo Finance
 
 async function startServer() {
   const app = express();
@@ -45,9 +53,323 @@ async function startServer() {
   }));
   app.use(express.json());
 
+  // Request logger
+  app.use((req, res, next) => {
+    console.log(`[Karlısın-REQ] ${req.method} ${req.url}`);
+    next();
+  });
+
   // ---------------------------------------------------------
   // 1. API ROTLARI (EN ÜSTTE OLMALI - VITE'DEN ÖNCE)
   // ---------------------------------------------------------
+
+  // DIVIDEND API (Yahoo Finance)
+  app.get('/api/dividends', async (req, res) => {
+    const symbol = (req.query.symbol as string || '').toUpperCase();
+    if (!symbol) return res.status(400).json({ error: 'Sembol eksik' });
+    
+    console.log(`[Karlısın-API] Temettü verisi isteniyor: ${symbol}`);
+
+    const cacheKey = `div_${symbol}`;
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Karlısın-API] Cache hit: ${symbol}`);
+      return res.json(cachedData);
+    }
+
+    try {
+      console.log(`[Karlısın-API] Yahoo Finance sorgusu başlıyor: ${symbol}`);
+      // 1. Get core summary data (Reduced modules to avoid validation errors)
+      // Note: 'dividendHistory' and 'recommendationTrend' often cause schema errors
+      const summary = await yahooFinance.quoteSummary(symbol, {
+        modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
+      });
+      console.log(`[Karlısın-API] Summary alındı: ${symbol}`);
+
+      // 2. Get historical dividends (last 5 years)
+      const now = new Date();
+      const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+      
+      let historyData = [];
+      try {
+        const history = await yahooFinance.chart(symbol, {
+          period1: fiveYearsAgo,
+          period2: now,
+          events: 'dividends'
+        }) as any;
+        historyData = history.events?.dividends || [];
+      } catch (histErr) {
+        console.warn(`[Karlısın-API] Geçmiş temettü verisi çekilemedi (${symbol}):`, histErr);
+      }
+
+      const result = {
+        symbol,
+        summary,
+        history: historyData
+      };
+
+      cache.set(cacheKey, result, YAHOO_CACHE_TTL);
+      res.json(result);
+    } catch (err: any) {
+      console.error(`[Karlısın-API] Yahoo Finance Hatası (${symbol}):`, err);
+      
+      // Detailed error logging for debugging validation issues
+      if (err.name === 'YahooFinanceError' && err.errors) {
+        console.error('Validation Errors:', JSON.stringify(err.errors, null, 2));
+      }
+
+      res.status(500).json({ 
+        error: 'Veri çekilemedi', 
+        message: err.message,
+        details: err.errors || [] 
+      });
+    }
+  });
+
+  // HEALTH CHECK API
+  app.get('/api/health', (req, res) => {
+    res.json({
+      status: 'ok',
+      time: new Date().toISOString(),
+      keys: {
+        resend: !!process.env.RESEND_API_KEY,
+        alphavantage: !!process.env.ALPHA_VANTAGE_API_KEY
+      },
+      cache: cache.getStats()
+    });
+  });
+
+  // ALPHA VANTAGE INTEGRATION
+  const handleAVResponse = async (req: express.Request, res: express.Response, url: string, cacheKey?: string) => {
+    try {
+      console.log(`[Karlısın-AV] Fetching: ${url.replace(/apikey=[^&]+/, 'apikey=REDACTED')}`);
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error(`[Karlısın-AV] HTTP Error ${response.status}: ${url}`);
+        return res.status(response.status).json({ error: 'Alpha Vantage API HTTP Error', status: response.status });
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        
+        // Alpha Vantage signals limits/errors in 200 OK JSON
+        if (data && (data.Note || data.Information || data['Error Message'])) {
+          console.warn(`[Karlısın-AV] API Message:`, data.Note || data.Information || data['Error Message']);
+          return res.status(data['Error Message'] ? 400 : 429).json({ 
+            error: data['Error Message'] ? 'API Hata' : 'API Limit', 
+            message: data.Note || data.Information || data['Error Message'] 
+          });
+        }
+
+        if (cacheKey) cache.set(cacheKey, data, AV_CACHE_TTL);
+        return res.json(data);
+      } else {
+        // Probably CSV or text
+        const text = await response.text();
+        return res.json({ raw: text, type: contentType });
+      }
+    } catch (err: any) {
+      console.error(`[Karlısın-AV] Critical Error:`, err);
+      res.status(500).json({ error: 'Alpha Vantage Bridge Error', message: err.message });
+    }
+  };
+
+  app.get('/api/alphavantage/overview', async (req, res) => {
+    const symbol = (req.query.symbol as string || '').toUpperCase();
+    if (!symbol) return res.status(400).json({ error: 'Sembol eksik' });
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
+
+    const cacheKey = `av_overview_${symbol}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
+    let avSymbol = symbol;
+    if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
+    const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${avSymbol}&apikey=${apiKey}`;
+    return handleAVResponse(req, res, url, cacheKey);
+  });
+
+  app.get('/api/alphavantage/news', async (req, res) => {
+    const symbol = (req.query.symbol as string || '').toUpperCase();
+    if (!symbol) return res.status(400).json({ error: 'Sembol eksik' });
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
+
+    const cacheKey = `av_news_${symbol}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
+    let avSymbol = symbol;
+    if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
+    const url = `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=${avSymbol}&apikey=${apiKey}`;
+    return handleAVResponse(req, res, url, cacheKey);
+  });
+
+  app.get('/api/alphavantage/rsi', async (req, res) => {
+    const symbol = (req.query.symbol as string || '').toUpperCase();
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
+
+    let avSymbol = symbol;
+    if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
+    const url = `https://www.alphavantage.co/query?function=RSI&symbol=${avSymbol}&interval=daily&time_period=14&series_type=close&apikey=${apiKey}`;
+    const cacheKey = `av_rsi_${symbol}`;
+    return handleAVResponse(req, res, url, cacheKey);
+  });
+
+  app.get('/api/alphavantage/earnings', async (req, res) => {
+    const symbol = (req.query.symbol as string || '').toUpperCase();
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
+
+    let avSymbol = symbol;
+    if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
+    const url = `https://www.alphavantage.co/query?function=EARNINGS&symbol=${avSymbol}&apikey=${apiKey}`;
+    const cacheKey = `av_earn_${symbol}`;
+    return handleAVResponse(req, res, url, cacheKey);
+  });
+
+  app.get('/api/alphavantage/cashflow', async (req, res) => {
+    const symbol = (req.query.symbol as string || '').toUpperCase();
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
+
+    let avSymbol = symbol;
+    if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
+    const url = `https://www.alphavantage.co/query?function=CASH_FLOW&symbol=${avSymbol}&apikey=${apiKey}`;
+    const cacheKey = `av_cf_${symbol}`;
+    return handleAVResponse(req, res, url, cacheKey);
+  });
+
+  app.get('/api/alphavantage/financials', async (req, res) => {
+    const symbol = (req.query.symbol as string || '').toUpperCase();
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
+
+    const cacheKey = `av_fin_${symbol}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
+    let avSymbol = symbol;
+    if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
+    const url = `https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol=${avSymbol}&apikey=${apiKey}`;
+    return handleAVResponse(req, res, url, cacheKey);
+  });
+
+  app.get('/api/alphavantage/commodity/:type', async (req, res) => {
+    const type = req.params.type.toUpperCase();
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
+
+    const cacheKey = `av_comm_${type}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+    
+    const url = `https://www.alphavantage.co/query?function=${type}&apikey=${apiKey}`;
+    return handleAVResponse(req, res, url, cacheKey);
+  });
+
+  app.get('/api/alphavantage/economics/:func', async (req, res) => {
+    const func = req.params.func.toUpperCase();
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
+
+    const cacheKey = `av_econ_${func}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
+    const url = `https://www.alphavantage.co/query?function=${func}&apikey=${apiKey}`;
+    return handleAVResponse(req, res, url, cacheKey);
+  });
+
+  app.get('/api/alphavantage/calendar', async (req, res) => {
+    const horizon = req.query.horizon || '3month'; // 3month or 6month
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+
+    if (!apiKey) {
+      return res.status(503).json({ error: 'Alpha Vantage API anahtarı yapılandırılmamış.' });
+    }
+
+    const cacheKey = `av_calendar_${horizon}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
+    try {
+      console.log(`[Karlısın-AV] Calendar request for horizon: ${horizon}`);
+      const url = `https://www.alphavantage.co/query?function=DIVIDEND_CALENDAR&horizon=${horizon}&apikey=${apiKey}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        return res.status(response.status).json({ error: 'Calendar API error', status: response.status });
+      }
+
+      const csvText = await response.text();
+
+      // Check for Alpha Vantage standard error/info JSON embedded in text
+      if (csvText.includes('"Note":') || csvText.includes('"Information":') || csvText.includes('"Error Message":')) {
+        try {
+          const errObj = JSON.parse(csvText);
+          return res.status(429).json({ error: 'API Limit/Error', message: errObj.Note || errObj.Information || errObj['Error Message'] });
+        } catch (e) {
+          // Continue to parse as CSV if it's not JSON
+        }
+      }
+
+      // Basic CSV to JSON
+      const lines = csvText.trim().split('\n').filter(l => l.trim().length > 0);
+      if (lines.length < 2) {
+        return res.json([]);
+      }
+      
+      // Some versions of the API might return "No events found" as a single line
+      if (lines.length === 1 && lines[0].toLowerCase().includes('no events')) {
+        return res.json([]);
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const results = lines.slice(1).map(line => {
+        const values = line.split(',');
+        const entry: any = {};
+        headers.forEach((header, i) => {
+          // Map potentially different header names to what frontend expects
+          let cleanHeader = header.replace(/"/g, '');
+          if (cleanHeader === 'dividend_amount') cleanHeader = 'amount';
+          if (cleanHeader === 'ex_dividend_date') cleanHeader = 'dividend_date';
+          
+          entry[cleanHeader] = (values[i] || '').replace(/"/g, '').trim();
+        });
+        return entry;
+      });
+
+      cache.set(cacheKey, results, AV_CACHE_TTL);
+      res.json(results);
+    } catch (err: any) {
+      console.error(`[Karlısın-AV] Calendar Error:`, err);
+      res.status(500).json({ error: 'Alpha Vantage takvim hatası', message: err.message });
+    }
+  });
+
+  // SEARCH API (Symbol lookup)
+  app.get('/api/stock/search', async (req, res) => {
+    const query = req.query.q as string;
+    if (!query) return res.status(400).json({ error: 'Sorgu eksik' });
+
+    try {
+      const results = await yahooFinance.search(query) as any;
+      if (!results || !results.quotes) {
+        return res.json([]);
+      }
+      // Filter for Yahoo Finance valid quotes and map to a clean structure
+      const quotes = (results.quotes || []).filter((q: any) => q.isYahooFinance || q.symbol);
+      res.json(quotes);
+    } catch (err: any) {
+      console.error(`[Karlısın-API] Arama Hatası:`, err);
+      res.status(500).json({ error: 'Arama yapılamadı' });
+    }
+  });
   
   // BASİT PING TESTİ
   app.get('/api/ping', (req, res) => {
@@ -215,19 +537,23 @@ async function startServer() {
     next();
   });
 
+  // SEO DOSYALARI İÇİN AÇIK ROTALAR (Her zaman erişilebilir olmalı)
+  app.get('/sitemap.xml', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+  });
+  app.get('/robots.txt', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+  });
+  app.get('/ads.txt', (req, res) => {
+    res.setHeader('Content-Type', 'text/plain');
+    res.sendFile(path.join(__dirname, 'public', 'ads.txt'));
+  });
+
   const isProduction = process.env.NODE_ENV === 'production';
   
   if (isProduction) {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
-    
-    // SEO DOSYALARI İÇİN AÇIK ROTALAR
-    app.get('/sitemap.xml', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
-    });
-    app.get('/robots.txt', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
-    });
     
     // API dışındaki her şeyi index.html'e gönder
     app.get('*', (req, res) => {
@@ -260,4 +586,6 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch(err => {
+  console.error('[Karlısın-Sunucu] Başlatma hatası:', err);
+});

@@ -13,6 +13,8 @@ import Dashboard from './components/Dashboard';
 import About from './components/About';
 import Blog from './components/Blog';
 import SalaryCalculator from './components/SalaryCalculator';
+import DividendTracker from './components/DividendTracker';
+import { MarketPulse } from './components/PiyasaninNabzi';
 import Policy from './components/Policy';
 import FeedbackOverlay from './components/FeedbackOverlay';
 import Landing from './components/Landing';
@@ -47,7 +49,8 @@ export default function App() {
               <Route path="/pazar-kar-hesaplama" element={<PageWrapper><Home /></PageWrapper>} />
               <Route path="/pazar-kar" element={<PageWrapper><Home /></PageWrapper>} />
               <Route path="/maas-vergi-hesaplama" element={<PageWrapper><SalaryCalculator /></PageWrapper>} />
-              <Route path="/temettu-takibi" element={<PageWrapper><Mortgage /></PageWrapper>} />
+              <Route path="/temettu-takibi" element={<PageWrapper><DividendTracker /></PageWrapper>} />
+              <Route path="/borsa/nabiz" element={<PageWrapper><MarketPulse /></PageWrapper>} />
               <Route path="/dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
               <Route path="/blog" element={<PageWrapper><Blog /></PageWrapper>} />
               <Route path="/blog/:id" element={<PageWrapper><Blog /></PageWrapper>} />

@@ -56,12 +56,12 @@ export default function Dashboard() {
             <p className="text-sm text-slate-400 font-bold">Here is what's happening with your finances today.</p>
           </div>
           <div className="flex gap-4 w-full md:w-auto">
-            <div className="relative flex-grow md:flex-grow-0">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+            <div className="relative flex-grow md:flex-grow-0 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 group-focus-within:text-indigo-400 transition-colors" />
               <input 
                 type="text" 
                 placeholder="Search tools..." 
-                className="pl-11 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium w-full md:w-64 transition-all text-white"
+                className="w-full md:w-64 bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-11 pr-5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-white placeholder:text-slate-500 transition-all font-medium"
               />
             </div>
             <button className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 transition-all active:scale-95 shrink-0">

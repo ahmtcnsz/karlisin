@@ -106,7 +106,7 @@ export default function SalaryCalculator() {
           setRates({
             usd: usdRate,
             gramAltin: gramAltinRate,
-            updateTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+            updateTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' }),
             loading: false
           });
         } else {
@@ -124,7 +124,7 @@ export default function SalaryCalculator() {
           setRates({
             usd: usdRate,
             gramAltin: calculatedGramAltin,
-            updateTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+            updateTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' }),
             loading: false
           });
         } catch (innerError) {
@@ -404,7 +404,12 @@ export default function SalaryCalculator() {
   // Future Planner Calculations
   const yearlySavings = totalTakeHome * (savingsRate / 100);
   const goldSavingsEquivalent = (yearlySavings / gramAltinPrice).toFixed(1);
-  const usdSavingsEquivalent = (yearlySavings / usdPrice).toFixed(0); // Using live rate
+  const usdSavingsEquivalent = (yearlySavings / usdPrice).toFixed(0);
+  
+  const monthlySavings = averageNet * (savingsRate / 100);
+  const safetyMonths = (yearlySavings / averageNet).toFixed(1);
+  const fiveYearSavings = yearlySavings * 5;
+  const tenYearSavings = yearlySavings * 10;
 
   const exportToExcel = () => {
     const data = calculations.map((calc) => {
@@ -562,7 +567,7 @@ export default function SalaryCalculator() {
                       value={targetAmount}
                       onChange={(e) => setTargetAmount(e.target.value === '' ? '' : Number(e.target.value))}
                       placeholder="Örn: 55000"
-                      className="w-full h-16 bg-black/40 border border-white/10 rounded-2xl px-6 outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 text-white font-black text-xl transition-all placeholder:text-slate-700"
+                      className="w-full h-16 bg-black/40 border border-white/10 rounded-2xl px-6 outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 text-white font-black text-xl transition-all placeholder:text-slate-700"
                     />
                     <span className="absolute right-6 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-600">₺</span>
                   </div>
@@ -1023,10 +1028,14 @@ export default function SalaryCalculator() {
                     <th className="px-6 py-5 border-b border-white/5 sticky left-0 bg-slate-900 z-10">Ay</th>
                     <th className="px-4 py-5 border-b border-white/5">SSK İşçi</th>
                     <th className="px-4 py-5 border-b border-white/5">İşsizlik İşçi</th>
-                    <th className="px-4 py-5 border-b border-white/5">Gelir Vergisi</th>
+                    <th className="px-4 py-5 border-b border-white/5">Aylık Gelir Vergisi</th>
                     <th className="px-4 py-5 border-b border-white/5">Damga Vergisi</th>
-                    <th className="px-4 py-5 border-b border-white/5">Küm. Matrah</th>
-                    <th className="px-4 py-5 border-b border-white/5 font-bold text-slate-300">Net</th>
+                    <th className="px-4 py-5 border-b border-white/5">Kümülatif Vergi Matrahı</th>
+                    <th className="px-4 py-5 border-b border-white/5">Brüt</th>
+                    <th className="px-4 py-5 border-b border-white/5">Asgari Geçim İndirimi</th>
+                    <th className="px-4 py-5 border-b border-white/5">Asgari Ücret Gelir Vergisi İstisnası</th>
+                    <th className="px-4 py-5 border-b border-white/5">Asgari Ücret Damga Vergisi İstisnası</th>
+                    <th className="px-6 py-5 border-b border-white/5 text-indigo-400 font-bold">Toplam Net Ele Geçen</th>
                     {showEmployerCost && (
                       <>
                         <th className="px-4 py-5 border-b border-white/5 text-amber-400">SSK İşveren</th>
@@ -1034,10 +1043,6 @@ export default function SalaryCalculator() {
                         <th className="px-4 py-5 border-b border-white/5 text-amber-400">Toplam Maliyet</th>
                       </>
                     )}
-                    <th className="px-4 py-5 border-b border-white/5">A.G.İ / Sosyal</th>
-                    <th className="px-4 py-5 border-b border-white/5">GV İstisnası</th>
-                    <th className="px-4 py-5 border-b border-white/5">DV İstisnası</th>
-                    <th className="px-6 py-5 border-b border-white/5 text-indigo-400 font-bold">Ele Geçen</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -1049,7 +1054,13 @@ export default function SalaryCalculator() {
                       <td className="px-4 py-4 text-xs font-mono text-rose-400/80">{formatCurrency(calc.incomeTax)}</td>
                       <td className="px-4 py-4 text-xs font-mono text-amber-400/80">{formatCurrency(calc.stampTax)}</td>
                       <td className="px-4 py-4 text-xs font-mono text-slate-400">{formatCurrency(calc.cumulativeIncomeTaxBase)}</td>
-                      <td className="px-4 py-4 text-xs font-mono text-slate-300 font-black">{formatCurrency(calc.net)}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-slate-300 font-black">{formatCurrency(calc.gross)}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-emerald-400/70">{formatCurrency(calc.agi)}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-indigo-400/70">{formatCurrency(calc.minWageIncomeTaxExemption)}</td>
+                      <td className="px-4 py-4 text-xs font-mono text-indigo-400/70">{formatCurrency(calc.minWageStampTaxExemption)}</td>
+                      <td className="px-6 py-4 text-sm font-black text-white bg-indigo-500/5 group-hover:bg-indigo-500/10 transition-colors">
+                        {formatCurrency(calc.totalNet)}
+                      </td>
                       {showEmployerCost && (
                         <>
                           <td className="px-4 py-4 text-xs font-mono text-amber-400/80">{formatCurrency(calc.sgkEmployer)}</td>
@@ -1057,12 +1068,6 @@ export default function SalaryCalculator() {
                           <td className="px-4 py-4 text-xs font-mono text-amber-400 font-black">{formatCurrency(calc.totalEmployerCost)}</td>
                         </>
                       )}
-                      <td className="px-4 py-4 text-xs font-mono text-emerald-400/70">{formatCurrency(calc.agi)}</td>
-                      <td className="px-4 py-4 text-xs font-mono text-indigo-400/70">{formatCurrency(calc.minWageIncomeTaxExemption)}</td>
-                      <td className="px-4 py-4 text-xs font-mono text-indigo-400/70">{formatCurrency(calc.minWageStampTaxExemption)}</td>
-                      <td className="px-6 py-4 text-sm font-black text-white bg-indigo-500/5 group-hover:bg-indigo-500/10 transition-colors">
-                        {formatCurrency(calc.totalNet)}
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1125,7 +1130,7 @@ export default function SalaryCalculator() {
                   <p className="text-[11px] leading-relaxed font-bold text-slate-400">
                     <span className="text-amber-500 uppercase font-black mr-2">ÖNEMLİ:</span> 
                     Şu an <span className="text-white uppercase">{months[selectedMonthIndex]}</span> ayı için simülasyon yapıyorsunuz. Maaşınız o dönemde yatacak olsa dahi, 
-                    buradaki karşılıklar <span className="text-white">bugünün ({new Date().toLocaleDateString('tr-TR')})</span> kurlarıdır. Zaman içindeki enflasyon ve kur farkı bu değerleri değiştirebilir.
+                    buradaki karşılıklar <span className="text-white">bugünün ({new Date().toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' })})</span> kurlarıdır. Zaman içindeki enflasyon ve kur farkı bu değerleri değiştirebilir.
                   </p>
                 </div>
               </motion.div>
@@ -1214,88 +1219,218 @@ export default function SalaryCalculator() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mb-16 bg-slate-900 border border-white/5 rounded-[60px] overflow-hidden shadow-2xl"
+            className="mb-16 bg-slate-900 border border-white/5 rounded-[60px] overflow-hidden shadow-2xl relative"
           >
-            <div className="p-12 md:p-16">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-16">
-                <div>
+            {/* Background Decorative Pattern */}
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+            
+            <div className="p-12 md:p-16 relative z-10">
+              <div className="flex flex-col lg:flex-row justify-between items-start gap-12 mb-16">
+                <div className="flex-1">
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 text-indigo-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-500/20 mb-4">
                     <PiggyBank size={14} />
                     YILLIK BİRİKİM RADARI
                   </div>
-                  <h3 className="text-3xl md:text-5xl font-black text-white tracking-tighter">Finansal Gelecek Planlayıcı</h3>
-                  <div className="mt-6 flex flex-col gap-4">
-                    <p className="text-[11px] font-bold text-slate-500 leading-relaxed max-w-xl">
-                      Tüm yılın toplam kazancı üzerinden belirlediğiniz oranda tasarruf yapmanız durumunda oluşan <span className="text-white italic">Yıllık Birikim Potansiyeliniz.</span>
-                    </p>
-                    <div className="bg-indigo-500/5 border border-indigo-500/10 p-4 rounded-2xl">
-                      <p className="text-[9px] text-slate-400 leading-normal">
-                        <span className="text-indigo-400 font-black mr-2 uppercase">SİMU LASYON PARAMETRESİ:</span>
-                        Bu hesaplama, <span className="text-white">Ocak - Aralık 2026</span> dönemindeki toplam tahmini net gelirinizin, <span className="text-white italic">anlık (bugünün)</span> piyasa kurları ile normalize edilmiş halidir. Alım gücü hesaplamasında bugünün fiyatları referans alınmıştır.
-                      </p>
+                  <h3 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight mb-6">
+                    Finansal Gelecek <br />
+                    <span className="text-indigo-400">Planlayıcısı.</span>
+                  </h3>
+                  <p className="text-lg text-slate-400 font-medium leading-relaxed max-w-xl mb-6">
+                    Maaşınız sadece bugünü değil, yarınınızı da finanse eder. <span className="text-white">Yıllık toplam net kazancınız</span> üzerinden hedeflediğiniz tasarruf oranıyla ne kadarlık bir birikim oluşturabileceğinizi simüle edin.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                    <div className="bg-white/5 border border-white/10 p-5 rounded-3xl backdrop-blur-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0 mt-1">
+                          <TrendingUp size={16} className="text-indigo-400" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest mb-1">Hesaplama Temeli</p>
+                          <p className="text-lg font-black text-white italic tracking-tighter">{displayCurrency(totalTakeHome)}</p>
+                          <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Yıllık Toplam Net Kazanç</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-indigo-500/5 border border-indigo-500/10 p-5 rounded-3xl backdrop-blur-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0 mt-1">
+                          <InfoIcon size={16} className="text-indigo-400" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest mb-1">Simülasyon Detayı</p>
+                          <p className="text-[11px] text-slate-500 leading-relaxed italic">
+                            Ocak - Aralık 2026 dönemindeki tüm gelirlerinizin toplamıdır. Enflasyon hariçtir.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="bg-white/5 px-8 py-6 rounded-3xl border border-white/10 text-center">
-                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 italic">Hedef Tasarruf Oranı</span>
-                   <span className="text-4xl font-black text-emerald-400">%{savingsRate}</span>
+
+                <div className="w-full lg:w-96 shrink-0">
+                  <div className="bg-slate-950/60 p-8 rounded-[40px] border border-white/5 backdrop-blur-xl relative group">
+                    <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-[40px]" />
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-center mb-6">
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Hedef Oran</span>
+                        <div className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-lg text-[10px] font-black">STABİL</div>
+                      </div>
+                      <div className="text-7xl font-black text-white tracking-tighter mb-2 italic">
+                        %{savingsRate}
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Net Maaş Tasarrufu</p>
+                      
+                      <div className="mt-10">
+                        <input 
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="5"
+                          value={savingsRate}
+                          onChange={(e) => setSavingsRate(Number(e.target.value))}
+                          className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all border border-white/5"
+                        />
+                        <div className="flex justify-between mt-4">
+                          <span className="text-[9px] font-black text-slate-700">MIN</span>
+                          <span className="text-[9px] font-black text-slate-500 tracking-widest">HEDEF SEVİYE</span>
+                          <span className="text-[9px] font-black text-slate-700">MAX</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-16">
-                <div className="relative p-2">
-                  <input 
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="5"
-                    value={savingsRate}
-                    onChange={(e) => setSavingsRate(Number(e.target.value))}
-                    className="w-full h-3 bg-white/5 rounded-full appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all border border-white/10"
-                  />
-                  <div className="flex justify-between mt-6">
-                    {[0, 20, 40, 60, 80, 100].map(p => (
-                      <span key={p} className="text-[10px] font-black text-slate-600 uppercase tracking-widest">%{p}</span>
-                    ))}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Core Metrics Column */}
+                <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-indigo-500/5 p-10 rounded-[45px] border border-indigo-500/10 group hover:border-indigo-500/30 transition-all relative overflow-hidden">
+                    <Wallet size={48} className="absolute -right-4 -bottom-4 text-indigo-500/10 group-hover:scale-110 transition-transform" />
+                    <div className="relative z-10">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Bir Yılda Ne Biriktiririm?</span>
+                      <div className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2">{displayCurrency(yearlySavings)}</div>
+                      <p className="text-[11px] font-medium text-slate-400">Bir yıllık emeğinizin <span className="text-indigo-400 font-bold">%{savingsRate}</span> tasarruf edilmiş karşılığı.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-500/5 p-10 rounded-[45px] border border-amber-500/10 group hover:border-amber-500/30 transition-all relative overflow-hidden">
+                    <Gem size={48} className="absolute -right-4 -bottom-4 text-amber-500/10 group-hover:scale-110 transition-transform" />
+                    <div className="relative z-10">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Altın Karşılığı (Gram)</span>
+                      <div className="text-4xl md:text-5xl font-black text-amber-500 tracking-tighter mb-2">{targetAmount ? `${goldSavingsEquivalent}` : '---'} <span className="text-lg">gr</span></div>
+                      <p className="text-[11px] font-medium text-slate-400 italic">Enflasyona karşı korumalı <span className="text-amber-500/80 font-bold">tahmini</span> pörtföy değeri.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-emerald-500/5 p-10 rounded-[45px] border border-emerald-500/10 group hover:border-emerald-500/30 transition-all relative overflow-hidden">
+                    <DollarSign size={48} className="absolute -right-4 -bottom-4 text-emerald-500/10 group-hover:scale-110 transition-transform" />
+                    <div className="relative z-10">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">USD Karşılığı (Dolar)</span>
+                      <div className="text-4xl md:text-5xl font-black text-emerald-400 tracking-tighter mb-2">{targetAmount ? `${usdSavingsEquivalent}` : '---'} <span className="text-lg">$</span></div>
+                      <p className="text-[11px] font-medium text-slate-400">Global piyasalardaki <span className="text-emerald-500/80 font-bold">simüle edilen</span> alım gücü.</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                   <div className="bg-white/5 p-10 rounded-[40px] border border-white/5 flex flex-col items-center gap-6">
-                      <div className="w-16 h-16 bg-emerald-500/10 rounded-[28px] flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                         <Wallet size={32} />
+                {/* Long Term Strategy Column */}
+                <div className="lg:col-span-8 bg-slate-950/40 border border-white/5 rounded-[45px] p-12">
+                   <div className="flex items-center gap-4 mb-10">
+                      <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-indigo-400 border border-white/10 shrink-0">
+                        <TrendingUp size={24} />
                       </div>
-                      <div className="text-center">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 uppercase">Yıllık Birikim (TRY)</span>
-                        <span className="text-3xl font-black text-white leading-none tracking-tighter">{displayCurrency(yearlySavings)}</span>
-                      </div>
-                   </div>
-
-                   <div className="bg-white/5 p-10 rounded-[40px] border border-white/5 flex flex-col items-center gap-6">
-                      <div className="w-16 h-16 bg-amber-500/10 rounded-[28px] flex items-center justify-center text-amber-400 border border-amber-500/20">
-                         <Gem size={32} />
-                      </div>
-                      <div className="text-center">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 uppercase">Altın Karşılığı</span>
-                        <span className="text-3xl font-black text-white leading-none tracking-tighter">{targetAmount ? `${goldSavingsEquivalent} Gram` : '---'}</span>
+                      <div>
+                        <h4 className="text-2xl font-black text-white tracking-tight">Uzun Vadeli Projeksiyon</h4>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Aynı tasarruf oranıyla gelecek analizi</p>
                       </div>
                    </div>
 
-                   <div className="bg-white/5 p-10 rounded-[40px] border border-white/5 flex flex-col items-center gap-6">
-                      <div className="w-16 h-16 bg-indigo-500/10 rounded-[28px] flex items-center justify-center text-indigo-400 border border-indigo-500/20">
-                         <DollarSign size={32} />
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                      <div className="space-y-8">
+                        <div className="flex items-center gap-6 group">
+                           <div className="w-1 h-12 bg-slate-800 group-hover:bg-indigo-500 transition-colors rounded-full" />
+                           <div>
+                             <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest block mb-1">5 Yılda Toplam</span>
+                             <div className="text-3xl font-black text-white tracking-tighter">{displayCurrency(fiveYearSavings)}</div>
+                             <p className="text-[10px] text-slate-500 font-medium italic mt-1 italic">Varlıkların değer kazanımı hariçtir.</p>
+                           </div>
+                        </div>
+
+                        <div className="flex items-center gap-6 group">
+                           <div className="w-1 h-12 bg-slate-800 group-hover:bg-purple-500 transition-colors rounded-full" />
+                           <div>
+                             <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest block mb-1">10 Yılda Toplam</span>
+                             <div className="text-3xl font-black text-white tracking-tighter">{displayCurrency(tenYearSavings)}</div>
+                             <p className="text-[10px] text-slate-500 font-medium italic mt-1 italic">On yıllık finansal disiplin sonucu.</p>
+                           </div>
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 uppercase">USD Karşılığı</span>
-                        <span className="text-3xl font-black text-white leading-none tracking-tighter">{targetAmount ? `${usdSavingsEquivalent} Dolar` : '---'}</span>
+
+                      <div className="bg-indigo-500/10 border border-indigo-500/20 p-8 rounded-[35px] flex flex-col justify-center items-center text-center">
+                        <div className="w-14 h-14 bg-indigo-500 text-white rounded-full flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/20">
+                          <Target size={28} />
+                        </div>
+                        <span className="text-[11px] font-black text-indigo-300 uppercase tracking-[0.2em] block mb-4">Finansal Özgürlük Katsayısı</span>
+                        <div className="text-5xl font-black text-white tracking-tighter mb-2 italic">{safetyMonths} <span className="text-lg">Ay</span></div>
+                        <p className="text-[11px] font-medium text-indigo-300 leading-relaxed px-4">
+                          Yıllık birikiminiz, hiç çalışmasanız dahi sizi <span className="font-black italic underline decoration-indigo-400">{safetyMonths} ay</span> boyunca hayatta tutacak bir emniyet kemeri oluşturur.
+                        </p>
                       </div>
                    </div>
                 </div>
 
-                <div className="pt-12 border-t border-white/5 flex items-center justify-center gap-3">
-                   <InfoIcon className="text-slate-600" size={16} />
-                   <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest italic leading-none">Bu veriler simülasyon amaçlıdır, yatırım tavsiyesi değildir.</p>
+                {/* Insight Column */}
+                <div className="lg:col-span-4 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[45px] p-10 text-white shadow-xl shadow-indigo-600/20 flex flex-col h-full">
+                  <div className="flex-1">
+                    <h4 className="text-2xl font-black tracking-tight mb-6 leading-tight italic uppercase">Neden <br /> Biriktirmelisiniz?</h4>
+                    <div className="space-y-6">
+                      <div className="flex gap-4">
+                        <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0">1</div>
+                        <p className="text-sm font-medium leading-relaxed opacity-90">
+                          <span className="font-bold underline decoration-white/20">Fırsat Maliyeti:</span> Bugün harcanan her 1 TL, yarının 10 TL'si olabilir. Tasarruf, gelecekteki özgürlüğünüzü satın almaktır.
+                        </p>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0">2</div>
+                        <p className="text-sm font-medium leading-relaxed opacity-90">
+                          <span className="font-bold underline decoration-white/20">Emniyet Kemeri:</span> Beklenmedik durumlar için kümülatif matrah değil, kümülatif birikim sizi korur. 
+                        </p>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0">3</div>
+                        <p className="text-sm font-medium leading-relaxed opacity-90">
+                          <span className="font-bold underline decoration-white/20">Psikolojik Konfor:</span> Kenarda duran X aylık birikim, kariyerinizde daha özgür kararlar almanızı sağlar.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="mt-12 w-full py-4 bg-white text-indigo-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-50 transition-colors shadow-lg"
+                  >
+                    PLANLAMAYA BAŞLA
+                  </button>
                 </div>
+              </div>
+
+              <div className="mt-16 pt-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+                 <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
+                      <InfoIcon size={14} />
+                    </div>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic">Simülasyon bugünün verileriyle normalize edilmiştir.</p>
+                 </div>
+                 <div className="flex items-center gap-6">
+                    <div className="text-right">
+                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Hesaplama Motoru</p>
+                       <p className="text-[11px] font-bold text-white tracking-widest">KARLISIN SIM V2.0</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl border border-white/10 flex items-center justify-center bg-white/5">
+                       <ShieldCheck className="text-indigo-400" size={24} />
+                    </div>
+                 </div>
               </div>
             </div>
           </motion.div>

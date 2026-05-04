@@ -10,6 +10,7 @@ const FeedbackOverlay: React.FC = () => {
   const [userEmail, setUserEmail] = useState('');
   const [showFeedbackTooltip, setShowFeedbackTooltip] = useState(true);
   const [feedbackBottom, setFeedbackBottom] = useState(32);
+  const [isMinimized, setIsMinimized] = useState(false);
   const location = useLocation();
 
   // Blog detay sayfasında gizle
@@ -26,7 +27,11 @@ const FeedbackOverlay: React.FC = () => {
 
   useEffect(() => {
     const tooltipTimer = setTimeout(() => setShowFeedbackTooltip(false), 30000);
-    return () => clearTimeout(tooltipTimer);
+    const minimizeTimer = setTimeout(() => setIsMinimized(true), 35000);
+    return () => {
+      clearTimeout(tooltipTimer);
+      clearTimeout(minimizeTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -162,20 +167,51 @@ const FeedbackOverlay: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => {
-          setIsFeedbackOpen(!isFeedbackOpen);
-          setShowFeedbackTooltip(false);
-        }}
-        id="feedback-toggle"
-        className="flex items-center gap-3 px-4 sm:px-6 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all relative overflow-hidden"
-      >
-        <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity" />
-        <MessageSquare size={24} className="fill-white/20 shrink-0" />
-        <span className="text-lg hidden sm:inline">Geri Bildirim</span>
-      </motion.button>
+      <AnimatePresence mode="wait">
+        {!isMinimized ? (
+          <motion.button
+            key="feedback-button"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setIsFeedbackOpen(!isFeedbackOpen);
+              setShowFeedbackTooltip(false);
+            }}
+            id="feedback-toggle"
+            className="flex items-center gap-3 px-4 sm:px-6 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity" />
+            <MessageSquare size={24} className="fill-white/20 shrink-0" />
+            <span className="text-lg hidden sm:inline">Geri Bildirim</span>
+          </motion.button>
+        ) : (
+          <motion.div
+            key="sticky-sidebar"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 16 }} // Move slightly out of frame or closer to edge
+            whileHover={{ x: 0 }}
+            className="flex flex-col bg-white border border-slate-200 shadow-2xl rounded-l-2xl overflow-hidden"
+          >
+            <button 
+              onClick={() => setIsFeedbackOpen(!isFeedbackOpen)}
+              className="p-4 hover:bg-slate-50 transition-colors group flex items-center justify-center"
+            >
+              <div className="relative">
+                <MessageSquare 
+                  size={24} 
+                  className={isFeedbackOpen ? "text-indigo-600 fill-indigo-600/20" : "text-[#00144f] group-hover:scale-110 transition-transform"} 
+                />
+                {!isFeedbackOpen && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
+                )}
+              </div>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
