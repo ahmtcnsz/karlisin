@@ -53,7 +53,7 @@ export default function Landing() {
       title: 'Piyasanın Nabzı',
       description: 'Global makro veriler ve borsa analiz motoru ile piyasanın ritmini yakalayın.',
       icon: <TrendingUp className="text-amber-400" size={28} />,
-      badge: 'YENİ',
+      badge: 'YAKINDA',
       color: 'from-amber-500/20 to-amber-600/5',
       borderColor: 'border-amber-500/20'
     },
