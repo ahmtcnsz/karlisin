@@ -610,28 +610,31 @@ const DividendTracker: React.FC = () => {
       // Use query parameter to avoid dot issues in paths
       const url = `/api/dividends?symbol=${encodeURIComponent(symbol)}`;
       const res = await fetch(url);
-      
-      if (!res.ok) {
-        let errorMsg = 'Veri çekilemedi';
-        try {
-          const json = await res.json();
-          errorMsg = json.message || json.error || `Hata kodu: ${res.status}`;
-        } catch (e) {
-          errorMsg = `Sunucu hatası: ${res.status}`;
-        }
-        throw new Error(errorMsg);
-      }
-      
       const text = await res.text();
+      
       let json;
       try {
         json = JSON.parse(text);
-        if (json.source) {
-          console.log(`[DividendTracker] Veri kaynağı: ${json.source}`);
-        }
       } catch (e) {
-        console.error('[DividendTracker] JSON Parse Hatası. Gelen metin:', text.substring(0, 500));
-        throw new Error(`Sunucu beklenen formatta (JSON) yanıt vermedi. Durum: ${res.status}. Lütfen geliştirici konsolunu kontrol edin.`);
+        console.error('[DividendTracker] JSON Parse Hatası. Uzunluk:', text.length, 'Gelen ilk 100 karakter:', text.substring(0, 100));
+        if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
+          throw new Error('Sunucu veriyi doğru formatta göndermedi (HTML). Lütfen tekrar deneyin.');
+        }
+        throw new Error(`Sunucu beklenen formatta (JSON) yanıt vermedi. Durum: ${res.status}.`);
+      }
+      
+      if (!res.ok) {
+        let errorMsg = json.message || json.error || 'Veri çekme hatası';
+        
+        // Detailed error info for Turkish users if multiple sources failed
+        if (json.details && Array.isArray(json.details)) {
+          console.warn('[DividendTracker] Kaynak hataları:', json.details);
+          if (json.details.some((d: string) => d.toLowerCase().includes('limit'))) {
+            errorMsg = 'Günlük veri limiti doldu. Bir süre sonra tekrar deneyin.';
+          }
+        }
+        
+        throw new Error(errorMsg);
       }
       
       if (!json || !json.summary) {
