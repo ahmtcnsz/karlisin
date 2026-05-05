@@ -38,9 +38,7 @@ import {
   ChevronDown,
   Clock,
   ArrowDownRight,
-  PieChart,
-  Calculator,
-  Lightbulb
+  PieChart
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
@@ -280,7 +278,7 @@ const TradingViewWidget = ({ symbol }: { symbol: string }) => {
 
   useEffect(() => {
     const currentContainer = container.current;
-    if (!currentContainer || !symbol) return;
+    if (!currentContainer) return;
     
     // Clear existing content safely
     currentContainer.innerHTML = '';
@@ -297,6 +295,7 @@ const TradingViewWidget = ({ symbol }: { symbol: string }) => {
     if (symbol.endsWith('.IS')) {
       tvSymbol = `BIST:${symbol.replace('.IS', '')}`;
     } else if (!symbol.includes(':') && symbol.length <= 5) {
+      // Fallback for symbols that might be BIST but missing .IS
       tvSymbol = `BIST:${symbol}`;
     }
 
@@ -306,7 +305,8 @@ const TradingViewWidget = ({ symbol }: { symbol: string }) => {
     script.async = true;
     script.crossOrigin = "anonymous";
     
-    const config = {
+    // Enhanced configuration for better reliability
+    script.innerHTML = JSON.stringify({
       "autosize": true,
       "symbol": tvSymbol,
       "interval": "D",
@@ -323,19 +323,11 @@ const TradingViewWidget = ({ symbol }: { symbol: string }) => {
       "allow_symbol_change": true,
       "calendar": false,
       "support_host": "https://www.tradingview.com"
-    };
-
-    script.innerHTML = JSON.stringify(config);
+    });
     
-    // Append script after a micro-task to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      if (currentContainer.querySelector(`#${widgetId}`)) {
-        currentContainer.appendChild(script);
-      }
-    }, 0);
+    currentContainer.appendChild(script);
 
     return () => {
-      clearTimeout(timeoutId);
       if (currentContainer) {
         currentContainer.innerHTML = '';
       }
@@ -993,12 +985,12 @@ const DividendTracker: React.FC = () => {
                                     <div className="p-1 rounded-full hover:bg-white/5 transition-colors">
                                        <Info className="w-4 h-4 text-slate-500 group-hover/info:text-indigo-400 transition-colors" />
                                     </div>
-                                    <div className="absolute bottom-full right-0 mb-3 w-64 p-4 bg-slate-900/95 backdrop-blur-xl text-[10px] font-bold text-slate-200 rounded-2xl border border-white/10 opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 translate-y-2 group-hover/info:translate-y-0">
+                                    <div className="absolute bottom-full right-0 mb-3 w-56 p-4 bg-slate-900/95 backdrop-blur-xl text-[10px] font-bold text-slate-200 rounded-2xl border border-white/10 opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 translate-y-2 group-hover/info:translate-y-0">
                                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/5">
                                           <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                                          <span className="uppercase tracking-widest text-indigo-400">Veri Konsensüsü</span>
+                                          <span className="uppercase tracking-widest text-indigo-400">Bilgilendirme</span>
                                        </div>
-                                       Bu veri; Bloomberg, Refinitiv (Reuters) ve Yahoo Finance gibi global finansal sağlayıcılardan gelen kurumsal analist (JP Morgan, Goldman Sachs, vb.) raporlarının ağırlıklı ortalamasını temsil eder.
+                                       Analistlerin "Al", "Tut" veya "Sat" tavsiyelerinin ağırlıklı ortalamasıdır. Yahoo Finance verilerini temel alır.
                                     </div>
                                  </div>
                               </div>
@@ -1007,14 +999,12 @@ const DividendTracker: React.FC = () => {
                               <div className="text-4xl font-black text-white italic tracking-[0.1em] uppercase mb-2">
                                  {getRecommendationLabel(data.summary.financialData?.recommendationKey)}
                               </div>
-                              <div className="mt-auto space-y-2">
-                                 <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
-                                    <div className="w-1 h-1 rounded-full bg-indigo-500" />
+                              <div className="flex items-center gap-2 mt-auto">
+                                 <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
                                     {data.summary.financialData?.numberOfAnalystOpinions 
-                                      ? `${data.summary.financialData.numberOfAnalystOpinions} Kurumsal Analist Görüşü` 
+                                      ? `${data.summary.financialData.numberOfAnalystOpinions} Analist Görüşü` 
                                       : 'Sektör Ortalaması'}
                                  </div>
-                                 <div className="text-[8px] text-slate-600 font-black uppercase tracking-[0.2em] italic">Kaynak: Global Institutional Aggregator</div>
                               </div>
                            </div>
 
@@ -1297,33 +1287,9 @@ const DividendTracker: React.FC = () => {
                       <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest italic">Karlısın Pro Analiz</span>
                     </div>
                     <h3 className="text-4xl font-black text-white mb-4 tracking-tighter italic uppercase leading-none">PASİF GELİR HEDEFLEYİCİ</h3>
-                    <p className="text-slate-400 text-lg leading-relaxed font-medium max-w-xl mb-6">
-                      Maaşlı bir çalışanın veya yatırımcının en büyük hayali olan <span className="text-white italic">"Finansal Özgürlük"</span> için gereken vites değişimini simüle edin. Eğer portföyünüzde bu hisseden <span className="text-white font-black underline decoration-indigo-500/50 decoration-2">1.000 adet (lot)</span> bulunsaydı, ne kadarlık bir brüt nakit akışınız olurdu?
+                    <p className="text-slate-400 text-lg leading-relaxed font-medium max-w-xl">
+                      Eğer portföyünüzde bu hisseden <span className="text-white font-black">1.000 adet (lot)</span> bulunsaydı, yıllık tahmini nakit akışı aşağıdakı gibi gerçekleşecekti.
                     </p>
-                    
-                    <div className="flex flex-wrap gap-4">
-                      <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl backdrop-blur-md flex items-center gap-4 group/logic">
-                        <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-slate-500 group-hover/logic:bg-indigo-500/20 group-hover/logic:text-indigo-400 transition-colors">
-                           <Calculator size={16} />
-                        </div>
-                        <div>
-                          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Hesaplama Standartı</div>
-                          <div className="text-xs font-bold text-slate-300">
-                            1000 <span className="text-[10px] text-slate-500 mx-1">×</span> {formatCurrency(data?.summary?.summaryDetail?.dividendRate || 0, data.symbol)} <span className="text-indigo-400 ml-1">(Hisse Başı Tahmini Temettü)</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-emerald-500/5 border border-emerald-500/10 px-5 py-3 rounded-2xl backdrop-blur-md flex items-center gap-4 group/logic">
-                         <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                           <Lightbulb size={16} />
-                        </div>
-                        <div>
-                          <div className="text-[9px] font-black text-emerald-500/60 uppercase tracking-widest mb-1">Neden 1.000 Adet?</div>
-                          <div className="text-xs font-bold text-white italic">Projeksiyonun anlaşılabilir olması için sabit 1.000 lot temel alınmıştır.</div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
 
                     <div className="flex-shrink-0 text-center md:text-right relative z-10 flex flex-col items-center md:items-end scale-100">
