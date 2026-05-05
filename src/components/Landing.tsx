@@ -38,24 +38,14 @@ export default function Landing() {
       borderColor: 'border-emerald-500/20'
     },
     {
-      id: 'dividend',
+      id: 'mortgage',
       path: '/temettu-takibi',
       title: 'Temettü Takibi',
       description: 'Borsa pasif gelirinizi takip edin, vergi süreçlerini ve gelecek ödemeleri planlayın.',
-      icon: <PieChart className="text-indigo-400" size={28} />,
-      badge: 'AKTİF',
+      icon: <TrendingUp className="text-indigo-400" size={28} />,
+      badge: 'YENİ & PRO',
       color: 'from-indigo-500/20 to-purple-600/5',
       borderColor: 'border-indigo-500/20'
-    },
-    {
-      id: 'market-pulse',
-      path: '/borsa/nabiz',
-      title: 'Piyasanın Nabzı',
-      description: 'Global makro veriler ve borsa analiz motoru ile piyasanın ritmini yakalayın.',
-      icon: <TrendingUp className="text-amber-400" size={28} />,
-      badge: 'YENİ',
-      color: 'from-amber-500/20 to-amber-600/5',
-      borderColor: 'border-amber-500/20'
     },
   ];
 
@@ -71,9 +61,9 @@ export default function Landing() {
       icon: <Zap size={20} />
     },
     {
-      title: 'Borsa Analiz',
-      desc: 'Şirketlerin finansal sağlığını ve temettü gücünü profesyonelce analiz edin.',
-      icon: <Globe size={20} />
+      title: 'Gelişmiş Analiz',
+      desc: 'Karmaşık finansal verileri basit ve anlaşılır grafiklere dönüştürün.',
+      icon: <PieChart size={20} />
     }
   ];
 

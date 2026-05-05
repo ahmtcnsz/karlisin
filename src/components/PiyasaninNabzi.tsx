@@ -15,6 +15,8 @@ import {
   Calculator
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import Navbar from './Navbar';
+import Footer from './Footer';
 
 const FeatureCard = ({ icon: Icon, title, description, badge, color }: { 
   icon: any, 
@@ -54,7 +56,8 @@ const FeatureCard = ({ icon: Icon, title, description, badge, color }: {
 
 export const MarketPulse = () => {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/30 pt-16">
+      <Navbar />
       
       {/* Hero Section */}
       <div className="relative pt-24 pb-32 overflow-hidden">
@@ -91,7 +94,7 @@ export const MarketPulse = () => {
               transition={{ delay: 0.2 }}
               className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed mb-12"
             >
-              Global finansal veri altyapısı ile borsanın sadece fiyatlarını değil, <span className="text-white">finansal sağlığını</span> ve <span className="text-white">makro-ekonomik ritmini</span> takip edin.
+              Alpha Vantage global API entegrasyonu ile borsanın sadece fiyatlarını değil, <span className="text-white">finansal sağlığını</span> ve <span className="text-white">makro-ekonomik ritmini</span> takip edin.
             </motion.p>
           </div>
         </div>
@@ -103,28 +106,28 @@ export const MarketPulse = () => {
           <FeatureCard 
             icon={ShieldCheck}
             title="Dividend Safety Score"
-            description="Şirketin nakit akışı ve kazanç verilerini kullanarak, temettü ödemelerini sürdürebilme gücünü skorluyoruz."
+            description="CASH_FLOW ve EARNINGS verilerini kullanarak, şirketin temettü ödemelerini sürdürebilme gücünü skorluyoruz."
             badge="ÖZEL ALGORİTMA"
             color="bg-emerald-500"
           />
           <FeatureCard 
             icon={Globe}
             title="Global Market Pulse"
-            description="Altın, Petrol, Doğal Gaz ve Enflasyon (TÜFE/CPI) verilerini içeren kapsamlı makro-ekonomik özet paneli."
+            description="Altın, Petrol, Doğal Gaz ve Enflasyon (TÜFE/CPI) verilerini içeren makro-ekonomik özet paneli."
             badge="MAKRO VERİ"
             color="bg-indigo-500"
           />
           <FeatureCard 
             icon={BarChart3}
             title="Endeks Kıyaslama"
-            description="Seçilen hisseyi global endeksler (S&P 500, Nasdaq) ve emtialar ile tarihsel olarak kıyaslayın."
+            description="Seçilen hisseyi BIST100, S&P 500 ve Nasdaq ile tarihsel olarak görsel bazda kıyaslayın."
             badge="VİZÜALİZASYON"
             color="bg-purple-500"
           />
           <FeatureCard 
             icon={Flame}
             title="Smart Movers"
-            description="Anlık değişimlerin ötesinde, global piyasa trendlerine göre en çok kazandıran ve kaybedenlerin hibrit analizi."
+            description="Anlık değişimlerin ötesinde, global piyasa trendlerine göre en çok kazandıran ve kaybedenlerin analizi."
             badge="DİNAMİK LİSTE"
             color="bg-amber-500"
           />
@@ -147,7 +150,7 @@ export const MarketPulse = () => {
                 Derinlikli <br /> Analiz Zamanı.
               </h2>
               <p className="text-lg md:text-xl text-indigo-100 font-medium leading-relaxed mb-10 opacity-90">
-                Pazar verileri sadece fiyat verir, yeni analiz motorumuz hikayeyi anlatır. Şirketin finansal sağlığını ve makro-çevresini saniyeler içinde analiz edin.
+                Yahoo Finance fiyat verir, Alpha Vantage hikayeyi anlatır. Şirketin finansal sağlığını (Fundamental Analysis) ve makro-çevresini saniyeler içinde analiz edin.
               </p>
               
               <div className="space-y-6">
@@ -193,27 +196,29 @@ export const MarketPulse = () => {
           </div>
         </motion.div>
 
-        {/* Why the new engine? */}
+        {/* Why Alpha Vantage? */}
         <div className="mt-40 text-center">
           <h3 className="text-2xl md:text-3xl font-black text-white italic tracking-tighter uppercase mb-6 inline-block border-b-2 border-indigo-500 pb-2">
-            Neden Gelişmiş Finansal Veri Motoru?
+            Neden Alpha Vantage Entegrasyonu?
           </h3>
           <div className="max-w-3xl mx-auto">
             <p className="text-slate-400 font-medium leading-relaxed mb-8">
-              Karlısın, özellikle makro-ekonomik veriler (emtialar, enflasyon, faiz) ve fundamental analiz (şirketin finansal sağlığı) konularında yeni kurumsal veri sağlayıcıları ile entegre oluyor. Bu gelişimle beraber <span className="text-white">Karlısın</span>, sadece bir takip aracı değil, bir <span className="text-indigo-400">profesyonel karar destek sistemi</span> haline gelecek.
+              Alpha Vantage, özellikle makro-ekonomik veriler (emtialar, enflasyon, faiz) ve fundamental analiz (şirketin finansal sağlığı) konularında Yahoo Finance'ten daha derinlikli veriler sunabiliyor. Bu entegrasyonla beraber <span className="text-white">Karlısın</span>, sadece bir takip aracı değil, bir <span className="text-indigo-400">karar destek sistemi</span> haline gelecek.
             </p>
             <div className="flex items-center justify-center gap-6">
               <div className="px-6 py-3 bg-slate-900 border border-white/5 rounded-2xl">
-                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">VERİ STATÜSÜ</span>
+                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">API Status</span>
                  <span className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                   GELİŞTİRME AŞAMASINDA
+                   DEVELOPMENT ACTIVE
                  </span>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };

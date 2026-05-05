@@ -541,23 +541,22 @@ async function startServer() {
     next();
   });
 
-  // SEO DOSYALARI İÇİN AÇIK ROTALAR (Her zaman erişilebilir olmalı)
-  app.get('/sitemap.xml', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
-  });
-  app.get('/robots.txt', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
-  });
-  app.get('/ads.txt', (req, res) => {
-    res.setHeader('Content-Type', 'text/plain');
-    res.sendFile(path.join(__dirname, 'public', 'ads.txt'));
-  });
-
   const isProduction = process.env.NODE_ENV === 'production';
   
   if (isProduction) {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
+    
+    // SEO DOSYALARI İÇİN AÇIK ROTALAR
+    app.get('/sitemap.xml', (req, res) => {
+      res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+    });
+    app.get('/robots.txt', (req, res) => {
+      res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+    });
+    app.get('/ads.txt', (req, res) => {
+      res.sendFile(path.join(__dirname, 'public', 'ads.txt'));
+    });
     
     // API dışındaki her şeyi index.html'e gönder
     app.get('*', (req, res) => {

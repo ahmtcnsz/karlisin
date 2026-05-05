@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ArrowRight, Home, Calculator, ShoppingBag, PieChart, BookOpen, Shield, FileText, Info, TrendingUp } from 'lucide-react';
+import { ChevronRight, ArrowRight, Home, Calculator, ShoppingBag, PieChart, BookOpen, Shield, FileText, Info } from 'lucide-react';
 
 export default function Sitemap() {
   const sections = [
@@ -12,7 +12,6 @@ export default function Sitemap() {
         { name: 'Maaş ve Vergi Hesaplama (2026)', path: '/maas-vergi-hesaplama', icon: <Calculator size={16} /> },
         { name: 'Pazar Kâr Analizi (Trendyol & Amazon)', path: '/pazar-kar-hesaplama', icon: <ShoppingBag size={16} /> },
         { name: 'Temettü Verimi Takibi', path: '/temettu-takibi', icon: <PieChart size={16} /> },
-        { name: 'Piyasanın Nabzı (Borsa Analiz)', path: '/borsa/nabiz', icon: <TrendingUp size={16} /> },
       ]
     },
     {
