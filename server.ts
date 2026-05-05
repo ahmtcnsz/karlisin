@@ -76,12 +76,13 @@ async function startServer() {
 
     try {
       console.log(`[Karlısın-API] Yahoo Finance sorgusu başlıyor: ${symbol}`);
-      // 1. Get core summary data (Reduced modules to avoid validation errors)
-      // Note: 'dividendHistory' and 'recommendationTrend' often cause schema errors
+      // 1. Get core summary data
       const summary = await yahooFinance.quoteSummary(symbol, {
         modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
       });
-      console.log(`[Karlısın-API] Summary alındı: ${symbol}`);
+      
+      // Serileştirme hatasını önlemek için sadece gerekli verileri alalım
+      const cleanSummary = JSON.parse(JSON.stringify(summary));
 
       // 2. Get historical dividends (last 5 years)
       const now = new Date();
@@ -94,14 +95,17 @@ async function startServer() {
           period2: now,
           events: 'dividends'
         }) as any;
-        historyData = history.events?.dividends || [];
+        
+        if (history && history.events && history.events.dividends) {
+          historyData = JSON.parse(JSON.stringify(history.events.dividends));
+        }
       } catch (histErr) {
         console.warn(`[Karlısın-API] Geçmiş temettü verisi çekilemedi (${symbol}):`, histErr);
       }
 
       const result = {
         symbol,
-        summary,
+        summary: cleanSummary,
         history: historyData
       };
 
@@ -358,15 +362,25 @@ async function startServer() {
   // SEARCH API (Symbol lookup)
   app.get('/api/stock/search', async (req, res) => {
     const query = req.query.q as string;
-    if (!query) return res.status(400).json({ error: 'Sorgu eksik' });
+    if (!query || query.length < 2) return res.json([]);
 
     try {
       const results = await yahooFinance.search(query) as any;
       if (!results || !results.quotes) {
         return res.json([]);
       }
-      // Filter for Yahoo Finance valid quotes and map to a clean structure
-      const quotes = (results.quotes || []).filter((q: any) => q.isYahooFinance || q.symbol);
+      
+      // Serileştirilebilir veri döndür
+      const quotes = (results.quotes || [])
+        .filter((q: any) => q.isYahooFinance || q.symbol)
+        .map((q: any) => ({
+          symbol: q.symbol,
+          shortname: q.shortname || q.longname || q.symbol,
+          longname: q.longname || q.shortname || q.symbol,
+          exchange: q.exchange,
+          typeDisp: q.typeDisp
+        }));
+
       res.json(quotes);
     } catch (err: any) {
       console.error(`[Karlısın-API] Arama Hatası:`, err);

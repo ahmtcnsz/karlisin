@@ -622,7 +622,13 @@ const DividendTracker: React.FC = () => {
         throw new Error(errorMsg);
       }
       
-      const json = await res.json();
+      const text = await res.text();
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Sunucu veriyi doğru formatta göndermedi (HTML). Lütfen birazdan tekrar deneyin.');
+      }
       
       if (!json || !json.summary) {
         throw new Error('Sembol verisi eksik veya hatalı.');
@@ -667,8 +673,14 @@ const DividendTracker: React.FC = () => {
     try {
       const res = await fetch(`/api/stock/search?q=${val}`);
       if (!res.ok) return;
-      const json = await res.json();
-      setSearchResults(Array.isArray(json) ? json : []);
+      const text = await res.text();
+      try {
+        const json = JSON.parse(text);
+        setSearchResults(Array.isArray(json) ? json : []);
+      } catch (e) {
+        console.warn('[Search] API returned non-JSON response');
+        setSearchResults([]);
+      }
     } catch (err) {
       console.error('[Search] Error:', err);
     }
