@@ -14,7 +14,7 @@ export default function Sitemap() {
         { name: 'Maaş ve Vergi Hesaplama (2026)', path: '/maas-vergi-hesaplama', icon: <Calculator size={16} />, badge: 'YENİ' },
         { name: 'Pazar Kâr Analizi (Trendyol & Amazon)', path: '/pazar-kar-hesaplama', icon: <ShoppingBag size={16} />, badge: 'POPÜLER' },
         { name: 'Temettü Verimi Takibi', path: '/temettu-takibi', icon: <PieChart size={16} />, badge: 'AKTİF' },
-        { name: 'Piyasanın Nabzı (Borsa Analiz)', path: '/borsa/nabiz', icon: <TrendingUp size={16} />, badge: 'YENİ' },
+        { name: 'Piyasanın Nabzı (Borsa Analiz)', path: '/borsa/nabiz', icon: <TrendingUp size={16} />, badge: 'YAKINDA' },
       ]
     },
     {
@@ -85,6 +85,7 @@ export default function Sitemap() {
                         "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border shrink-0",
                         link.badge === 'YENİ' ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" :
                         link.badge === 'AKTİF' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                        link.badge === 'YAKINDA' ? "bg-rose-500/10 text-rose-400 border-rose-500/20" :
                         "bg-amber-500/10 text-amber-500 border-amber-500/20"
                       )}>
                         {link.badge}
