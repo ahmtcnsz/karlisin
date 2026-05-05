@@ -5,8 +5,7 @@ import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
-import YahooFinance from 'yahoo-finance2';
-const yahooFinance = new (YahooFinance as any)();
+import yahooFinance from 'yahoo-finance2';
 import NodeCache from 'node-cache';
 
 // .env dosyasını yükle
@@ -572,8 +571,8 @@ async function startServer() {
   // API rotalarını Vite'den koru (Daha Kesin Filtreleme)
     app.use((req, res, next) => {
       // API istekleri doğrudan alttaki express rotalarına akmalı
-      // req.path kullanmak sorgu parametrelerinden etkilenmeyi önler
-      if (req.path.startsWith('/api/')) {
+      // Hem /api/ hem de /api ile başlayanları yakalamak için
+      if (req.path.startsWith('/api')) {
         return next();
       }
       vite.middlewares(req, res, next);

@@ -465,17 +465,27 @@ const DividendTracker: React.FC = () => {
       const url = `/api/dividends?symbol=${encodeURIComponent(symbol)}`;
       const res = await fetch(url);
       
+      const contentType = res.headers.get('content-type');
+      let errorMsg = 'Veri çekilemedi';
+
       if (!res.ok) {
-        let errorMsg = 'Veri çekilemedi';
-        try {
-          const json = await res.json();
-          errorMsg = json.message || json.error || `Hata kodu: ${res.status}`;
-        } catch (e) {
-          errorMsg = `Sunucu hatası: ${res.status}`;
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const json = await res.json();
+            errorMsg = json.message || json.error || `Hata kodu: ${res.status}`;
+          } catch (e) {
+            errorMsg = `Sunucu hatası: ${res.status}`;
+          }
+        } else {
+          errorMsg = `Sunucu hatası (${res.status}). Sunucu JSON yerine farklı bir cevap döndü.`;
         }
         throw new Error(errorMsg);
       }
       
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Sunucudan beklenen JSON verisi alınamadı. Lütfen sayfayı yenileyip tekrar deneyin.');
+      }
+
       const json = await res.json();
       
       if (!json || !json.summary) {
