@@ -1,5 +1,4 @@
 import React from 'react';
-import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
 import { 
   Zap, 
@@ -56,10 +55,6 @@ const FeatureCard = ({ icon: Icon, title, description, badge, color }: {
 export const MarketPulse = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/30">
-      <Helmet>
-        <title>Piyasanın Nabzı - Global Finans ve Borsa Analizleri</title>
-        <meta name="description" content="Altın, Petrol, Enflasyon ve S&P 500 gibi global verilerle piyasanın ritmini takip edin. Şirketlerin finansal sağlık skorlarını keşfedin." />
-      </Helmet>
       
       {/* Hero Section */}
       <div className="relative pt-24 pb-32 overflow-hidden">
@@ -78,7 +73,7 @@ export const MarketPulse = () => {
                 <div className="w-2 h-2 rounded-full bg-indigo-500 animate-ping absolute inset-0" />
                 <div className="w-2 h-2 rounded-full bg-indigo-500 relative" />
               </div>
-              PİYASANIN NABZI v1.0
+              YAKINDA: PİYASANIN NABZI v1.0
             </motion.div>
 
             <motion.h1 
