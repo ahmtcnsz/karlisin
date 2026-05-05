@@ -53,7 +53,7 @@ export default function Landing() {
       title: 'Piyasanın Nabzı',
       description: 'Global makro veriler ve borsa analiz motoru ile piyasanın ritmini yakalayın.',
       icon: <TrendingUp className="text-amber-400" size={28} />,
-      badge: 'YAKINDA',
+      badge: 'YENİ',
       color: 'from-amber-500/20 to-amber-600/5',
       borderColor: 'border-amber-500/20'
     },
@@ -282,7 +282,7 @@ export default function Landing() {
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-indigo-400">Canlı Takip Et.</span>
             </h2>
             <p className="text-xl text-slate-400 font-medium leading-relaxed">
-              Borsa İstanbul (BİST) ve Amerikan Borsası (Nasdaq/NYSE) hisselerini global finansal veri entegrasyonu ile tek merkezden yönet. 
+              Borsa İstanbul (BİST) ve Amerikan Borsası (Nasdaq/NYSE) hisselerini Alpha Vantage API entegrasyonu ile tek merkezden yönet. 
               2026 yılı tüm temettü hakediş tarihlerini ve tahmini ödemelerini anında gör.
             </p>
             <div className="flex gap-4 pt-4">

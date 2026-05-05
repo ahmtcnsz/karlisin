@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LineChart, 
@@ -30,8 +29,10 @@ import {
   AlertCircle,
   AlertTriangle,
   LayoutGrid,
+  BarChart3,
   Activity,
   Maximize2,
+  Minimize2,
   ShieldCheck,
   MousePointer2,
   ChevronDown,
@@ -39,15 +40,39 @@ import {
   ArrowDownRight,
   PieChart,
   Calculator,
-  Lightbulb,
-  X
+  Lightbulb
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
 
 // 2026 Comprehensive Expected Dividend Calendar (Updated for Full 2026 Season)
 const popularUpcoming = [
-  // MAYIS (ZİRVE SEZONU - Mevcut Ay)
+  // MART - NİSAN (TAMAMLANANLAR VEYA YAKIN GEÇMİŞ)
+  { symbol: 'AKBNK.IS', name: 'Akbank', yield: '4.20%', date: '2026-03-25', month: 'Mart 2026', confirmed: true },
+  { symbol: 'GARAN.IS', name: 'Garanti BBVA', yield: '4.10%', date: '2026-03-28', month: 'Mart 2026', confirmed: true },
+  { symbol: 'ISCTR.IS', name: 'İş Bankası (C)', yield: '2.90%', date: '2026-03-31', month: 'Mart 2026', confirmed: true },
+  { symbol: 'ANSGR.IS', name: 'Anadolu Sigorta', yield: '5.10%', date: '2026-03-20', month: 'Mart 2026', confirmed: true },
+  { symbol: 'AGHOL.IS', name: 'Anadolu Grubu Hol.', yield: '1.80%', date: '2026-03-29', month: 'Mart 2026', confirmed: true },
+  { symbol: 'TSKB.IS', name: 'TSKB', yield: '3.30%', date: '2026-03-24', month: 'Mart 2026', confirmed: true },
+  { symbol: 'AKGRT.IS', name: 'Aksigorta', yield: '4.60%', date: '2026-03-26', month: 'Mart 2026', confirmed: true },
+  { symbol: 'HALKB.IS', name: 'Halkbank', yield: '0.00%', date: '2026-03-27', month: 'Mart 2026', confirmed: true },
+  { symbol: 'VAKBN.IS', name: 'Vakıfbank', yield: '0.00%', date: '2026-03-30', month: 'Mart 2026', confirmed: true },
+
+  { symbol: 'TUPRS.IS', name: 'Tüpraş', yield: '5.50%', date: '2026-04-03', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'FROTO.IS', name: 'Ford Otosan', yield: '4.10%', date: '2026-04-08', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'DOAS.IS', name: 'Doğuş Otomotiv', yield: '10.80%', date: '2026-04-15', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'ENKAI.IS', name: 'Enka İnşaat', yield: '2.80%', date: '2026-04-14', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'OTKAR.IS', name: 'Otokar', yield: '3.60%', date: '2026-04-18', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'TTRAK.IS', name: 'Türk Traktör', yield: '6.20%', date: '2026-04-22', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'BRISA.IS', name: 'Brisa', yield: '4.80%', date: '2026-04-25', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'AKSA.IS', name: 'Aksa Akrilik', yield: '4.10%', date: '2026-04-24', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'DEVA.IS', name: 'Deva Holding', yield: '1.20%', date: '2026-04-10', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'ENJSA.IS', name: 'Enerjisa Enerji', yield: '5.20%', date: '2026-04-28', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'GWIND.IS', name: 'Galata Wind', yield: '3.10%', date: '2026-04-12', month: 'Nisan 2026', confirmed: true },
+  { symbol: 'ALBRK.IS', name: 'Albaraka Türk', yield: '3.20%', date: '2026-04-16', month: 'Nisan 2026', confirmed: true },
+  
+  // NİSAN SONU - MAYIS (ZİRVE SEZONU)
+  { symbol: 'EREGL.IS', name: 'Erdemir', yield: '4.20%', date: '2026-04-29', month: 'Nisan 2026', confirmed: true },
   { symbol: 'THYAO.IS', name: 'Türk Hava Yolları', yield: '2.10%', date: '2026-05-02', month: 'Mayıs 2026', confirmed: true },
   { symbol: 'TOASO.IS', name: 'Tofaş Oto', yield: '5.20%', date: '2026-05-05', month: 'Mayıs 2026', confirmed: true },
   { symbol: 'KCHOL.IS', name: 'Koç Holding', yield: '3.10%', date: '2026-05-08', month: 'Mayıs 2026', confirmed: true },
@@ -250,6 +275,78 @@ const getRecommendationLabel = (key?: string) => {
   return 'TUT';
 };
 
+const TradingViewWidget = ({ symbol }: { symbol: string }) => {
+  const container = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const currentContainer = container.current;
+    if (!currentContainer || !symbol) return;
+    
+    // Clear existing content safely
+    currentContainer.innerHTML = '';
+    
+    // Create the widget container div with a unique ID
+    const widgetId = `tradingview_${Math.random().toString(36).substring(7)}`;
+    const widgetDiv = document.createElement('div');
+    widgetDiv.id = widgetId;
+    widgetDiv.className = 'tradingview-widget-container__widget h-full w-full';
+    currentContainer.appendChild(widgetDiv);
+
+    // Map Yahoo symbols to TradingView symbols
+    let tvSymbol = symbol;
+    if (symbol.endsWith('.IS')) {
+      tvSymbol = `BIST:${symbol.replace('.IS', '')}`;
+    } else if (!symbol.includes(':') && symbol.length <= 5) {
+      tvSymbol = `BIST:${symbol}`;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    script.type = "text/javascript";
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    
+    const config = {
+      "autosize": true,
+      "symbol": tvSymbol,
+      "interval": "D",
+      "timezone": "Europe/Istanbul",
+      "theme": "dark",
+      "style": "1",
+      "locale": "tr",
+      "toolbar_bg": "#f1f3f6",
+      "enable_publishing": false,
+      "hide_top_toolbar": false,
+      "hide_legend": false,
+      "save_image": false,
+      "container_id": widgetId,
+      "allow_symbol_change": true,
+      "calendar": false,
+      "support_host": "https://www.tradingview.com"
+    };
+
+    script.innerHTML = JSON.stringify(config);
+    
+    // Append script after a micro-task to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      if (currentContainer.querySelector(`#${widgetId}`)) {
+        currentContainer.appendChild(script);
+      }
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (currentContainer) {
+        currentContainer.innerHTML = '';
+      }
+    };
+  }, [symbol]);
+
+  return (
+    <div className="tradingview-widget-container h-full w-full" ref={container} />
+  );
+};
+
 const InfoTooltip = ({ title, text }: { title: string; text: string }) => {
   return (
     <div className="relative inline-block ml-1.5 group/tooltip cursor-help align-middle">
@@ -298,7 +395,7 @@ const DividendGrowthChart = ({ history }: { history: any[] }) => {
   })).sort((a, b) => a.year - b.year);
 
   return (
-    <div className="h-64 w-full min-h-[256px]">
+    <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={processedData}>
           <defs>
@@ -362,10 +459,12 @@ const DividendTracker: React.FC = () => {
   const [avCashFlow, setAvCashFlow] = useState<any | null>(null);
   const [avEcon, setAvEcon] = useState<any | null>(null);
   const [avOil, setAvOil] = useState<any | null>(null);
+  const [avCalendar, setAvCalendar] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
   
+  const [isChartModalOpen, setIsChartModalOpen] = useState(false);
   const [isInformationModalOpen, setIsInformationModalOpen] = useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
   const [showAllDividends, setShowAllDividends] = useState(false);
@@ -387,8 +486,9 @@ const DividendTracker: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Lock body scroll when any modal is open
   useEffect(() => {
-    const isAnyModalOpen = isInformationModalOpen || isCalculatorModalOpen || showAllDividends;
+    const isAnyModalOpen = isChartModalOpen || isInformationModalOpen || isCalculatorModalOpen || showAllDividends;
     
     if (isAnyModalOpen) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -406,47 +506,93 @@ const DividendTracker: React.FC = () => {
       document.body.style.paddingRight = '0px';
       document.documentElement.style.overflow = 'unset';
     };
-  }, [isInformationModalOpen, isCalculatorModalOpen, showAllDividends]);
+  }, [isChartModalOpen, isInformationModalOpen, isCalculatorModalOpen, showAllDividends]);
 
   const fetchAlphaVantage = async (symbol: string) => {
     try {
       const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-      // Check if we already have it in state
-      if (avData?.Symbol === symbol) return;
 
       // 1. Overview
       const res = await fetch(`/api/alphavantage/overview?symbol=${encodeURIComponent(symbol)}`);
       if (res.ok) {
         const json = await res.json();
         if (json && json.Symbol) setAvData(json);
-        else if (json && json.error === 'API Limit') {
-          console.warn('[AV-Overview] Limit hit:', json.message);
-        }
       }
-      
-      const safeFetchJson = async (url: string) => {
-        try {
-          const r = await fetch(url);
-          if (r.ok) {
-            const json = await r.json();
-            if (json && (json.Note || json.Information || json.error === 'API Limit')) return null;
-            return json;
-          }
-        } catch (e) { console.error(`[AV-Fetch] Error for ${url}:`, e); }
-        return null;
-      };
+      await wait(1000); // Rate limit protection
 
-      // Only fetch news and technically indicators selectively or with delay
-      await wait(1500);
-      const jsonNews = await safeFetchJson(`/api/alphavantage/news?symbol=${encodeURIComponent(symbol)}`);
-      if (jsonNews) setAvNews(jsonNews);
+      // 2. News & Sentiment
+      const resNews = await fetch(`/api/alphavantage/news?symbol=${encodeURIComponent(symbol)}`);
+      if (resNews.ok) {
+        const jsonNews = await resNews.json();
+        setAvNews(jsonNews);
+      }
+      await wait(1000);
 
-      await wait(1500);
-      const jsonRsi = await safeFetchJson(`/api/alphavantage/rsi?symbol=${encodeURIComponent(symbol)}`);
-      if (jsonRsi) setAvRsi(jsonRsi);
+      // 3. RSI (Technical)
+      const resRsi = await fetch(`/api/alphavantage/rsi?symbol=${encodeURIComponent(symbol)}`);
+      if (resRsi.ok) {
+        const jsonRsi = await resRsi.json();
+        setAvRsi(jsonRsi);
+      }
+      await wait(1000);
+
+      // 4. Financials (Income Statement)
+      const resFin = await fetch(`/api/alphavantage/financials?symbol=${encodeURIComponent(symbol)}`);
+      if (resFin.ok) {
+        const jsonFin = await resFin.json();
+        setAvFin(jsonFin);
+      }
+      await wait(1000);
+
+      // 5. Earnings
+      const resEarn = await fetch(`/api/alphavantage/earnings?symbol=${encodeURIComponent(symbol)}`);
+      if (resEarn.ok) {
+        const jsonEarn = await resEarn.json();
+        setAvEarnings(jsonEarn);
+      }
+      await wait(1000);
+
+      // 6. Cash Flow
+      const resCF = await fetch(`/api/alphavantage/cashflow?symbol=${encodeURIComponent(symbol)}`);
+      if (resCF.ok) {
+        const jsonCF = await resCF.json();
+        setAvCashFlow(jsonCF);
+      }
     } catch (err) {
       console.warn('[AV] Alpha Vantage fetch skipped or failed:', err);
+    }
+  };
+
+  const fetchAVCalendar = async () => {
+    try {
+      const res = await fetch('/api/alphavantage/calendar?horizon=3month');
+      if (!res.ok) return;
+      const json = await res.json();
+      if (Array.isArray(json)) {
+        setAvCalendar(json.filter(i => i.symbol).slice(0, 10));
+      }
+    } catch (err) {
+      console.warn('[AV Calendar] Fetch failed:', err);
+    }
+  };
+
+  const fetchEconomics = async () => {
+    try {
+      // Fetch Federal Funds Rate as a global proxy
+      const res = await fetch('/api/alphavantage/economics/FEDERAL_FUNDS_RATE');
+      if (res.ok) {
+        const json = await res.json();
+        setAvEcon(json);
+      }
+
+      // Fetch Brent Oil Price as a global commodity index
+      const resOil = await fetch('/api/alphavantage/commodity/BRENT');
+      if (resOil.ok) {
+        const jsonOil = await resOil.json();
+        setAvOil(jsonOil);
+      }
+    } catch (err) {
+      console.warn('[AV Econ] Fetch failed:', err);
     }
   };
 
@@ -465,27 +611,17 @@ const DividendTracker: React.FC = () => {
       const url = `/api/dividends?symbol=${encodeURIComponent(symbol)}`;
       const res = await fetch(url);
       
-      const contentType = res.headers.get('content-type');
-      
       if (!res.ok) {
         let errorMsg = 'Veri çekilemedi';
-        if (contentType && contentType.includes('application/json')) {
-          try {
-            const json = await res.json();
-            errorMsg = json.message || json.error || `Hata kodu: ${res.status}`;
-          } catch (e) {
-            errorMsg = `Sunucu hatası: ${res.status}`;
-          }
-        } else {
-          errorMsg = `Sunucu hatası (${res.status}). Sunucu şu an yanıt veremiyor.`;
+        try {
+          const json = await res.json();
+          errorMsg = json.message || json.error || `Hata kodu: ${res.status}`;
+        } catch (e) {
+          errorMsg = `Sunucu hatası: ${res.status}`;
         }
         throw new Error(errorMsg);
       }
       
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Geçersiz sunucu yanıtı. Lütfen sayfayı yenileyin veya farklı bir sembol deneyin.');
-      }
-
       const json = await res.json();
       
       if (!json || !json.summary) {
@@ -494,6 +630,7 @@ const DividendTracker: React.FC = () => {
 
       // Background fetch for AV if symbol matches
       fetchAlphaVantage(symbol);
+      fetchAVCalendar();
 
       // Patch for 2026 demo consistency
       const mockMatch = popularUpcoming.find(u => u.symbol === symbol);
@@ -517,6 +654,8 @@ const DividendTracker: React.FC = () => {
 
   useEffect(() => {
     fetchData(selectedSymbol);
+    fetchAVCalendar();
+    fetchEconomics();
   }, []);
 
   const handleSearch = async (val: string) => {
@@ -595,10 +734,6 @@ const DividendTracker: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/30 pt-16">
-      <Helmet>
-        <title>Temettü Takibi 2026 - BIST Temettü Takvimi ve Analizi</title>
-        <meta name="description" content="BIST ve Global hisseler için 2026 temettü takvimi, verim analizi ve gelecek ödeme tahminleri. Temettü yatırımcılığı için en kapsamlı takip aracı." />
-      </Helmet>
       {/* Search Header */}
       <div className="border-b border-white/5 bg-slate-900/40 backdrop-blur-xl sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -758,6 +893,14 @@ const DividendTracker: React.FC = () => {
                           <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
                           Tahmin
                         </button>
+
+                        <button 
+                          onClick={() => setIsChartModalOpen(true)}
+                          className="flex items-center gap-2.5 px-5 py-3 bg-indigo-600 shadow-xl shadow-indigo-600/20 text-white rounded-2xl border border-white/10 hover:scale-105 transition-all font-black text-[10px] uppercase tracking-widest"
+                        >
+                          <BarChart3 className="w-3.5 h-3.5" />
+                          Teknik
+                        </button>
                       </div>
                     </div>
 
@@ -872,7 +1015,6 @@ const DividendTracker: React.FC = () => {
                                       : 'Sektör Ortalaması'}
                                  </div>
                                  <div className="text-[8px] text-slate-600 font-black uppercase tracking-[0.2em] italic">Kaynak: Global Institutional Aggregator</div>
-                                 <div className="text-[7px] text-slate-700 font-bold uppercase tracking-tight mt-1 truncate">Örn: JP Morgan, Goldman Sachs, HSBC, Morgan Stanley</div>
                               </div>
                            </div>
 
@@ -1097,6 +1239,49 @@ const DividendTracker: React.FC = () => {
                     </div>
                   )}
                </div>
+
+               {/* Global Opportunities (Alpha Vantage Calendar) */}
+               {avCalendar.length > 0 && (
+                <div className="lg:col-span-3 bg-slate-900 border border-white/5 rounded-[40px] p-10 shadow-2xl space-y-8 overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-8">
+                     <div className="text-xs font-black text-indigo-500 uppercase tracking-[0.4em] italic mb-2">ALPHA VANTAGE GLOBAL</div>
+                     <div className="h-0.5 w-full bg-indigo-500/20 rounded-full" />
+                  </div>
+                  
+                  <div className="flex items-center gap-6 mb-8">
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                      <ExternalLink className="text-indigo-400 w-7 h-7" />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter">Dünyadan Yaklaşan Ödemeler</h3>
+                      <p className="text-slate-500 text-[10px] font-black tracking-[0.3em] uppercase mt-1">Sektör Bağımsız Global Fırsatlar</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    {avCalendar.map((item, idx) => (
+                      <button 
+                        key={idx}
+                        onClick={() => {
+                          setSelectedSymbol(item.symbol);
+                          fetchData(item.symbol);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-indigo-500/40 transition-all text-left flex items-center justify-between group/avc"
+                      >
+                        <div>
+                          <div className="text-base font-black text-white group-hover/avc:text-indigo-400 transition-colors uppercase italic">{item.symbol}</div>
+                          <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{formatDate(new Date(item.dividend_date))}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs font-black text-emerald-500">{formatCurrency(parseFloat(item.amount), item.symbol)}</div>
+                          <ArrowUpRight className="w-3 h-3 text-slate-700 group-hover/avc:text-emerald-500 ml-auto mt-1" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+               )}
 
                <div className="lg:col-span-3 bg-gradient-to-br from-indigo-600/10 to-purple-600/10 border border-white/5 rounded-[48px] p-12 md:p-16 flex flex-col md:flex-row items-center gap-12 shadow-3xl relative overflow-hidden group">
                   <div className="absolute -left-20 -top-20 w-80 h-80 bg-indigo-600/10 blur-[120px] rounded-full group-hover:bg-indigo-600/20 transition-colors duration-1000" />
@@ -1426,6 +1611,64 @@ const DividendTracker: React.FC = () => {
 
       {/* Chart Dialog Popup */}
       <AnimatePresence>
+        {isChartModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsChartModalOpen(false)}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, rotateX: 20 }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+              exit={{ opacity: 0, scale: 0.9, rotateX: 20 }}
+              className="relative w-full max-w-6xl h-[85vh] bg-slate-950 border border-white/10 rounded-[48px] shadow-[0_0_150px_rgba(79,70,229,0.3)] overflow-hidden flex flex-col"
+            >
+               <div className="p-8 border-b border-white/5 flex items-center justify-between bg-slate-900/50 backdrop-blur-md">
+                 <div className="flex items-center gap-6">
+                   <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-xl shadow-indigo-500/10">
+                     <TrendingUp className="text-indigo-400 w-7 h-7" />
+                   </div>
+                   <div>
+                     <div className="flex items-center gap-3 mb-1">
+                       <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none">{data.symbol} Teknik Analiz</h3>
+                       <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-lg text-[8px] font-black italic border border-indigo-500/30">PRO CHART V2</span>
+                     </div>
+                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] italic">Gelişmiş TradingView Entegrasyonu</p>
+                   </div>
+                 </div>
+                 
+                 <div className="flex items-center gap-4">
+                    <a 
+                      href={`https://www.tradingview.com/symbols/BIST-${data.symbol.replace('.IS', '')}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 rounded-2xl text-[10px] font-black text-slate-300 transition-all uppercase tracking-widest border border-white/5"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" /> DIŞARIDA AÇ
+                    </a>
+                    <div className="w-px h-8 bg-white/10 hidden md:block" />
+                    <button 
+                      onClick={() => setIsChartModalOpen(false)}
+                      className="flex items-center gap-2.5 px-6 py-3 bg-white text-slate-950 hover:bg-slate-100 rounded-2xl text-[11px] font-black transition-all uppercase tracking-widest shadow-xl shadow-white/5 active:scale-95"
+                    >
+                      <Minimize2 className="w-4 h-4" /> KAPAT
+                    </button>
+                 </div>
+               </div>
+               <div className="flex-1 bg-black relative">
+                 <TradingViewWidget symbol={data.symbol} />
+                 
+                 {/* Watermark/Fallback instruction */}
+                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none opacity-20">
+                    <p className="text-[10px] font-black text-white uppercase tracking-[0.5em] italic">Karlısın Finansal Analiz Paneli</p>
+                 </div>
+               </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       {/* Sticky Legal Disclaimer */}
@@ -1464,9 +1707,9 @@ const DividendTracker: React.FC = () => {
                 </div>
                 <button 
                   onClick={() => setShowAllDividends(false)}
-                  className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                  className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 >
-                  <X className="w-6 h-6 text-white" />
+                  <ChevronRight className="w-6 h-6 text-white rotate-90 md:rotate-0" />
                 </button>
               </div>
 
