@@ -466,9 +466,9 @@ const DividendTracker: React.FC = () => {
       const res = await fetch(url);
       
       const contentType = res.headers.get('content-type');
-      let errorMsg = 'Veri çekilemedi';
-
+      
       if (!res.ok) {
+        let errorMsg = 'Veri çekilemedi';
         if (contentType && contentType.includes('application/json')) {
           try {
             const json = await res.json();
@@ -477,13 +477,13 @@ const DividendTracker: React.FC = () => {
             errorMsg = `Sunucu hatası: ${res.status}`;
           }
         } else {
-          errorMsg = `Sunucu hatası (${res.status}). Sunucu JSON yerine farklı bir cevap döndü.`;
+          errorMsg = `Sunucu hatası (${res.status}). Sunucu şu an yanıt veremiyor.`;
         }
         throw new Error(errorMsg);
       }
       
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Sunucudan beklenen JSON verisi alınamadı. Lütfen sayfayı yenileyip tekrar deneyin.');
+        throw new Error('Geçersiz sunucu yanıtı. Lütfen sayfayı yenileyin veya farklı bir sembol deneyin.');
       }
 
       const json = await res.json();

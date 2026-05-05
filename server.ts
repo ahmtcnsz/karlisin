@@ -5,7 +5,17 @@ import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinanceRaw from 'yahoo-finance2';
+
+// ESM/CJS compatibility for yahoo-finance2
+const yahooFinance = (YahooFinanceRaw as any).default || YahooFinanceRaw;
+
+// Yahoo Finance yapılandırması (Validation kapatma - şema hatalarını önlemek için)
+if (yahooFinance && (yahooFinance as any).settings) {
+  (yahooFinance as any).settings.set({
+    validation: { logErrors: false }
+  });
+}
 import NodeCache from 'node-cache';
 
 // .env dosyasını yükle
