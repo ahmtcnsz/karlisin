@@ -5,8 +5,8 @@ import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
-import YahooFinance from 'yahoo-finance2';
-const yahooFinance = new (YahooFinance as any)();
+import yahooFinanceClass from 'yahoo-finance2';
+const yahooFinance = new yahooFinanceClass();
 import NodeCache from 'node-cache';
 
 // .env dosyasını yükle
@@ -77,11 +77,20 @@ async function startServer() {
 
     try {
       console.log(`[Karlısın-API] Yahoo Finance sorgusu başlıyor: ${symbol}`);
-      // 1. Get core summary data (Reduced modules to avoid validation errors)
-      // Note: 'dividendHistory' and 'recommendationTrend' often cause schema errors
-      const summary = await yahooFinance.quoteSummary(symbol, {
-        modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
-      });
+      
+      let summary;
+      try {
+        summary = await yahooFinance.quoteSummary(symbol, {
+          modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
+        });
+      } catch (validationErr: any) {
+        console.warn(`[Karlısın-API] Tam sorgu başarısız (${symbol}), kısıtlı modüller deneniyor:`, validationErr.message);
+        // Fallback: Try with only reliable modules
+        summary = await yahooFinance.quoteSummary(symbol, {
+          modules: ['summaryDetail', 'price', 'assetProfile']
+        });
+      }
+      
       console.log(`[Karlısın-API] Summary alındı: ${symbol}`);
 
       // 2. Get historical dividends (last 5 years)
@@ -527,19 +536,13 @@ async function startServer() {
 
   // API CATCH-ALL (API içindeki 404'ler JSON dönmeli)
   app.all('/api/*', (req, res) => {
+    console.warn(`[Karlısın-API] 404: ${req.method} ${req.path}`);
     res.status(404).json({ error: 'API rotası bulunamadı', path: req.path });
   });
 
   // ---------------------------------------------------------
-  // 2. LOGLAMA VE DİĞERLERİ
+  // 2. LOGLAMA VE STATİK DOSYALAR
   // ---------------------------------------------------------
-
-  app.use((req, res, next) => {
-    if (!req.url.startsWith('/api')) {
-      // API değilse sessiz kal veya logla
-    }
-    next();
-  });
 
   const isProduction = process.env.NODE_ENV === 'production';
   
@@ -548,19 +551,12 @@ async function startServer() {
     app.use(express.static(distPath));
     
     // SEO DOSYALARI İÇİN AÇIK ROTALAR
-    app.get('/sitemap.xml', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
-    });
-    app.get('/robots.txt', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
-    });
-    app.get('/ads.txt', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'ads.txt'));
-    });
+    app.get('/sitemap.xml', (req, res) => res.sendFile(path.join(__dirname, 'public', 'sitemap.xml')));
+    app.get('/robots.txt', (req, res) => res.sendFile(path.join(__dirname, 'public', 'robots.txt')));
+    app.get('/ads.txt', (req, res) => res.sendFile(path.join(__dirname, 'public', 'ads.txt')));
     
     // API dışındaki her şeyi index.html'e gönder
     app.get('*', (req, res) => {
-      // API istekleri yukarıda catch-all ile yakalanmış olmalı, buraya düşerse 404 dön
       if (req.url.startsWith('/api')) {
         return res.status(404).json({ error: 'API rotası bulunamadı.' });
       }
@@ -572,16 +568,27 @@ async function startServer() {
       appType: 'spa',
     });
     
-  // API rotalarını Vite'den koru (Daha Kesin Filtreleme)
+    // API rotalarını Vite'den koru
     app.use((req, res, next) => {
-      // API istekleri doğrudan alttaki express rotalarına akmalı
-      // req.path kullanmak sorgu parametrelerinden etkilenmeyi önler
       if (req.path.startsWith('/api/')) {
         return next();
       }
       vite.middlewares(req, res, next);
     });
   }
+
+  // GLOBAL HATA YAKALAYICI (Tüm unhandled hatalar için)
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[Karlısın-Sunucu] KRİTİK HATA:', err);
+    if (res.headersSent) {
+      return next(err);
+    }
+    res.status(500).json({ 
+      error: 'Sunucu hatası oluştu', 
+      message: err.message,
+      path: req.path
+    });
+  });
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);

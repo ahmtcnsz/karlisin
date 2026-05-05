@@ -614,9 +614,14 @@ const DividendTracker: React.FC = () => {
         throw new Error(errorMsg);
       }
       
-      const json = await res.json();
+      let json;
+      try {
+        json = await res.json();
+      } catch (jsonErr) {
+        throw new Error('Sunucu JSON yerine geçersiz bir format (HTML/Metin) döndürdü. Sunucu yeniden baslatiliyor olabilir.');
+      }
       
-      if (!json || !json.summary) {
+      if (!json || (!json.summary && !json.symbol)) {
         throw new Error('Sembol verisi eksik veya hatalı.');
       }
 
@@ -1432,20 +1437,25 @@ const DividendTracker: React.FC = () => {
                                             <div className="w-12 h-12 rounded-xl bg-white/5 flex flex-col items-center justify-center border border-white/5">
                                               <span className="text-[9px] font-black text-slate-500 uppercase">
                                                 {(() => {
-                                                  const d = new Date(item.date * 1000);
+                                                  const d = typeof item.date === 'string' ? new Date(item.date) : new Date(item.date * 1000);
                                                   return isNaN(d.getTime()) ? '-' : d.toLocaleString('tr-TR', { month: 'short' });
                                                 })()}
                                               </span>
                                               <span className="text-lg font-black text-white leading-none">
                                                 {(() => {
-                                                  const d = new Date(item.date * 1000);
+                                                  const d = typeof item.date === 'string' ? new Date(item.date) : new Date(item.date * 1000);
                                                   return isNaN(d.getTime()) ? '-' : d.getDate();
                                                 })()}
                                               </span>
                                             </div>
                                             <div>
                                               <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-0.5">Ödeme Tarihi</div>
-                                              <div className="text-sm font-bold text-white">{formatDate(item.date * 1000)}</div>
+                                              <div className="text-sm font-bold text-white">
+                                                {(() => {
+                                                  const d = typeof item.date === 'string' ? new Date(item.date) : new Date(item.date * 1000);
+                                                  return formatDate(d);
+                                                })()}
+                                              </div>
                                             </div>
                                           </div>
                                         </td>
