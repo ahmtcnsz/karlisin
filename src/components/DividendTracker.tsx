@@ -483,10 +483,21 @@ const DividendTracker: React.FC = () => {
       }
       
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Sunucudan beklenen JSON verisi alınamadı. Lütfen sayfayı yenileyip tekrar deneyin.');
+        const resClone = res.clone();
+        const textPreview = await resClone.text();
+        console.error('[DividendTracker] Beklenmeyen cevap (HTML?):', textPreview.substring(0, 200));
+        throw new Error(`Sunucudan beklenen JSON verisi alınamadı (Tip: ${contentType}).`);
       }
 
-      const json = await res.json();
+      let json;
+      const resCloneForJson = res.clone();
+      try {
+        json = await res.json();
+      } catch (parseErr) {
+        const textBody = await resCloneForJson.text().catch(() => 'Metin okunamadı');
+        console.error('[DividendTracker] JSON Ayrıştırma Hatası:', parseErr, 'Cevap:', textBody.substring(0, 200));
+        throw new Error('Sunucudan gelen veri işlenemedi.');
+      }
       
       if (!json || !json.summary) {
         throw new Error('Sembol verisi eksik veya hatalı.');

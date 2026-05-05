@@ -6,7 +6,18 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
 import YahooFinance from 'yahoo-finance2';
-const yahooFinance = new (YahooFinance as any)();
+let yahooFinance: any = null;
+try {
+  yahooFinance = new (YahooFinance as any)();
+  yahooFinance.setGlobalConfig({
+    queue: { concurrency: 1, timeout: 5000 },
+    validation: { logErrors: true }
+  });
+  console.log('[Karlısın-Sunucu] Yahoo Finance başarıyla başlatıldı.');
+} catch (e) {
+  console.error('[Karlısın-Sunucu] Yahoo Finance başlatılamadı:', e);
+}
+
 import NodeCache from 'node-cache';
 
 // .env dosyasını yükle
@@ -27,6 +38,7 @@ async function startServer() {
   // Ortam değişkenleri kontrolü (Debug için)
   console.log('--- Sistem Yapılandırması ---');
   console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'Tanımlı (Ok)' : 'EKSİK!');
+  console.log('ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? 'Tanımlı (Ok)' : 'EKSİK!');
   console.log('RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL || 'Tanımlı Değil (Varsayılan kullanılıyor)');
   console.log('RESEND_REGION:', process.env.RESEND_REGION || 'Global/US');
   console.log('---------------------------');
@@ -78,12 +90,72 @@ async function startServer() {
     }
 
     try {
+      if (!yahooFinance) {
+        throw new Error('Yahoo Finance servisi başlatılamadı.');
+      }
+
       console.log(`[Karlısın-API] Yahoo Finance sorgusu başlıyor: ${symbol}`);
-      // 1. Get core summary data (Reduced modules to avoid validation errors)
-      // Note: 'dividendHistory' and 'recommendationTrend' often cause schema errors
-      const summary = await yahooFinance.quoteSummary(symbol, {
-        modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
-      });
+      // 1. Get core summary data
+      let summary;
+      try {
+        summary = await yahooFinance.quoteSummary(symbol, {
+          modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
+        });
+      } catch (yfError: any) {
+        console.warn(`[Karlısın-API] Yahoo Finance Hatası, Alpha Vantage Fallback deneniyor (${symbol}):`, yfError.message);
+        
+        // Alpha Vantage Fallback
+        const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+        if (apiKey) {
+          let avSymbol = symbol;
+          if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
+          const avUrl = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${avSymbol}&apikey=${apiKey}`;
+          const avRes = await fetch(avUrl);
+          if (avRes.ok) {
+            const avJson = await avRes.json();
+            if (avJson && avJson.Symbol) {
+              // Construct a Yahoo-like summary object from AV data
+              summary = {
+                summaryDetail: {
+                  dividendRate: parseFloat(avJson.DividendPerShare) || 0,
+                  dividendYield: parseFloat(avJson.DividendYield) || 0,
+                  payoutRatio: parseFloat(avJson.PayoutRatio) || 0,
+                  marketCap: parseFloat(avJson.MarketCapitalization) || 0,
+                  fiftyTwoWeekHigh: parseFloat(avJson['52WeekHigh']) || 0,
+                  fiftyTwoWeekLow: parseFloat(avJson['52WeekLow']) || 0,
+                },
+                calendarEvents: {
+                  exDividendDate: avJson.ExDividendDate ? new Date(avJson.ExDividendDate) : null,
+                  dividendDate: avJson.DividendDate ? new Date(avJson.DividendDate) : null,
+                },
+                assetProfile: {
+                  longBusinessSummary: avJson.Description,
+                  sector: avJson.Sector,
+                  industry: avJson.Industry,
+                  website: null
+                },
+                defaultKeyStatistics: {
+                  forwardPE: parseFloat(avJson.ForwardPE) || 0,
+                  profitMargins: parseFloat(avJson.ProfitMargin) || 0
+                },
+                price: {
+                  regularMarketPrice: 0, // OVERVIEW doesn't have current price, but we can use GLOBAL_QUOTE if needed
+                  regularMarketChangePercent: 0,
+                  currencySymbol: avJson.Currency === 'TRY' ? '₺' : '$'
+                }
+              };
+              console.log(`[Karlısın-API] Alpha Vantage Fallback Başarılı: ${symbol}`);
+            } else {
+              throw yfError; // Fallback failed or no data, throw original error
+            }
+          } else {
+            throw yfError;
+          }
+        } else {
+          throw yfError;
+        }
+      }
+
       console.log(`[Karlısın-API] Summary alındı: ${symbol}`);
 
       // 2. Get historical dividends (last 5 years)
