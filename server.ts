@@ -5,8 +5,7 @@ import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
-import YahooFinance from 'yahoo-finance2';
-const yahooFinance = new (YahooFinance as any)();
+import yahooFinance from 'yahoo-finance2';
 import NodeCache from 'node-cache';
 
 // .env dosyasını yükle

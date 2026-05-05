@@ -409,12 +409,26 @@ export default function Blog() {
           url: shareUrl,
         });
       } catch (err) {
-        console.error('Sharing failed', err);
+        if (!(err instanceof Error && err.name === 'AbortError')) {
+          console.error('Sharing failed', err);
+        }
       }
     } else {
       // Fallback to clipboard
-      await navigator.clipboard.writeText(shareUrl);
-      alert('Link kopyalandı!');
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        // Custom toast instead of alert would be better, but sticking to simple feedback
+        const btn = document.getElementById(`share-btn-${article.id}`);
+        if (btn) {
+          const originalText = btn.innerHTML;
+          btn.innerHTML = 'Kopyalandı!';
+          setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+        } else {
+          alert('Link kopyalandı!');
+        }
+      } catch (err) {
+        console.error('Clipboard failed', err);
+      }
     }
   };
 
@@ -440,13 +454,10 @@ export default function Blog() {
         const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e);
 
         if (subscribers.length > 0) {
-          const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/broadcast';
-          const isCustomDomain = window.location.hostname.includes('karlisin.com') || window.location.hostname.includes('www');
-          const apiUrl = isCustomDomain ? workingCloudRunUrl : '/api/broadcast';
+          const apiUrl = '/api/broadcast';
 
           const res = await fetch(apiUrl, {
             method: 'POST',
-            mode: 'cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               subscribers,
@@ -489,13 +500,10 @@ export default function Blog() {
       });
 
       try {
-        const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/mail';
-        const isCustomDomain = window.location.hostname.includes('karlisin.com') || window.location.hostname.includes('www');
-        const apiUrl = isCustomDomain ? workingCloudRunUrl : '/api/mail';
+        const apiUrl = '/api/mail';
 
         await fetch(apiUrl, {
           method: 'POST',
-          mode: 'cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, type: 'newsletter' })
         });

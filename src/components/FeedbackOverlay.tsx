@@ -26,6 +26,13 @@ const FeedbackOverlay: React.FC = () => {
   };
 
   useEffect(() => {
+    (window as any).toggleFeedback = () => setIsFeedbackOpen(prev => !prev);
+    return () => {
+      delete (window as any).toggleFeedback;
+    };
+  }, []);
+
+  useEffect(() => {
     const tooltipTimer = setTimeout(() => setShowFeedbackTooltip(false), 30000);
     const minimizeTimer = setTimeout(() => setIsMinimized(true), 35000);
     return () => {

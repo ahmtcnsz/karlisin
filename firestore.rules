@@ -30,15 +30,16 @@ service cloud.firestore {
              data.subscribedAt == request.time;
     }
 
+    function isAdmin() { return isSignedIn() && request.auth.token.email == "admin@karlisin.com" && request.auth.token.email_verified == true; }
+
     match /waitlist/{entryId} {
       allow create: if isValidWaitlistEntry(incoming());
-      allow read, update, delete: if false;
+      allow read, update, delete: if isAdmin();
     }
 
     match /newsletter_subscribers/{entryId} {
       allow create: if isValidNewsletterEntry(incoming());
-      allow list: if true; // Otomatik duyuru için abone listesinin okunmasına izin ver
-      allow get, update, delete: if false;
+      allow list, get, update, delete: if isAdmin();
     }
   }
 }

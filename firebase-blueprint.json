@@ -21,12 +21,38 @@
         }
       },
       "required": ["email", "source", "createdAt"]
+    },
+    "NewsletterSubscriber": {
+      "title": "Newsletter Subscriber",
+      "description": "Represents a user who has subscribed to the newsletter.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email address of the subscriber."
+        },
+        "source": {
+          "type": "string",
+          "description": "The source of the subscription (e.g., 'blog_newsletter')."
+        },
+        "subscribedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the user subscribed."
+        }
+      },
+      "required": ["email", "source", "subscribedAt"]
     }
   },
   "firestore": {
     "/waitlist/{entryId}": {
       "schema": "WaitlistEntry",
       "description": "Collection of waitlist entries."
+    },
+    "/newsletter_subscribers/{entryId}": {
+      "schema": "NewsletterSubscriber",
+      "description": "Collection of newsletter subscribers."
     }
   }
 }
