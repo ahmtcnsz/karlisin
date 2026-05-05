@@ -60,36 +60,36 @@ async function startServer() {
   // 1. API ROTLARI (EN ÜSTTE OLMALI - VITE'DEN ÖNCE)
   // ---------------------------------------------------------
 
-  // DIVIDEND API (Yahoo Finance)
+  // DIVIDEND API (Yahoo Finance with Alpha Vantage Fallback)
   app.get('/api/dividends', async (req, res) => {
     const symbol = (req.query.symbol as string || '').toUpperCase();
     if (!symbol) return res.status(400).json({ error: 'Sembol eksik' });
     
-    console.log(`[Karlısın-API] Temettü verisi isteniyor: ${symbol}`);
+    console.log(`[Karlısın-API] Veri isteniyor: ${symbol}`);
 
-    const cacheKey = `div_${symbol}`;
+    const cacheKey = `div_v2_${symbol}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) {
       console.log(`[Karlısın-API] Cache hit: ${symbol}`);
       return res.json(cachedData);
     }
 
+    let result: any = { symbol, source: 'none' };
+    let errorLog: string[] = [];
+
+    // 1. TRY YAHOO FINANCE
     try {
-      console.log(`[Karlısın-API] Yahoo Finance sorgusu başlıyor: ${symbol}`);
-      // 1. Get core summary data
+      console.log(`[Karlısın-API] Method 1: Yahoo Finance -> ${symbol}`);
       const summary = await yahooFinance.quoteSummary(symbol, {
         modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
       });
       
-      // Serileştirme hatasını önlemek için sadece gerekli verileri alalım
       const cleanSummary = JSON.parse(JSON.stringify(summary));
-
-      // 2. Get historical dividends (last 5 years)
-      const now = new Date();
-      const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
       
       let historyData = [];
       try {
+        const now = new Date();
+        const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
         const history = await yahooFinance.chart(symbol, {
           period1: fiveYearsAgo,
           period2: now,
@@ -99,32 +99,77 @@ async function startServer() {
         if (history && history.events && history.events.dividends) {
           historyData = JSON.parse(JSON.stringify(history.events.dividends));
         }
-      } catch (histErr) {
-        console.warn(`[Karlısın-API] Geçmiş temettü verisi çekilemedi (${symbol}):`, histErr);
-      }
+      } catch (e) { console.warn('Yahoo History fail'); }
 
-      const result = {
+      result = {
         symbol,
         summary: cleanSummary,
-        history: historyData
+        history: historyData,
+        source: 'yahoo'
       };
-
-      cache.set(cacheKey, result);
-      res.json(result);
-    } catch (err: any) {
-      console.error(`[Karlısın-API] Yahoo Finance Hatası (${symbol}):`, err);
       
-      // Detailed error logging for debugging validation issues
-      if (err.name === 'YahooFinanceError' && err.errors) {
-        console.error('Validation Errors:', JSON.stringify(err.errors, null, 2));
-      }
+      cache.set(cacheKey, result);
+      return res.json(result);
 
-      res.status(500).json({ 
-        error: 'Veri çekilemedi', 
-        message: err.message,
-        details: err.errors || [] 
-      });
+    } catch (err: any) {
+      console.warn(`[Karlısın-API] Yahoo Finance başarısız (${symbol}), Fallback deneniyor...`);
+      errorLog.push(`Yahoo: ${err.message}`);
     }
+
+    // 2. TRY ALPHA VANTAGE (AS FALLBACK)
+    const avKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (avKey) {
+      try {
+        console.log(`[Karlısın-API] Method 2: Alpha Vantage -> ${symbol}`);
+        let avSymbol = symbol;
+        if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
+
+        const ovRes = await fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${avSymbol}&apikey=${avKey}`);
+        const ovData = await ovRes.json();
+
+        if (ovData && ovData.Symbol) {
+          // Yahoo formatına benzetelim (Minimum gerekli alanlar)
+          result = {
+            symbol,
+            source: 'alphavantage',
+            summary: {
+              summaryDetail: {
+                dividendYield: { value: parseFloat(ovData.DividendYield) || 0 },
+                dividendRate: { value: parseFloat(ovData.DividendPerShare) || 0 },
+                trailingPE: { value: parseFloat(ovData.PERatio) || 0 },
+                marketCap: { value: parseFloat(ovData.MarketCapitalization) || 0 },
+                fiftyTwoWeekHigh: { value: parseFloat(ovData['52WeekHigh']) || 0 },
+                fiftyTwoWeekLow: { value: parseFloat(ovData['52WeekLow']) || 0 },
+              },
+              price: {
+                longName: ovData.Name || symbol,
+                shortName: ovData.Name || symbol,
+                currency: ovData.Currency || 'USD',
+                regularMarketPrice: { value: 0 } // Current price overview'da yok, quote lazım
+              },
+              assetProfile: {
+                industry: ovData.Industry,
+                sector: ovData.Sector,
+                longBusinessSummary: ovData.Description
+              }
+            },
+            history: [] // Historical verisi için başka endpoint lazım ama şimdilik boş
+          };
+
+          cache.set(cacheKey, result);
+          return res.json(result);
+        }
+      } catch (err: any) {
+        errorLog.push(`AlphaVantage: ${err.message}`);
+      }
+    }
+
+    // FINAL ERROR
+    res.status(500).json({ 
+      error: 'Tüm veri kaynakları başarısız oldu.', 
+      symbol,
+      attempts: errorLog 
+    });
   });
 
   // ALPHA VANTAGE INTEGRATION
@@ -359,33 +404,64 @@ async function startServer() {
     }
   });
 
-  // SEARCH API (Symbol lookup)
+  // SEARCH API (Symbol lookup with Alpha Vantage Fallback)
   app.get('/api/stock/search', async (req, res) => {
     const query = req.query.q as string;
     if (!query || query.length < 2) return res.json([]);
 
+    let allResults: any[] = [];
+
+    // 1. TRY YAHOO SEARCH
     try {
       const results = await yahooFinance.search(query) as any;
-      if (!results || !results.quotes) {
-        return res.json([]);
+      if (results && results.quotes) {
+        allResults = (results.quotes || [])
+          .filter((q: any) => q.isYahooFinance || q.symbol)
+          .map((q: any) => ({
+            symbol: q.symbol,
+            shortname: q.shortname || q.longname || q.symbol,
+            longname: q.longname || q.shortname || q.symbol,
+            exchange: q.exchange,
+            typeDisp: q.typeDisp,
+            source: 'yahoo'
+          }));
       }
-      
-      // Serileştirilebilir veri döndür
-      const quotes = (results.quotes || [])
-        .filter((q: any) => q.isYahooFinance || q.symbol)
-        .map((q: any) => ({
-          symbol: q.symbol,
-          shortname: q.shortname || q.longname || q.symbol,
-          longname: q.longname || q.shortname || q.symbol,
-          exchange: q.exchange,
-          typeDisp: q.typeDisp
-        }));
-
-      res.json(quotes);
     } catch (err: any) {
-      console.error(`[Karlısın-API] Arama Hatası:`, err);
-      res.status(500).json({ error: 'Arama yapılamadı' });
+      console.warn(`[Karlısın-API] Yahoo Search başarısız:`, err.message);
     }
+
+    // 2. TRY ALPHA VANTAGE SEARCH (If results are low or Yahoo failed)
+    const avKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (allResults.length < 3 && avKey) {
+      try {
+        console.log(`[Karlısın-API] Alpha Vantage Search deneniyor: ${query}`);
+        const avRes = await fetch(`https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${encodeURIComponent(query)}&apikey=${avKey}`);
+        const avData = await avRes.json();
+        
+        if (avData && avData.bestMatches) {
+          const avQuotes = avData.bestMatches.map((m: any) => ({
+            symbol: m['1. symbol'].replace('.IST', '.IS'),
+            shortname: m['2. name'],
+            longname: m['2. name'],
+            exchange: m['4. region'],
+            typeDisp: m['3. type'],
+            source: 'alphavantage'
+          }));
+          
+          // Combine and filter duplicates
+          const existingSymbols = new Set(allResults.map(r => r.symbol));
+          avQuotes.forEach((q: any) => {
+            if (!existingSymbols.has(q.symbol)) {
+              allResults.push(q);
+            }
+          });
+        }
+      } catch (err: any) {
+        console.warn(`[Karlısın-API] AV Search başarısız:`, err.message);
+      }
+    }
+
+    res.json(allResults);
   });
   
   // BASİT PING TESTİ
