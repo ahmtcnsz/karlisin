@@ -5,23 +5,31 @@ import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
+
+// .env dosyasını EN BAŞTA yükle
+dotenv.config();
+
 import YahooFinance from 'yahoo-finance2';
-let yahooFinance: any = null;
-try {
-  yahooFinance = new (YahooFinance as any)();
-  yahooFinance.setGlobalConfig({
-    queue: { concurrency: 1, timeout: 5000 },
-    validation: { logErrors: true }
-  });
-  console.log('[Karlısın-Sunucu] Yahoo Finance başarıyla başlatıldı.');
-} catch (e) {
-  console.error('[Karlısın-Sunucu] Yahoo Finance başlatılamadı:', e);
-}
+
+// Yahoo Finance initialization helper
+const createYahooFinance = () => {
+  try {
+    const yf = new (YahooFinance as any)();
+    yf.setGlobalConfig({
+      queue: { concurrency: 1, timeout: 10000 },
+      validation: { logErrors: true }
+    });
+    console.log('[Karlısın-Sunucu] Yahoo Finance başarıyla başlatıldı.');
+    return yf;
+  } catch (e) {
+    console.error('[Karlısın-Sunucu] Yahoo Finance başlatılamadı:', e);
+    return null;
+  }
+};
+
+const yahooFinance = createYahooFinance();
 
 import NodeCache from 'node-cache';
-
-// .env dosyasını yükle
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,7 +84,7 @@ async function startServer() {
   // ---------------------------------------------------------
 
   // DIVIDEND API (Yahoo Finance)
-  app.get('/api/dividends', async (req, res) => {
+  app.get('/api/dividends', async (req, res, next) => {
     const symbol = (req.query.symbol as string || '').toUpperCase();
     if (!symbol) return res.status(400).json({ error: 'Sembol eksik' });
     
@@ -91,70 +99,15 @@ async function startServer() {
 
     try {
       if (!yahooFinance) {
-        throw new Error('Yahoo Finance servisi başlatılamadı.');
+        throw new Error('Yahoo Finance servisi başlatılamadı (Sunucu hatası).');
       }
 
       console.log(`[Karlısın-API] Yahoo Finance sorgusu başlıyor: ${symbol}`);
+      
       // 1. Get core summary data
-      let summary;
-      try {
-        summary = await yahooFinance.quoteSummary(symbol, {
-          modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
-        });
-      } catch (yfError: any) {
-        console.warn(`[Karlısın-API] Yahoo Finance Hatası, Alpha Vantage Fallback deneniyor (${symbol}):`, yfError.message);
-        
-        // Alpha Vantage Fallback
-        const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
-        if (apiKey) {
-          let avSymbol = symbol;
-          if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
-          const avUrl = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${avSymbol}&apikey=${apiKey}`;
-          const avRes = await fetch(avUrl);
-          if (avRes.ok) {
-            const avJson = await avRes.json();
-            if (avJson && avJson.Symbol) {
-              // Construct a Yahoo-like summary object from AV data
-              summary = {
-                summaryDetail: {
-                  dividendRate: parseFloat(avJson.DividendPerShare) || 0,
-                  dividendYield: parseFloat(avJson.DividendYield) || 0,
-                  payoutRatio: parseFloat(avJson.PayoutRatio) || 0,
-                  marketCap: parseFloat(avJson.MarketCapitalization) || 0,
-                  fiftyTwoWeekHigh: parseFloat(avJson['52WeekHigh']) || 0,
-                  fiftyTwoWeekLow: parseFloat(avJson['52WeekLow']) || 0,
-                },
-                calendarEvents: {
-                  exDividendDate: avJson.ExDividendDate ? new Date(avJson.ExDividendDate) : null,
-                  dividendDate: avJson.DividendDate ? new Date(avJson.DividendDate) : null,
-                },
-                assetProfile: {
-                  longBusinessSummary: avJson.Description,
-                  sector: avJson.Sector,
-                  industry: avJson.Industry,
-                  website: null
-                },
-                defaultKeyStatistics: {
-                  forwardPE: parseFloat(avJson.ForwardPE) || 0,
-                  profitMargins: parseFloat(avJson.ProfitMargin) || 0
-                },
-                price: {
-                  regularMarketPrice: 0, // OVERVIEW doesn't have current price, but we can use GLOBAL_QUOTE if needed
-                  regularMarketChangePercent: 0,
-                  currencySymbol: avJson.Currency === 'TRY' ? '₺' : '$'
-                }
-              };
-              console.log(`[Karlısın-API] Alpha Vantage Fallback Başarılı: ${symbol}`);
-            } else {
-              throw yfError; // Fallback failed or no data, throw original error
-            }
-          } else {
-            throw yfError;
-          }
-        } else {
-          throw yfError;
-        }
-      }
+      const summary = await yahooFinance.quoteSummary(symbol, {
+        modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
+      });
 
       console.log(`[Karlısın-API] Summary alındı: ${symbol}`);
 
@@ -185,12 +138,9 @@ async function startServer() {
     } catch (err: any) {
       console.error(`[Karlısın-API] Yahoo Finance Hatası (${symbol}):`, err);
       
-      // Detailed error logging for debugging validation issues
-      if (err.name === 'YahooFinanceError' && err.errors) {
-        console.error('Validation Errors:', JSON.stringify(err.errors, null, 2));
-      }
-
-      res.status(500).json({ 
+      // Send JSON error instead of letting Express render HTML
+      const statusCode = err.name === 'YahooFinanceError' ? 404 : 500;
+      res.status(statusCode).json({ 
         error: 'Veri çekilemedi', 
         message: err.message,
         details: err.errors || [] 
@@ -430,16 +380,16 @@ async function startServer() {
     if (!query) return res.status(400).json({ error: 'Sorgu eksik' });
 
     try {
+      if (!yahooFinance) throw new Error('Arama servisi hazır değil.');
       const results = await yahooFinance.search(query) as any;
       if (!results || !results.quotes) {
         return res.json([]);
       }
-      // Filter for Yahoo Finance valid quotes and map to a clean structure
       const quotes = (results.quotes || []).filter((q: any) => q.isYahooFinance || q.symbol);
       res.json(quotes);
     } catch (err: any) {
       console.error(`[Karlısın-API] Arama Hatası:`, err);
-      res.status(500).json({ error: 'Arama yapılamadı' });
+      res.status(500).json({ error: 'Arama yapılamadı', message: err.message });
     }
   });
   
@@ -599,7 +549,20 @@ async function startServer() {
   });
 
   // ---------------------------------------------------------
-  // 2. LOGLAMA VE DİĞERLERİ
+  // 2. ERROR HANDLING (Kritik: HTML yerine JSON dönmek için)
+  // ---------------------------------------------------------
+  
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[Karlısın-HATA] Kritik Sunucu Hatası:', err);
+    res.status(500).json({ 
+      error: 'Sunucu hatası oluştu', 
+      message: err.message,
+      path: req.path
+    });
+  });
+
+  // ---------------------------------------------------------
+  // 3. LOGLAMA VE DİĞERLERİ
   // ---------------------------------------------------------
 
   app.use((req, res, next) => {
