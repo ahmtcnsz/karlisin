@@ -206,7 +206,53 @@ async function startServer() {
       errorLog.push(`Yahoo (Global): ${err.message}`);
     }
 
-    // 2. TRY FINNHUB (FALLBACK)
+    // 2. TRY GOOGLE FINANCE SCRAPER (SMART FALLBACK)
+    try {
+      console.log(`[Karlısın-API] Attempt 2: Google Finance Scraper -> ${symbol}`);
+      let googleTicker = symbol;
+      if (symbol.includes('.')) {
+        const parts = symbol.split('.');
+        if (parts[1] === 'IS') googleTicker = `IST:${parts[0]}`;
+      } else {
+        // Guess IST for BIST if likely
+        if (symbol.length >= 4 && symbol.length <= 5) googleTicker = `IST:${symbol}`;
+      }
+
+      const gRes = await fetch(`https://www.google.com/finance/quote/${googleTicker}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+      });
+
+      if (gRes.ok) {
+        const html = await gRes.text();
+        const priceMatch = html.match(/data-last-price="([^"]+)"/);
+        const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/);
+        const currencyMatch = html.match(/data-currency-code="([^"]+)"/);
+
+        if (priceMatch) {
+          const priceValue = parseFloat(priceMatch[1]);
+          const result = {
+            symbol: googleTicker,
+            source: 'google-finance',
+            summary: {
+              price: {
+                regularMarketPrice: { value: priceValue },
+                longName: nameMatch ? nameMatch[1] : symbol,
+                currency: currencyMatch ? currencyMatch[1] : (googleTicker.startsWith('IST') ? 'TRY' : 'USD')
+              },
+              summaryDetail: { dividendYield: { value: 0 }, marketCap: { value: 0 } }
+            },
+            history: [],
+            timestamp: new Date().toISOString()
+          };
+          cache.set(cacheKey, result);
+          return res.json(result);
+        }
+      }
+    } catch (err: any) {
+      errorLog.push(`GoogleFinance: ${err.message}`);
+    }
+
+    // 3. TRY FINNHUB (FALLBACK)
     const finnhubKey = process.env.FINNHUB_API_KEY;
     if (finnhubKey && finnhubKey !== 'YOUR_FINNHUB_KEY') {
       try {
