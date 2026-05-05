@@ -5,35 +5,37 @@ import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
-import yahooFinanceModule from 'yahoo-finance2';
+import yahooFinance from 'yahoo-finance2';
 import NodeCache from 'node-cache';
 
-// yahoo-finance2 v3+ requires careful initialization in some environments
-// If it's a class/constructor, we must use 'new'.
-let yahooFinance: any = yahooFinanceModule;
+// yahoo-finance2 v3+ sometimes requires explicit instantiation depending on the build target
+let yf: any = yahooFinance;
 
-// Fallback for some ESM/CJS interop issues where the class is in .default
-if (!yahooFinance && (yahooFinanceModule as any).default) {
-  yahooFinance = (yahooFinanceModule as any).default;
-}
-
-// The error message suggests we might need to instantiate it ourselves
-if (typeof yahooFinance === 'function') {
+function getYahooInstance() {
+  if (yf && typeof yf.quote === 'function') return yf;
+  
   try {
-    yahooFinance = new (yahooFinance as any)();
-    console.log('[Karlısın-INIT] Yahoo Finance initialized via constructor.');
-    
-    // Silence common validation errors in the logs
-    if (yahooFinance && typeof yahooFinance.setGlobalConfig === 'function') {
-      yahooFinance.setGlobalConfig({
-        validation: { logErrors: false }
-      });
+    // If it's a class/constructor
+    if (typeof yahooFinance === 'function') {
+      yf = new (yahooFinance as any)();
+    } else if ((yahooFinance as any).default && typeof (yahooFinance as any).default === 'function') {
+      yf = new (yahooFinance as any).default();
+    } else {
+      // Fallback singleton
+      yf = yahooFinance;
+    }
+
+    if (yf && typeof yf.setGlobalConfig === 'function') {
+      yf.setGlobalConfig({ validation: { logErrors: false } });
     }
   } catch (e) {
-    console.warn('[Karlısın-INIT] Failed to instantiate Yahoo Finance via constructor.');
+    console.warn('[Karlısın-INIT] Yahoo Finance instance creation failed:', e);
   }
+  return yf;
 }
 
+// Global instance check
+getYahooInstance();
 
 // .env dosyasını yükle
 dotenv.config();
@@ -41,8 +43,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Cache instance (1 hour default TTL)
-const cache = new NodeCache({ stdTTL: 3600 });
+// Cache instance (12 hours default TTL for dividend data)
+const cache = new NodeCache({ stdTTL: 43200 });
 
 async function startServer() {
   const app = express();
@@ -92,43 +94,27 @@ async function startServer() {
 
     // 1. TRY YAHOO FINANCE
     try {
-      // Logic for ticker variations
+      console.log(`[Karlısın-API] Attempt 1: Yahoo Finance -> ${symbol}`);
+      
       let tickers = [symbol];
       if (!symbol.includes('.')) {
-        // If 4-5 chars and no dot, it's likely BIST or US. Try BIST first if it looks like one.
-        if (symbol.length >= 4 && symbol.length <= 6) {
-          tickers = [`${symbol}.IS`, symbol];
-        } else {
-          tickers = [symbol, `${symbol}.IS`];
-        }
-      }
-
-      // FALLBACK: If no tickers found, try a search
-      try {
-        console.log(`[Karlısın-API] Searching for symbol match: ${symbol}`);
-        const searchRes = await yahooFinance.search(symbol);
-        if (searchRes && searchRes.quotes && searchRes.quotes.length > 0) {
-          const firstQuote = searchRes.quotes[0];
-          if (firstQuote.symbol && !tickers.includes(firstQuote.symbol)) {
-            console.log(`[Karlısın-API] Found candidate ticker via search: ${firstQuote.symbol}`);
-            tickers.push(firstQuote.symbol);
-          }
-        }
-      } catch (e) {
-        console.warn(`[Karlısın-API] Search failed for ${symbol}`);
+        // Turkish users usually search for BIST stocks first
+        tickers = [`${symbol}.IS`, symbol];
+      } else if (symbol.endsWith('.IST')) {
+        tickers = [symbol.replace('.IST', '.IS'), symbol];
       }
 
       let quote: any = null;
       let successfulTicker = '';
+      const yfInstance = getYahooInstance();
 
       for (const t of tickers) {
         try {
           console.log(`[Karlısın-API] Yahoo trying: ${t}`);
-          // Ensure we have a working instance
-          if (!yahooFinance || typeof yahooFinance.quote !== 'function') {
-             throw new Error('Yahoo Finance instance not properly initialized.');
+          if (!yfInstance || typeof yfInstance.quote !== 'function') {
+             throw new Error('Yahoo Finance instance not available.');
           }
-          const q = await yahooFinance.quote(t) as any;
+          const q = await yfInstance.quote(t) as any;
           if (q && q.regularMarketPrice) {
             quote = q;
             successfulTicker = t;
@@ -140,8 +126,26 @@ async function startServer() {
         }
       }
       
+      // Secondary fallback: Yahoo search if direct quote failed
+      if (!quote) {
+        try {
+          console.log(`[Karlısın-API] Yahoo searching for: ${symbol}`);
+          const searchRes = await yfInstance.search(symbol);
+          if (searchRes?.quotes?.length > 0) {
+            const bestMatch = searchRes.quotes[0].symbol;
+            console.log(`[Karlısın-API] Found match via search: ${bestMatch}`);
+            const q = await yfInstance.quote(bestMatch) as any;
+            if (q && q.regularMarketPrice) {
+              quote = q;
+              successfulTicker = bestMatch;
+            }
+          }
+        } catch (e: any) {
+          console.warn(`[Karlısın-API] Yahoo search/quote fallback failed: ${e.message}`);
+        }
+      }
+
       if (quote && quote.regularMarketPrice) {
-        // Build base price data from quote
         let summaryData: any = {
           price: {
             regularMarketPrice: { value: quote.regularMarketPrice },
@@ -159,25 +163,22 @@ async function startServer() {
           }
         };
 
-        // Try getting deeper info (industry, sector etc)
         try {
-          const fullSummary = await yahooFinance.quoteSummary(successfulTicker, {
+          const fullSummary = await yfInstance.quoteSummary(successfulTicker, {
             modules: ['summaryDetail', 'assetProfile', 'defaultKeyStatistics']
           });
           if (fullSummary) {
-            // Merge deep data into summaryData
             summaryData = { ...summaryData, ...JSON.parse(JSON.stringify(fullSummary)) };
           }
         } catch (e: any) { 
           console.warn(`[Karlısın-API] Yahoo Summary partial fail for ${successfulTicker}: ${e.message}`);
         }
 
-        // Try getting history (dividends)
         let historyData = [];
         try {
           const now = new Date();
           const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
-          const history = await yahooFinance.chart(successfulTicker, {
+          const history = await yfInstance.chart(successfulTicker, {
             period1: fiveYearsAgo,
             period2: now,
             events: 'dividends'
@@ -199,8 +200,6 @@ async function startServer() {
         
         cache.set(cacheKey, result);
         return res.json(result);
-      } else {
-        errorLog.push(`Yahoo: No market price found for ${tickers.join(', ')}`);
       }
     } catch (err: any) {
       errorLog.push(`Yahoo (Global): ${err.message}`);
@@ -208,44 +207,46 @@ async function startServer() {
 
     // 2. TRY GOOGLE FINANCE SCRAPER (SMART FALLBACK)
     try {
-      console.log(`[Karlısın-API] Attempt 2: Google Finance Scraper -> ${symbol}`);
-      let googleTicker = symbol;
+      const googleTickers = [symbol];
       if (symbol.includes('.')) {
         const parts = symbol.split('.');
-        if (parts[1] === 'IS') googleTicker = `IST:${parts[0]}`;
-      } else {
-        // Guess IST for BIST if likely
-        if (symbol.length >= 4 && symbol.length <= 5) googleTicker = `IST:${symbol}`;
+        if (parts[1] === 'IS') googleTickers.unshift(`IST:${parts[0]}`);
+      } else if (symbol.length >= 4 && symbol.length <= 6) {
+        googleTickers.unshift(`IST:${symbol}`);
       }
 
-      const gRes = await fetch(`https://www.google.com/finance/quote/${googleTicker}`, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
-      });
+      for (const gt of googleTickers) {
+        console.log(`[Karlısın-API] Attempt 2: Google Finance -> ${gt}`);
+        const gRes = await fetch(`https://www.google.com/finance/quote/${gt}`, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36' }
+        });
 
-      if (gRes.ok) {
-        const html = await gRes.text();
-        const priceMatch = html.match(/data-last-price="([^"]+)"/);
-        const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/);
-        const currencyMatch = html.match(/data-currency-code="([^"]+)"/);
+        if (gRes.ok) {
+          const html = await gRes.text();
+          // Improved regex for Google Finance data
+          const priceMatch = html.match(/data-last-price="([^"]+)"/);
+          const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/);
+          const currencyMatch = html.match(/data-currency-code="([^"]+)"/);
 
-        if (priceMatch) {
-          const priceValue = parseFloat(priceMatch[1]);
-          const result = {
-            symbol: googleTicker,
-            source: 'google-finance',
-            summary: {
-              price: {
-                regularMarketPrice: { value: priceValue },
-                longName: nameMatch ? nameMatch[1] : symbol,
-                currency: currencyMatch ? currencyMatch[1] : (googleTicker.startsWith('IST') ? 'TRY' : 'USD')
+          if (priceMatch) {
+            const priceValue = parseFloat(priceMatch[1]);
+            const result = {
+              symbol: gt,
+              source: 'google-finance',
+              summary: {
+                price: {
+                  regularMarketPrice: { value: priceValue },
+                  longName: nameMatch ? nameMatch[1] : symbol,
+                  currency: currencyMatch ? currencyMatch[1] : (gt.startsWith('IST') ? 'TRY' : 'USD')
+                },
+                summaryDetail: { dividendYield: { value: 0 }, marketCap: { value: 0 } }
               },
-              summaryDetail: { dividendYield: { value: 0 }, marketCap: { value: 0 } }
-            },
-            history: [],
-            timestamp: new Date().toISOString()
-          };
-          cache.set(cacheKey, result);
-          return res.json(result);
+              history: [],
+              timestamp: new Date().toISOString()
+            };
+            cache.set(cacheKey, result);
+            return res.json(result);
+          }
         }
       }
     } catch (err: any) {
@@ -375,8 +376,11 @@ async function startServer() {
       const data = await response.json();
 
       if (data && data.Symbol) {
-        cache.set(cacheKey, data);
+        // High TTL for stable data
+        cache.set(cacheKey, data, 43200);
         res.json(data);
+      } else if (data.Note || data.Information) {
+        res.status(429).json({ error: 'Alpha Vantage limitine takıldı', details: data });
       } else {
         res.status(404).json({ error: 'Alpha Vantage veri bulamadı', details: data });
       }
@@ -405,8 +409,14 @@ async function startServer() {
       const response = await fetch(url);
       const data = await response.json();
       
-      cache.set(cacheKey, data);
-      res.json(data);
+      if (data.feed) {
+        cache.set(cacheKey, data, 3600); // 1 hour for news
+        res.json(data);
+      } else if (data.Note || data.Information) {
+        res.status(429).json({ error: 'Limit reached', details: data });
+      } else {
+        res.json(data);
+      }
     } catch (err: any) {
       res.status(500).json({ error: 'News error', message: err.message });
     }
@@ -420,6 +430,10 @@ async function startServer() {
 
     if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
 
+    const cacheKey = `av_rsi_${symbol}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
     try {
       let avSymbol = symbol;
       if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
@@ -427,7 +441,15 @@ async function startServer() {
       const url = `https://www.alphavantage.co/query?function=RSI&symbol=${avSymbol}&interval=daily&time_period=14&series_type=close&apikey=${apiKey}`;
       const response = await fetch(url);
       const data = await response.json();
-      res.json(data);
+
+      if (data['Technical Analysis: RSI']) {
+        cache.set(cacheKey, data, 21600); // 6 hours for indicators
+        res.json(data);
+      } else if (data.Note || data.Information) {
+        res.status(429).json({ error: 'Limit logic', details: data });
+      } else {
+        res.json(data);
+      }
     } catch (err: any) {
       res.status(500).json({ error: 'RSI error', message: err.message });
     }
@@ -441,6 +463,10 @@ async function startServer() {
 
     if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
 
+    const cacheKey = `av_earn_${symbol}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
     try {
       let avSymbol = symbol;
       if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
@@ -448,7 +474,15 @@ async function startServer() {
       const url = `https://www.alphavantage.co/query?function=EARNINGS&symbol=${avSymbol}&apikey=${apiKey}`;
       const response = await fetch(url);
       const data = await response.json();
-      res.json(data);
+
+      if (data.Symbol) {
+        cache.set(cacheKey, data, 43200); // 12 hours for earnings
+        res.json(data);
+      } else if (data.Note || data.Information) {
+        res.status(429).json({ error: 'Limit', details: data });
+      } else {
+        res.json(data);
+      }
     } catch (err: any) {
       res.status(500).json({ error: 'Earnings error', message: err.message });
     }
@@ -462,6 +496,10 @@ async function startServer() {
 
     if (!apiKey) return res.status(503).json({ error: 'API Key missing' });
 
+    const cacheKey = `av_cf_${symbol}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
     try {
       let avSymbol = symbol;
       if (symbol.endsWith('.IS')) avSymbol = symbol.replace('.IS', '.IST');
@@ -469,7 +507,15 @@ async function startServer() {
       const url = `https://www.alphavantage.co/query?function=CASH_FLOW&symbol=${avSymbol}&apikey=${apiKey}`;
       const response = await fetch(url);
       const data = await response.json();
-      res.json(data);
+
+      if (data.Symbol) {
+        cache.set(cacheKey, data, 43200); // 12 hours
+        res.json(data);
+      } else if (data.Note || data.Information) {
+        res.status(429).json({ error: 'Limit CF', details: data });
+      } else {
+        res.json(data);
+      }
     } catch (err: any) {
       res.status(500).json({ error: 'Cash flow error', message: err.message });
     }
@@ -576,7 +622,7 @@ async function startServer() {
         return entry;
       });
 
-      cache.set(cacheKey, results);
+      cache.set(cacheKey, results, 86400); // 24 hours for calendar
       res.json(results);
     } catch (err: any) {
       res.status(500).json({ error: 'Alpha Vantage takvim hatası', message: err.message });
