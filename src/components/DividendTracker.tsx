@@ -485,8 +485,9 @@ const DividendTracker: React.FC = () => {
       if (!contentType || !contentType.includes('application/json')) {
         const resClone = res.clone();
         const textPreview = await resClone.text();
-        console.error('[DividendTracker] Beklenmeyen cevap (HTML?):', textPreview.substring(0, 200));
-        throw new Error(`Sunucudan beklenen JSON verisi alınamadı (Tip: ${contentType}).`);
+        const cleanPreview = textPreview.substring(0, 100).replace(/[<>]/g, '');
+        console.error('[DividendTracker] Beklenmeyen cevap (HTML?):', textPreview.substring(0, 500));
+        throw new Error(`Sunucudan beklenen JSON verisi alınamadı (Tip: ${contentType}). İçerik: ${cleanPreview}...`);
       }
 
       let json;

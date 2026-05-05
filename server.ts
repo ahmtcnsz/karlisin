@@ -1,37 +1,32 @@
+import * as dotenv from 'dotenv';
+// .env dosyasını EN BAŞTA yükle
+dotenv.config();
+
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { Resend } from 'resend';
 import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
-import * as dotenv from 'dotenv';
-
-// .env dosyasını EN BAŞTA yükle
-dotenv.config();
-
-import YahooFinance from 'yahoo-finance2';
-
-// Yahoo Finance initialization helper
-const createYahooFinanceInstance = () => {
-  try {
-    const YF_ANY = YahooFinance as any;
-    const YFClass = YF_ANY.default || YF_ANY;
-    
-    const yf = new YFClass({
-      queue: { concurrency: 1 },
-      validation: { logErrors: true }
-    });
-    console.log('[Karlısın-Sunucu] Yahoo Finance başarıyla başlatıldı.');
-    return yf;
-  } catch (e: any) {
-    console.error('[Karlısın-Sunucu] Yahoo Finance başlatılamadı:', e.message);
-    return null;
-  }
-};
-
-const yahooFinance = createYahooFinanceInstance();
-
+import yahooFinanceModule from 'yahoo-finance2';
 import NodeCache from 'node-cache';
+
+const APP_VERSION = '1.0.6';
+
+// Yahoo Finance initialization
+let yahooFinance: any;
+try {
+  const YFClass = (yahooFinanceModule as any).default || yahooFinanceModule;
+  yahooFinance = new YFClass({
+    queue: { concurrency: 1 },
+    validation: { logErrors: true }
+  });
+  console.log(`[Karlısın-Sunucu] v${APP_VERSION} Yahoo Finance örneği başarıyla oluşturuldu.`);
+} catch (e: any) {
+  console.error(`[Karlısın-Sunucu] v${APP_VERSION} Yahoo Finance başlatılamadı:`, e.message);
+  // Bir dummy nesne oluştur ki uygulama çökmesin ama hata versin
+  yahooFinance = null;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,7 +54,8 @@ async function startServer() {
   // WWW -> Non-WWW Redirect (Canonical Domain)
   app.use((req, res, next) => {
     const host = req.headers.host;
-    if (host && host.startsWith('www.')) {
+    // Sadece gerçek alan adları için redirect yap, localhost veya AIS dev domainleri için yapma
+    if (host && host.startsWith('www.') && !host.includes('localhost') && !host.includes('.run.app')) {
       const newHost = host.replace(/^www\./, '');
       console.log(`[Karlısın-Redirect] Redirecting ${host} to ${newHost}`);
       return res.redirect(301, `https://${newHost}${req.url}`);
@@ -85,83 +81,87 @@ async function startServer() {
   // 1. API ROTLARI (EN ÜSTTE OLMALI - VITE'DEN ÖNCE)
   // ---------------------------------------------------------
 
-  // DIVIDEND API (Yahoo Finance)
-  app.get('/api/dividends', async (req, res, next) => {
-    const symbol = (req.query.symbol as string || '').toUpperCase();
-    if (!symbol) return res.status(400).json({ error: 'Sembol eksik' });
-    
-    console.log(`[Karlısın-API] Temettü verisi isteniyor: ${symbol}`);
-
-    const cacheKey = `div_${symbol}`;
-    const cachedData = cache.get(cacheKey);
-    if (cachedData) {
-      console.log(`[Karlısın-API] Cache hit: ${symbol}`);
-      return res.json(cachedData);
-    }
-
-    try {
-      if (!yahooFinance) {
-        throw new Error('Yahoo Finance servisi başlatılamadı (Sunucu hatası).');
+    // DIVIDEND API (Yahoo Finance)
+    app.get('/api/dividends', async (req, res) => {
+      const symbol = (req.query.symbol as string || '').toUpperCase();
+      if (!symbol) return res.status(400).json({ error: 'Sembol eksik', version: APP_VERSION });
+      
+      console.log(`[Karlısın-API] v${APP_VERSION} Temettü verisi isteniyor: ${symbol}`);
+  
+      const cacheKey = `div_${symbol}`;
+      const cachedData = cache.get(cacheKey);
+      if (cachedData) {
+        console.log(`[Karlısın-API] Cache hit: ${symbol}`);
+        return res.json({ ...(cachedData as any), version: APP_VERSION });
       }
-
-      console.log(`[Karlısın-API] Yahoo Finance sorgusu başlıyor: ${symbol}`);
-      
-      // 1. Get core summary data
-      const summary = await yahooFinance.quoteSummary(symbol, {
-        modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
-      });
-
-      console.log(`[Karlısın-API] Summary alındı: ${symbol}`);
-
-      // 2. Get historical dividends (last 5 years)
-      const now = new Date();
-      const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
-      
-      let historyData = [];
+  
       try {
-        const history = await yahooFinance.chart(symbol, {
-          period1: fiveYearsAgo,
-          period2: now,
-          events: 'dividends'
-        }) as any;
-        historyData = history.events?.dividends || [];
-      } catch (histErr) {
-        console.warn(`[Karlısın-API] Geçmiş temettü verisi çekilemedi (${symbol}):`, histErr);
+        if (!yahooFinance) {
+          throw new Error('Yahoo Finance servisi başlatılamadı. Sunucu logs kontrol edilmeli.');
+        }
+
+        console.log(`[Karlısın-API] Yahoo Finance sorgusu başlıyor: ${symbol}`);
+        
+        // 1. Get core summary data
+        // For some symbols, modules like 'calendarEvents' might be missing.
+        const summary = await yahooFinance.quoteSummary(symbol, {
+          modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
+        });
+  
+        console.log(`[Karlısın-API] Summary alındı: ${symbol}`);
+  
+        // 2. Get historical dividends (last 5 years)
+        const now = new Date();
+        const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+        
+        let historyData = [];
+        try {
+          const history = await yahooFinance.chart(symbol, {
+            period1: fiveYearsAgo,
+            period2: now,
+            events: 'dividends'
+          }) as any;
+          historyData = history.events?.dividends || [];
+        } catch (histErr) {
+          console.warn(`[Karlısın-API] Geçmiş temettü verisi çekilemedi (${symbol}):`, histErr);
+        }
+  
+        const result = {
+          symbol,
+          summary,
+          history: historyData,
+          version: APP_VERSION
+        };
+  
+        cache.set(cacheKey, result, YAHOO_CACHE_TTL);
+        res.json(result);
+      } catch (err: any) {
+        console.error(`[Karlısın-API] Yahoo Finance Hatası (${symbol}):`, err);
+        
+        const statusCode = err.name === 'YahooFinanceError' ? 404 : 500;
+        return res.status(statusCode).json({ 
+          error: 'Veri çekilemedi', 
+          message: err.message,
+          details: err.errors || [],
+          version: APP_VERSION
+        });
       }
-
-      const result = {
-        symbol,
-        summary,
-        history: historyData
-      };
-
-      cache.set(cacheKey, result, YAHOO_CACHE_TTL);
-      res.json(result);
-    } catch (err: any) {
-      console.error(`[Karlısın-API] Yahoo Finance Hatası (${symbol}):`, err);
-      
-      // Send JSON error instead of letting Express render HTML
-      const statusCode = err.name === 'YahooFinanceError' ? 404 : 500;
-      res.status(statusCode).json({ 
-        error: 'Veri çekilemedi', 
-        message: err.message,
-        details: err.errors || [] 
-      });
-    }
-  });
-
-  // HEALTH CHECK API
-  app.get('/api/health', (req, res) => {
-    res.json({
-      status: 'ok',
-      time: new Date().toISOString(),
-      keys: {
-        resend: !!process.env.RESEND_API_KEY,
-        alphavantage: !!process.env.ALPHA_VANTAGE_API_KEY
-      },
-      cache: cache.getStats()
     });
-  });
+  
+    // HEALTH CHECK API
+    app.get('/api/health', (req, res) => {
+      res.json({
+        status: 'ok',
+        version: APP_VERSION,
+        node_env: process.env.NODE_ENV,
+        time: new Date().toISOString(),
+        keys: {
+          resend: !!process.env.RESEND_API_KEY,
+          alphavantage: !!process.env.ALPHA_VANTAGE_API_KEY
+        },
+        cache: cache.getStats()
+      });
+    });
 
   // ALPHA VANTAGE INTEGRATION
   const handleAVResponse = async (req: express.Request, res: express.Response, url: string, cacheKey?: string) => {
