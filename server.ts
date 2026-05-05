@@ -12,22 +12,24 @@ dotenv.config();
 import YahooFinance from 'yahoo-finance2';
 
 // Yahoo Finance initialization helper
-const createYahooFinance = () => {
+const createYahooFinanceInstance = () => {
   try {
-    const yf = new (YahooFinance as any)();
-    yf.setGlobalConfig({
-      queue: { concurrency: 1, timeout: 10000 },
+    const YF_ANY = YahooFinance as any;
+    const YFClass = YF_ANY.default || YF_ANY;
+    
+    const yf = new YFClass({
+      queue: { concurrency: 1 },
       validation: { logErrors: true }
     });
     console.log('[Karlısın-Sunucu] Yahoo Finance başarıyla başlatıldı.');
     return yf;
-  } catch (e) {
-    console.error('[Karlısın-Sunucu] Yahoo Finance başlatılamadı:', e);
+  } catch (e: any) {
+    console.error('[Karlısın-Sunucu] Yahoo Finance başlatılamadı:', e.message);
     return null;
   }
 };
 
-const yahooFinance = createYahooFinance();
+const yahooFinance = createYahooFinanceInstance();
 
 import NodeCache from 'node-cache';
 
