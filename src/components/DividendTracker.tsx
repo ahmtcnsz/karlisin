@@ -630,7 +630,8 @@ const DividendTracker: React.FC = () => {
           console.log(`[DividendTracker] Veri kaynağı: ${json.source}`);
         }
       } catch (e) {
-        throw new Error('Sunucu veriyi doğru formatta göndermedi (HTML). Lütfen birazdan tekrar deneyin.');
+        console.error('[DividendTracker] JSON Parse Hatası. Gelen metin:', text.substring(0, 500));
+        throw new Error(`Sunucu beklenen formatta (JSON) yanıt vermedi. Durum: ${res.status}. Lütfen geliştirici konsolunu kontrol edin.`);
       }
       
       if (!json || !json.summary) {

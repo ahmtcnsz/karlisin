@@ -79,12 +79,48 @@ async function startServer() {
 
     // 1. TRY YAHOO FINANCE
     try {
-      console.log(`[Karlısın-API] Method 1: Yahoo Finance -> ${symbol}`);
-      const summary = await yahooFinance.quoteSummary(symbol, {
-        modules: ['summaryDetail', 'calendarEvents', 'assetProfile', 'defaultKeyStatistics', 'financialData', 'price']
-      });
+      console.log(`[Karlısın-API] Method 1: Yahoo Finance Query -> ${symbol}`);
       
-      const cleanSummary = JSON.parse(JSON.stringify(summary));
+      // First try a simple quote - it's much faster and more reliable
+      const quote = await yahooFinance.quote(symbol);
+      const cleanQuote = JSON.parse(JSON.stringify(quote));
+      
+      if (!cleanQuote || !cleanQuote.regularMarketPrice) {
+        throw new Error('Yahoo quote returned empty data');
+      }
+
+      // Then try summary but don't fail if it doesn't work
+      let summaryData: any = {
+        price: {
+          regularMarketPrice: { value: cleanQuote.regularMarketPrice },
+          longName: cleanQuote.longName || cleanQuote.shortName || symbol,
+          shortName: cleanQuote.shortName || symbol,
+          currency: cleanQuote.currency
+        },
+        summaryDetail: {
+          dividendYield: { value: cleanQuote.trailingAnnualDividendYield || 0 },
+          dividendRate: { value: cleanQuote.trailingAnnualDividendRate || 0 },
+          trailingPE: { value: cleanQuote.trailingPE || 0 },
+          marketCap: { value: cleanQuote.marketCap || 0 },
+          fiftyTwoWeekHigh: { value: cleanQuote.fiftyTwoWeekHigh || 0 },
+          fiftyTwoWeekLow: { value: cleanQuote.fiftyTwoWeekLow || 0 },
+        },
+        assetProfile: {
+          industry: '',
+          sector: '',
+          longBusinessSummary: ''
+        }
+      };
+
+      try {
+        const fullSummary = await yahooFinance.quoteSummary(symbol, {
+          modules: ['summaryDetail', 'assetProfile', 'defaultKeyStatistics']
+        });
+        const cleanFull = JSON.parse(JSON.stringify(fullSummary));
+        summaryData = { ...summaryData, ...cleanFull };
+      } catch (e) {
+        console.warn(`[Karlısın-API] Summary failed for ${symbol}, continuing with quote data only.`);
+      }
       
       let historyData = [];
       try {
@@ -103,7 +139,7 @@ async function startServer() {
 
       result = {
         symbol,
-        summary: cleanSummary,
+        summary: summaryData,
         history: historyData,
         source: 'yahoo'
       };
@@ -112,7 +148,7 @@ async function startServer() {
       return res.json(result);
 
     } catch (err: any) {
-      console.warn(`[Karlısın-API] Yahoo Finance başarısız (${symbol}), Fallback deneniyor...`);
+      console.warn(`[Karlısın-API] Yahoo Finance (quote) failed for ${symbol}: ${err.message}`);
       errorLog.push(`Yahoo: ${err.message}`);
     }
 
@@ -642,16 +678,20 @@ async function startServer() {
     res.sendFile(path.join(__dirname, 'public', 'ads.txt'));
   });
 
+  // ---------------------------------------------------------
+  // 3. VITE / STATIC ASSET SERVİSİ (EN SONDA OLMALI)
+  // ---------------------------------------------------------
+  
   const isProduction = process.env.NODE_ENV === 'production';
   
   if (isProduction) {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
     
-    // API dışındaki her şeyi index.html'e gönder
+    // API rotaları zaten yukarıda catch-all (/api/*) ile yakalandığı için buraya sadece non-API 404'ler düşer
     app.get('*', (req, res) => {
-      // API istekleri yukarıda catch-all ile yakalanmış olmalı, buraya düşerse 404 dön
-      if (req.url.startsWith('/api')) {
+      // Eğer bir şekilde /api ile başlayan bir istek buraya gelirse 404 JSON dön
+      if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: 'API rotası bulunamadı.' });
       }
       res.sendFile(path.join(distPath, 'index.html'));
@@ -662,12 +702,10 @@ async function startServer() {
       appType: 'spa',
     });
     
-  // API rotalarını Vite'den koru (Daha Kesin Filtreleme)
+    // API olmayan tüm istekleri Vite'ye yönlendir
     app.use((req, res, next) => {
-      // API istekleri doğrudan alttaki express rotalarına akmalı
-      // req.path kullanmak sorgu parametrelerinden etkilenmeyi önler
-      if (req.path.startsWith('/api/')) {
-        return next();
+      if (req.path.startsWith('/api')) {
+        return next(); // API rotaları yukarıdaki express rotalarına veya api-catch-all'a gitmeli
       }
       vite.middlewares(req, res, next);
     });
