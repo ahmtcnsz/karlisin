@@ -8,15 +8,20 @@ import * as dotenv from 'dotenv';
 import YahooFinance from 'yahoo-finance2';
 
 // ESM/CJS compatibility for yahoo-finance2 v3+
-const yahooFinance = typeof (YahooFinance as any) === 'function'
-  ? new (YahooFinance as any)()
-  : new (YahooFinance as any).default();
+let yahooFinance: any;
+try {
+  yahooFinance = typeof (YahooFinance as any) === 'function'
+    ? new (YahooFinance as any)()
+    : new (YahooFinance as any).default();
 
-// Yahoo Finance yapılandırması (Validation kapatma - şema hatalarını önlemek için)
-if (yahooFinance && (yahooFinance as any).settings) {
-  (yahooFinance as any).settings.set({
-    validation: { logErrors: false }
-  });
+  // Yahoo Finance yapılandırması (Validation kapatma - şema hatalarını önlemek için)
+  if (yahooFinance && yahooFinance.settings) {
+    yahooFinance.settings.set({
+      validation: { logErrors: false }
+    });
+  }
+} catch (e) {
+  console.error('[Karlısın-Sunucu] Yahoo Finance başlatma hatası:', e);
 }
 import NodeCache from 'node-cache';
 
@@ -532,21 +537,22 @@ async function startServer() {
     res.json({ message: 'Broadcast tamamlandı', results });
   });
 
+  // ---------------------------------------------------------
   // API CATCH-ALL (API içindeki 404'ler JSON dönmeli)
+  // ---------------------------------------------------------
   app.all('/api/*', (req, res) => {
-    res.status(404).json({ error: 'API rotası bulunamadı', path: req.path });
+    // Eğer buraya kadar geldiyse ve yukarıdaki /api/ rotalarıyla eşleşmediyse 404 dön
+    console.log(`[Karlısın-API] 404 Not Found: ${req.url}`);
+    res.status(404).json({ 
+      error: 'API rotası bulunamadı', 
+      path: req.path,
+      method: req.method 
+    });
   });
 
   // ---------------------------------------------------------
-  // 2. LOGLAMA VE DİĞERLERİ
+  // 2. STATIC FILES VE SPA FALLBACK
   // ---------------------------------------------------------
-
-  app.use((req, res, next) => {
-    if (!req.url.startsWith('/api')) {
-      // API değilse sessiz kal veya logla
-    }
-    next();
-  });
 
   // SEO DOSYALARI İÇİN AÇIK ROTALAR (Her zaman erişilebilir olmalı)
   app.get('/sitemap.xml', (req, res) => {
@@ -568,9 +574,9 @@ async function startServer() {
     
     // API dışındaki her şeyi index.html'e gönder
     app.get('*', (req, res) => {
-      // API istekleri yukarıda catch-all ile yakalanmış olmalı, buraya düşerse 404 dön
+      // Çift kontrol: Eğer bir şekilde buraya /api isteği düşerse HTML DÖNME!
       if (req.url.startsWith('/api')) {
-        return res.status(404).json({ error: 'API rotası bulunamadı.' });
+        return res.status(404).json({ error: 'API rotası yakalanamadı.' });
       }
       res.sendFile(path.join(distPath, 'index.html'));
     });
@@ -580,20 +586,12 @@ async function startServer() {
       appType: 'spa',
     });
     
-  // API rotalarını Vite'den koru (Daha Kesin Filtreleme)
-    app.use((req, res, next) => {
-      // API istekleri doğrudan alttaki express rotalarına akmalı
-      // Hem /api/ hem de /api ile başlayanları yakalamak için
-      if (req.path.startsWith('/api')) {
-        return next();
-      }
-      vite.middlewares(req, res, next);
-    });
+    app.use(vite.middlewares);
   }
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Test API: http://localhost:${PORT}/api/mail?email=test@example.com`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
 
