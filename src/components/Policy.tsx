@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
 import { Shield, FileText, Info } from 'lucide-react';
 
@@ -14,7 +15,7 @@ export default function Policy({ type }: PolicyProps) {
       "Fiyat Hesaplayıcı, yalnızca hesaplama ve bilgilendirme amacıyla sunulan bir araçtır. Sunulan sonuçlar finansal, hukuki veya ticari tavsiye niteliği taşımaz",
       "Kullanıcı, elde ettiği sonuçları kendi sorumluluğunda değerlendirir. Uygulamanın kullanımından doğabilecek doğrudan veya dolaylı zararlardan sorumluluk kabul edilmez.",
       "Hesaplama algoritmaları genel senaryolara göre tasarlanmıştır. Pazaryeri komisyonları, hizmet bedelleri ve diğer ücretler zamanla değişebilir. Kullanıcı, bu değişiklikleri kontrol etmekle yükümlüdür.",
-      "Kullanıcı, uygulamayı kötüye kullanmayacağını, sistemin işleyişine zarar verecek herhangi bir girişimde bulunmayacağını kabul eder.",
+      "Kullanıcı, uygulamanı kötüye kullanmayacağını, sistemin işleyişine zarar verecek herhangi bir girişimde bulunmayacağını kabul eder.",
       "Fiyat Hesaplayıcı, önceden bildirimde bulunmaksızın güncellenebilir, geliştirilebilir veya geçici/süresiz olarak durdurulabilir.",
       "Bu kullanım şartları zaman zaman güncellenebilir. Güncellenmiş versiyonlar yayınlandığı andan itibaren geçerli sayılır."
     ]
@@ -33,6 +34,10 @@ export default function Policy({ type }: PolicyProps) {
 
   return (
     <div className="pt-24 pb-20 px-6 max-w-4xl mx-auto min-h-screen">
+      <Helmet>
+        <title>{content.title} - Karlısın</title>
+        <meta name="description" content={`Karlısın ${content.title} sayfası. Kullanım şartları, veri güvenliği ve gizlilik hakkında detaylı bilgiler.`} />
+      </Helmet>
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

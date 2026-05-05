@@ -38,14 +38,24 @@ export default function Landing() {
       borderColor: 'border-emerald-500/20'
     },
     {
-      id: 'mortgage',
+      id: 'dividend',
       path: '/temettu-takibi',
       title: 'Temettü Takibi',
       description: 'Borsa pasif gelirinizi takip edin, vergi süreçlerini ve gelecek ödemeleri planlayın.',
-      icon: <TrendingUp className="text-indigo-400" size={28} />,
-      badge: 'YENİ & PRO',
+      icon: <PieChart className="text-indigo-400" size={28} />,
+      badge: 'AKTİF',
       color: 'from-indigo-500/20 to-purple-600/5',
       borderColor: 'border-indigo-500/20'
+    },
+    {
+      id: 'market-pulse',
+      path: '/borsa/nabiz',
+      title: 'Piyasanın Nabzı',
+      description: 'Global makro veriler ve borsa analiz motoru ile piyasanın ritmini yakalayın.',
+      icon: <TrendingUp className="text-amber-400" size={28} />,
+      badge: 'YAKINDA',
+      color: 'from-amber-500/20 to-amber-600/5',
+      borderColor: 'border-amber-500/20'
     },
   ];
 
@@ -61,9 +71,9 @@ export default function Landing() {
       icon: <Zap size={20} />
     },
     {
-      title: 'Gelişmiş Analiz',
-      desc: 'Karmaşık finansal verileri basit ve anlaşılır grafiklere dönüştürün.',
-      icon: <PieChart size={20} />
+      title: 'Borsa Analiz',
+      desc: 'Şirketlerin finansal sağlığını ve temettü gücünü profesyonelce analiz edin.',
+      icon: <Globe size={20} />
     }
   ];
 
@@ -272,7 +282,7 @@ export default function Landing() {
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-indigo-400">Canlı Takip Et.</span>
             </h2>
             <p className="text-xl text-slate-400 font-medium leading-relaxed">
-              Borsa İstanbul (BİST) ve Amerikan Borsası (Nasdaq/NYSE) hisselerini Alpha Vantage API entegrasyonu ile tek merkezden yönet. 
+              Borsa İstanbul (BİST) ve Amerikan Borsası (Nasdaq/NYSE) hisselerini global finansal veri entegrasyonu ile tek merkezden yönet. 
               2026 yılı tüm temettü hakediş tarihlerini ve tahmini ödemelerini anında gör.
             </p>
             <div className="flex gap-4 pt-4">
