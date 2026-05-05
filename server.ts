@@ -5,10 +5,12 @@ import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
-import YahooFinanceRaw from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
 
-// ESM/CJS compatibility for yahoo-finance2
-const yahooFinance = (YahooFinanceRaw as any).default || YahooFinanceRaw;
+// ESM/CJS compatibility for yahoo-finance2 v3+
+const yahooFinance = typeof (YahooFinance as any) === 'function'
+  ? new (YahooFinance as any)()
+  : new (YahooFinance as any).default();
 
 // Yahoo Finance yapılandırması (Validation kapatma - şema hatalarını önlemek için)
 if (yahooFinance && (yahooFinance as any).settings) {
