@@ -8,45 +8,44 @@ import * as dotenv from 'dotenv';
 import yahooFinanceModule from 'yahoo-finance2';
 import NodeCache from 'node-cache';
 
-// yahoo-finance2 v3+ sometimes requires explicit instantiation depending on the build target
-// We use a more robust instantiation logic to fix the "Call new YahooFinance() first" error
-let yfInstance: any = null;
+// yahoo-finance2 v3+ robust instantiation logic
+// This fixes the "Call new YahooFinance() first" error
+let yf: any = null;
 
-function getYahooInstance() {
-  if (yfInstance && typeof yfInstance.quote === 'function') return yfInstance;
+function getYahoo() {
+  if (yf && typeof yf.quote === 'function') return yf;
   
   try {
-    const rawModule: any = yahooFinanceModule;
-    
-    // 1. Try named export if available (class)
-    if (rawModule.YahooFinance && typeof rawModule.YahooFinance === 'function') {
-      yfInstance = new rawModule.YahooFinance();
-      console.log('[Karlısın-INIT] Yahoo Finance initialized via named YahooFinance class.');
+    const raw: any = yahooFinanceModule;
+    // Check if it's the class/constructor
+    if (typeof raw === 'function') {
+      yf = new raw();
+      console.log('[Karlısın-INIT] Yahoo Finance: Initialized via default constructor.');
     } 
-    // 2. Try default export if it's a function (class)
-    else if (typeof rawModule === 'function') {
-      yfInstance = new rawModule();
-      console.log('[Karlısın-INIT] Yahoo Finance initialized via default class constructor.');
+    // Check if the class is inside .default (common in ESM/CJS interop)
+    else if (raw.default && typeof raw.default === 'function') {
+      yf = new raw.default();
+      console.log('[Karlısın-INIT] Yahoo Finance: Initialized via raw.default constructor.');
     }
-    // 3. Try default.default (some ESM/CJS interop cases)
-    else if (rawModule.default && typeof rawModule.default === 'function') {
-      yfInstance = new rawModule.default();
-      console.log('[Karlısın-INIT] Yahoo Finance initialized via default.default constructor.');
+    // Check if it's a named export class
+    else if (raw.YahooFinance && typeof raw.YahooFinance === 'function') {
+      yf = new raw.YahooFinance();
+      console.log('[Karlısın-INIT] Yahoo Finance: Initialized via named YahooFinance constructor.');
     }
-    // 4. Fallback to whatever we have
+    // Fallback to whatever the module exported (v2 style or already instantiated)
     else {
-      yfInstance = rawModule.default || rawModule;
-      console.log('[Karlısın-INIT] Yahoo Finance falling back to singleton/module export.');
+      yf = raw.default || raw;
+      console.log('[Karlısın-INIT] Yahoo Finance: Falling back to module export.');
     }
 
-    if (yfInstance && typeof yfInstance.setGlobalConfig === 'function') {
-      yfInstance.setGlobalConfig({ validation: { logErrors: false } });
+    if (yf && typeof yf.setGlobalConfig === 'function') {
+      yf.setGlobalConfig({ validation: { logErrors: false } });
     }
   } catch (e) {
-    console.warn('[Karlısın-INIT] Yahoo Finance instantiation failed:', e);
-    yfInstance = yahooFinanceModule; // Last resort fallback
+    console.warn('[Karlısın-INIT] Yahoo Finance instantiation warning:', e);
+    yf = yahooFinanceModule; // Last resort
   }
-  return yfInstance;
+  return yf;
 }
 
 // .env dosyasını yükle
@@ -118,7 +117,7 @@ async function startServer() {
 
       let quote: any = null;
       let successfulTicker = '';
-      const currentYf = getYahooInstance();
+      const currentYf = getYahoo();
 
       for (const t of tickers) {
         try {
@@ -137,9 +136,9 @@ async function startServer() {
           errorLog.push(`Yahoo (${t}): ${e.message}`);
           
           // If we got the specific "new YahooFinance()" error, it means our instance is still bad
-          if (e.message.includes('new YahooFinance()')) {
-            console.error('[Karlısın-API] Critical: Yahoo instance corrupted, attempting forced re-init.');
-            yfInstance = null; // Force re-init on next call or next attempt
+          if (e.message.includes('new YahooFinance()') || e.message.includes('instantiate')) {
+            console.error('[Karlısın-API] Critical: Yahoo instance corrupted, resetting.');
+            yf = null; 
           }
         }
       }
@@ -147,7 +146,7 @@ async function startServer() {
       // Secondary fallback: Yahoo search if direct quote failed
       if (!quote) {
         try {
-          const searchYf = getYahooInstance();
+          const searchYf = getYahoo();
           console.log(`[Karlısın-API] Yahoo searching for: ${symbol}`);
           const searchRes = await searchYf.search(symbol);
           if (searchRes?.quotes?.length > 0) {
@@ -182,7 +181,7 @@ async function startServer() {
           }
         };
 
-        const postYf = getYahooInstance();
+        const postYf = getYahoo();
         try {
           const fullSummary = await postYf.quoteSummary(successfulTicker, {
             modules: ['summaryDetail', 'assetProfile', 'defaultKeyStatistics']
@@ -671,7 +670,7 @@ async function startServer() {
 
     // 1. TRY YAHOO SEARCH
     try {
-      const searchYf = getYahooInstance();
+      const searchYf = getYahoo();
       const results = await searchYf.search(query) as any;
       if (results && results.quotes) {
         allResults = (results.quotes || [])
@@ -739,7 +738,27 @@ async function startServer() {
       time: new Date().toISOString(),
       cache_keys: cache.keys().length,
       node_version: process.versions.node,
-      env: process.env.NODE_ENV
+      env: process.env.NODE_ENV,
+      yahoo_initialized: !!yf && typeof yf.quote === 'function'
+    });
+  });
+
+  app.get('/api/debug', (req, res) => {
+    const yfTest = getYahoo();
+    res.json({
+      env: {
+        FINNHUB: !!process.env.FINNHUB_API_KEY,
+        ALPHA_VANTAGE: !!process.env.ALPHA_VANTAGE_API_KEY,
+        RESEND: !!process.env.RESEND_API_KEY
+      },
+      headers: req.headers,
+      url: req.url,
+      yahoo: {
+        type: typeof yahooFinanceModule,
+        hasDefault: !!(yahooFinanceModule as any).default,
+        instanceType: typeof yfTest,
+        instanceMethods: yfTest ? Object.keys(yfTest).filter(k => typeof yfTest[k] === 'function').slice(0, 5) : []
+      }
     });
   });
 
