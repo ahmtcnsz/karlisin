@@ -9,10 +9,10 @@ export default function Sitemap() {
       title: 'Hesaplama Araçları',
       icon: <Calculator size={20} className="text-indigo-400" />,
       links: [
-        { name: '2026 Maaş ve Gelir Vergisi Hesaplama', path: '/maas-vergi-hesaplama', icon: <Calculator size={16} /> },
-        { name: 'Trendol & Amazon Pazar Kâr Analizi', path: '/pazar-kar-hesaplama', icon: <ShoppingBag size={16} /> },
-        { name: 'Temettü Dağıtımı ve Verimi Takibi', path: '/temettu-takibi', icon: <PieChart size={16} /> },
-        { name: 'Borsa Takibi ve Şirket Finansal Analizi', path: '/borsa/nabiz', icon: <TrendingUp size={16} /> },
+        { name: 'Maaş ve Vergi Hesaplama (2026)', path: '/maas-vergi-hesaplama', icon: <Calculator size={16} /> },
+        { name: 'Pazar Kâr Analizi (Trendyol & Amazon)', path: '/pazar-kar-hesaplama', icon: <ShoppingBag size={16} /> },
+        { name: 'Temettü Verimi Takibi', path: '/temettu-takibi', icon: <PieChart size={16} /> },
+        { name: 'Piyasanın Nabzı (Borsa Analiz)', path: '/borsa/nabiz', icon: <TrendingUp size={16} /> },
       ]
     },
     {
@@ -42,8 +42,8 @@ export default function Sitemap() {
           <ChevronRight size={12} />
           <span className="text-indigo-400">Site Haritası</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">Site Haritası</h1>
-        <p className="text-slate-400 font-medium">Karlısın platformundaki <strong>temettü dağıtımı</strong>, <strong>temettü dağıtan hisseler</strong> ve finansal araçlara buradan ulaşabilirsiniz.</p>
+        <h1 className="text-4xl md:text-5xl font-black text-white italic">Site Haritası</h1>
+        <p className="text-slate-400 font-medium">Karlısın platformundaki tüm araçlara ve içeriklere buradan ulaşabilirsiniz.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -65,19 +65,17 @@ export default function Sitemap() {
                   key={lIdx}
                   to={link.path}
                   onClick={(e) => link.onClick && link.onClick()}
-                  className="flex flex-col p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 hover:border-white/10 transition-all group"
+                  className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 hover:border-white/10 transition-all group"
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-3">
-                      <span className="p-2 bg-white/5 rounded-lg text-slate-400 group-hover:text-white transition-colors">
-                        {link.icon}
-                      </span>
-                      <span className="text-sm font-bold text-white transition-colors uppercase tracking-tight">
-                        {link.name}
-                      </span>
-                    </div>
-                    <ArrowRight size={16} className="text-slate-600 group-hover:text-indigo-400 transform group-hover:translate-x-1 transition-all" />
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 bg-white/5 rounded-lg text-slate-400 group-hover:text-white transition-colors">
+                      {link.icon}
+                    </span>
+                    <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">
+                      {link.name}
+                    </span>
                   </div>
+                  <ArrowRight size={16} className="text-slate-600 group-hover:text-indigo-400 transform group-hover:translate-x-1 transition-all" />
                 </Link>
               ))}
             </div>
