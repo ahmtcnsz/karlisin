@@ -102,6 +102,10 @@ export default function Footer() {
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-loose">
             © 2026 Karlısın Profesyonel Araçlar. <br className="md:hidden" /> Hassas. Güvenilir. Yenilikçi.
           </p>
+          <div className="mt-2 inline-flex items-center gap-2 px-2 py-0.5 bg-white/5 rounded border border-white/10">
+             <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+             <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Build v2.2.1-prod</span>
+          </div>
         </div>
       </div>
     </footer>

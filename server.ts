@@ -843,24 +843,26 @@ async function startServer() {
   const isProduction = process.env.NODE_ENV === 'production';
   
   if (isProduction) {
-    const distPath = path.resolve(process.cwd(), 'dist');
-    console.log(`[Karlısın-INIT] Production mode. Serving from: ${distPath}`);
+    const distPath = path.resolve(__dirname, 'dist');
+    console.log(`[Karlısın-INIT] Versiyon: 2.2.1`);
+    console.log(`[Karlısın-INIT] Production modu aktif.`);
+    console.log(`[Karlısın-INIT] Statik dosya yolu: ${distPath}`);
     
     // Serve static files first
     app.use(express.static(distPath, { index: false }));
     
     app.get('*', (req, res) => {
-      // Don't serve HTML for API or asset-like paths that missed
-      if (req.path.startsWith('/api') || req.path.includes('.')) {
-        console.warn(`[Karlısın-404] Missing asset or API: ${req.path}`);
-        return res.status(404).json({ error: 'Not found', path: req.path });
+      // API rotalarını atla
+      if (req.path.startsWith('/api')) {
+        console.warn(`[Karlısın-404] API bulunamadı: ${req.path}`);
+        return res.status(404).json({ error: 'API bulunamadı', path: req.path });
       }
-      
+
       const indexPath = path.join(distPath, 'index.html');
       res.sendFile(indexPath, (err) => {
         if (err) {
-          console.error(`[Karlısın-Error] Failed to send index.html:`, err);
-          res.status(500).send('Frontend build not found or inaccessible.');
+          console.error(`[Karlısın-ERROR] index.html gönderilemedi:`, err);
+          res.status(500).send('Sunucu hatası: Frontend derlemesi bulunamadı.');
         }
       });
     });
