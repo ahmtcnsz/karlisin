@@ -614,15 +614,24 @@ const DividendTracker: React.FC = () => {
       const url = `/api/dividends?symbol=${encodeURIComponent(symbol)}${forceRefresh ? '&refresh=true' : ''}`;
       const res = await fetch(url);
       
+      const contentType = res.headers.get('content-type');
       if (!res.ok) {
         let errorMsg = 'Veri çekme hatası';
-        try {
+        if (contentType && contentType.includes('application/json')) {
           const json = await res.json();
           errorMsg = json.message || json.error || errorMsg;
-        } catch (e) {}
+        } else {
+          errorMsg = `Sunucu hatası: ${res.status} ${res.statusText}`;
+        }
         throw new Error(errorMsg);
       }
       
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error('[DividendTracker] Beklenmeyen yanıt (HTML olabilir):', text.substring(0, 500));
+        throw new Error('Sunucu JSON yerine HTML döndürdü. Bu genellikle bir ağ hatası veya rota problemidir.');
+      }
+
       const json = await res.json();
       if (!json || !json.summary) throw new Error('Sembol verisi bulunamadı.');
 
@@ -872,7 +881,7 @@ const DividendTracker: React.FC = () => {
                               {data.summary.assetProfile?.sector || 'Sektör Verisi Yok'}
                             </span>
                             <div className="flex items-center gap-2">
-                              <span className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[9px] italic whitespace-nowrap">Unified Engine v2.1.0</span>
+                              <span className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[9px] italic whitespace-nowrap">Unified Engine v2.2.0</span>
                               {(data as any).verification?.last_sync && (
                                 <span className="text-emerald-500/60 font-black uppercase tracking-widest text-[8px] border border-emerald-500/20 px-2 py-0.5 rounded-md">
                                   SON SENK: {(data as any).verification.last_sync}

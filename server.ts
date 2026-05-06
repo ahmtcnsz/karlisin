@@ -68,15 +68,15 @@ function getRandomUserAgent() {
 class UnifiedDataService {
   static async getFullStockData(symbol: string) {
     const cleanSymbol = symbol.toUpperCase().trim();
-    const cacheKey = `unified_v2.1_${cleanSymbol}`;
+    const cacheKey = `unified_v2.2_${cleanSymbol}`;
     
     const cached = cache.get(cacheKey);
     if (cached) {
-      console.log(`[UnifiedDS v2.1] Cache hit: ${cleanSymbol}`);
+      console.log(`[UnifiedDS v2.2] Cache hit: ${cleanSymbol}`);
       return cached;
     }
 
-    console.log(`[UnifiedDS v2.1] Starting heavy aggregation for: ${cleanSymbol}`);
+    console.log(`[UnifiedDS v2.2] Starting heavy aggregation for: ${cleanSymbol}`);
     
     // Providers to run in parallel
     const [yahoo, google, av] = await Promise.allSettled([
@@ -97,8 +97,8 @@ class UnifiedDataService {
 
     const aggregated = {
       symbol: cleanSymbol,
-      version: '2.1.0',
-      source: 'Unified Engine v2.1',
+      version: '2.2.0',
+      source: 'Unified Engine v2.2',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
@@ -259,6 +259,11 @@ async function startServer() {
   // 1. API ROTLARI (KESİN OLARAK ÜSTTE)
   // ---------------------------------------------------------
 
+  // Debug Version API
+  app.get('/api/version', (req, res) => {
+    res.json({ version: '2.2.0', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
+  });
+
   // DIVIDEND API (Unified Engine: Yahoo + Google + Alpha Vantage)
   app.get('/api/dividends', async (req, res) => {
     const symbol = (req.query.symbol as string || '').toUpperCase().trim();
@@ -269,7 +274,7 @@ async function startServer() {
     // Cache bypass for forced refresh
     if (forceRefresh) {
       console.log(`[UnifiedDS] Force refreshing: ${symbol}`);
-      cache.del(`unified_v1_${symbol}`);
+      cache.del(`unified_v2.2_${symbol}`);
     }
 
     try {
