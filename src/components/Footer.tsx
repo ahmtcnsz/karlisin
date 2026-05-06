@@ -1,9 +1,42 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Globe, Mail, BarChart3 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Footer() {
+  const location = useLocation();
+  const path = location.pathname;
+
+  const seoContent = useMemo(() => {
+    if (path.includes('maas-vergi-hesaplama')) {
+      return {
+        title: "Maaş ve Gelir Vergisi Çözümleri",
+        desc: "Karlısın 2026 Maaş Hesaplama aracı, brütten nete hesaplama, gelir vergisi dilimleri ve SGK kesintilerini en güncel mevzuat verileriyle sunar. Çalışanlar ve işverenler için 12 aylık vergi projeksiyonu, kıdem tazminatı ve net maaş analizi süreçlerini dijitalleştirerek finansal planlamanızı kolaylaştırıyoruz.",
+        tags: ['Maaş Hesaplama', 'Gelir Vergisi', 'Brütten Nete', 'Vergi Dilimleri', 'SGK Kesintisi']
+      };
+    }
+    if (path.includes('pazar-kar')) {
+      return {
+        title: "E-Ticaret Kâr Ve Verimlilik Analizi",
+        desc: "Karlısın Pazaryeri Kâr Hesaplama aracı; Trendyol, Amazon, Hepsiburada ve N11 satıcıları için komisyon, kargo, KDV ve hizmet bedeli gibi tüm maliyetleri otomatik analiz eder. \"Kaça Satmalıyım?\" özelliği ve detaylı gider dökümü ile e-ticaret operasyonlarınızda maksimum kârlılık ve stratejik fiyatlandırma yapmanıza yardımcı oluyoruz.",
+        tags: ['Trendyol Komisyon', 'Amazon Kar Hesaplama', 'E-Ticaret Karlılık', 'Hepsiburada Komisyon', 'Satış Stratejisi']
+      };
+    }
+    if (path === '/' || path === '/anasayfa') {
+      return {
+        title: "Profesyonel Finansal Hesaplama Araçları",
+        desc: "Karlısın, e-ticaret satıcılarından yatırımcılara, çalışanlardan kurumsal yapılara kadar herkes için hassas finansal araçlar sunar. Temettü takibi, maaş vergi hesaplama ve pazaryeri kâr analizi gibi kritik metrikleri Unified Data Engine gücüyle birleştirerek, finansal kararlarınızı veriye dayalı ve güvenli şekilde almanızı sağlıyoruz.",
+        tags: ['Finansal Araçlar', 'Kar Hesaplama', 'Veri Analizi', 'Stratejik Planlama', 'Yatırım Rehberi']
+      };
+    }
+    // Default for Dividend or others
+    return {
+      title: "Finansal Teknoloji Çözümleri",
+      desc: "Karlısın, yatırımcıların en çok ihtiyaç duyduğu temettü dağıtımı, temettü dağıtan hisseler ve 2026 maaş hesaplama gibi kritik finansal metrikleri tek bir platformda toplar. Unified Data Engine teknolojimiz ile BIST ve global borsalardaki temettü veren şirketler için 12 aylık hedef fiyat tahminleri, pazar kâr analizi ve borsa takibini en hassas verilerle sunuyoruz.",
+      tags: ['Temettü Takvimi', 'Maaş Hesapla', 'Borsa Analizi', 'Pazar Kar Analizi', 'Temettü Veren Şirketler']
+    };
+  }, [path]);
+
   const badgeGlint = (
     <motion.div
       animate={{
@@ -98,13 +131,29 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-white/5 text-center">
+        <div className="mt-12 pt-8 border-t border-white/5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center text-left">
+            <div>
+              <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">{seoContent.title}</h5>
+              <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-2xl" dangerouslySetInnerHTML={{ __html: seoContent.desc }} />
+            </div>
+            <div className="flex flex-wrap gap-2 md:justify-end">
+              {seoContent.tags.map(tag => (
+                <span key={tag} className="px-2 py-0.5 bg-white/5 text-[8px] font-black text-slate-400 uppercase tracking-widest rounded border border-white/10">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-8 mt-8 border-t border-white/5 text-center">
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-loose">
             © 2026 Karlısın Profesyonel Araçlar. <br className="md:hidden" /> Hassas. Güvenilir. Yenilikçi.
           </p>
           <div className="mt-2 inline-flex items-center gap-2 px-2 py-0.5 bg-white/5 rounded border border-white/10">
              <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Build v2.2.1-prod</span>
+             <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Build v2.2.3-prod</span>
           </div>
         </div>
       </div>

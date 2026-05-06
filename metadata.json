@@ -1,6 +1,6 @@
 {
-  "name": "Karlısın | Temettü Takibi, Maaş Hesaplama & Pazar Kar Analizi",
-  "description": "BIST ve ABD borsaları için Unified Data Engine ile doğrulanmış temettü takibi, 2026 maaş hesaplama ve pazaryeri kâr analizi araçları.",
+  "name": "Karlısın | Temettü Dağıtımı & Temettü Dağıtan Hisseler Takip Aracı",
+  "description": "Temettü dağıtımı, temettü dağıtan hisseler, BIST temettü takvimi ve Unified Data Engine ile 12 aylık hedef fiyat tahmin araçları.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

@@ -21,6 +21,7 @@ import {
   DollarSign, 
   Percent, 
   Briefcase,
+  Target,
   ExternalLink,
   ChevronRight,
   Sparkles,
@@ -28,8 +29,9 @@ import {
   Loader2,
   AlertCircle,
   AlertTriangle,
+  Check,
+  CheckCircle2,
   LayoutGrid,
-  BarChart3,
   Activity,
   Maximize2,
   Minimize2,
@@ -41,7 +43,8 @@ import {
   ArrowDownRight,
   PieChart,
   Calculator,
-  Lightbulb
+  Lightbulb,
+  Layers
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
@@ -176,14 +179,31 @@ import TahminMotoru from './TahminMotoru';
 
 interface DividendData {
   symbol: string;
+  version: string;
+  source: string;
+  timestamp: string;
   summary: {
+    price: {
+      regularMarketPrice: number;
+      regularMarketChangePercent?: number;
+      longName: string;
+      currency: string;
+      dayHigh?: number;
+      dayLow?: number;
+      volume?: number;
+    };
     summaryDetail: {
-      dividendRate?: number;
-      dividendYield?: number;
-      payoutRatio?: number;
-      fiftyTwoWeekHigh?: number;
-      fiftyTwoWeekLow?: number;
-      marketCap?: number;
+      dividendRate: number;
+      dividendYield: number;
+      forwardDividendRate: number;
+      forwardDividendYield: number;
+      payoutRatio: number;
+      marketCap: number;
+      trailingPE: number;
+      fiftyTwoWeekHigh: number;
+      fiftyTwoWeekLow: number;
+      industry: string | null;
+      sector: string | null;
     };
     calendarEvents: {
       exDividendDate?: Date;
@@ -191,39 +211,27 @@ interface DividendData {
     };
     assetProfile: {
       longBusinessSummary?: string;
-      sector?: string;
-      industry?: string;
       website?: string;
-    };
-    defaultKeyStatistics: {
-      forwardPE?: number;
-      profitMargins?: number;
-    };
-    price?: {
-      regularMarketPrice?: number;
-      regularMarketChangePercent?: number;
-      currencySymbol?: string;
     };
     financialData?: {
       recommendationKey?: string;
       targetMeanPrice?: number;
       numberOfAnalystOpinions?: number;
-    };
-    recommendationTrend?: {
-      trend?: Array<{
-        period: string;
-        strongBuy: number;
-        buy: number;
-        hold: number;
-        sell: number;
-        strongSell: number;
-      }>;
+      isTechnicalTarget?: boolean;
     };
   };
   history: Array<{
     date: number;
     amount: number;
   }>;
+  verification: {
+    sources_count: number;
+    google_verified: boolean;
+    yahoo_verified: boolean;
+    alpha_vantage_verified: boolean;
+    investing_verified: boolean;
+    last_sync: string;
+  };
 }
 
 // Helper to safely extract value from complex objects (raw/fmt/value)
@@ -271,6 +279,14 @@ const formatDate = (val?: Date | number | null) => {
   }
 };
 
+const formatLargeNumber = (val?: number) => {
+  if (val === undefined || isNaN(val) || val === 0) return '---';
+  if (val >= 1000000000) return (val / 1000000000).toFixed(2) + 'B';
+  if (val >= 1000000) return (val / 1000000).toFixed(2) + 'M';
+  if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
+  return val.toString();
+};
+
 const getRecommendationLabel = (key?: string) => {
   if (!key) return 'TUT';
   const k = key.toLowerCase();
@@ -280,86 +296,38 @@ const getRecommendationLabel = (key?: string) => {
   return 'TUT';
 };
 
-const TradingViewWidget = ({ symbol }: { symbol: string }) => {
-  const container = useRef<HTMLDivElement>(null);
+const InfoTooltip = ({ title, text, position = 'center' }: { title: string; text: string; position?: 'center' | 'left' | 'right' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const positionClasses = {
+    center: "left-1/2 -translate-x-1/2",
+    left: "left-0",
+    right: "right-0"
+  };
 
-  useEffect(() => {
-    const currentContainer = container.current;
-    if (!currentContainer || !symbol) return;
-    
-    // Clear existing content safely
-    currentContainer.innerHTML = '';
-    
-    // Create the widget container div with a unique ID
-    const widgetId = `tradingview_${Math.random().toString(36).substring(7)}`;
-    const widgetDiv = document.createElement('div');
-    widgetDiv.id = widgetId;
-    widgetDiv.className = 'tradingview-widget-container__widget h-full w-full';
-    currentContainer.appendChild(widgetDiv);
-
-    // Map Yahoo symbols to TradingView symbols
-    let tvSymbol = symbol;
-    if (symbol.endsWith('.IS')) {
-      tvSymbol = `BIST:${symbol.replace('.IS', '')}`;
-    } else if (!symbol.includes(':') && symbol.length <= 5) {
-      tvSymbol = `BIST:${symbol}`;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-    script.type = "text/javascript";
-    script.async = true;
-    script.crossOrigin = "anonymous";
-    
-    const config = {
-      "autosize": true,
-      "symbol": tvSymbol,
-      "interval": "D",
-      "timezone": "Europe/Istanbul",
-      "theme": "dark",
-      "style": "1",
-      "locale": "tr",
-      "toolbar_bg": "#f1f3f6",
-      "enable_publishing": false,
-      "hide_top_toolbar": false,
-      "hide_legend": false,
-      "save_image": false,
-      "container_id": widgetId,
-      "allow_symbol_change": true,
-      "calendar": false,
-      "support_host": "https://www.tradingview.com"
-    };
-
-    script.innerHTML = JSON.stringify(config);
-    
-    // Append script after a micro-task to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      if (currentContainer.querySelector(`#${widgetId}`)) {
-        currentContainer.appendChild(script);
-      }
-    }, 0);
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (currentContainer) {
-        currentContainer.innerHTML = '';
-      }
-    };
-  }, [symbol]);
-
-  return (
-    <div className="tradingview-widget-container h-full w-full" ref={container} />
-  );
-};
-
-const InfoTooltip = ({ title, text }: { title: string; text: string }) => {
   return (
     <div className="relative inline-block ml-1.5 group/tooltip cursor-help align-middle">
-      <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:border-indigo-400 hover:bg-indigo-500/20 transition-all z-20 relative">
+      <button 
+        type="button"
+        onMouseEnter={() => setIsOpen(true)}
+        onMouseLeave={() => setIsOpen(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:border-indigo-400 hover:bg-indigo-500/20 transition-all z-20 relative outline-none"
+      >
         <Info className="w-2.5 h-2.5 text-slate-400 group-hover/tooltip:text-indigo-400" />
-      </div>
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 p-5 bg-slate-900/98 backdrop-blur-2xl border border-white/10 rounded-[24px] shadow-2xl z-[999] pointer-events-none opacity-0 group-hover/tooltip:opacity-100 transition-all duration-300 scale-90 group-hover/tooltip:scale-100 -translate-y-2 group-hover/tooltip:translate-y-0 shadow-indigo-500/20">
-        <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-4 bg-slate-900 border-t border-l border-white/10 rotate-45" />
+      </button>
+      <div className={cn(
+        "absolute bottom-full mb-3 w-64 p-5 bg-slate-900/98 backdrop-blur-2xl border border-white/10 rounded-[24px] shadow-2xl z-[9999] pointer-events-none transition-all duration-300 scale-90 translate-y-2 shadow-indigo-500/20",
+        positionClasses[position],
+        isOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0"
+      )}>
+        <div className={cn(
+          "absolute -bottom-1.5 w-4 h-4 bg-slate-900 border-b border-r border-white/10 rotate-45",
+          position === 'center' ? "left-1/2 -translate-x-1/2" : position === 'left' ? "left-4" : "right-4"
+        )} />
         <div className="relative z-10">
           <h5 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">{title}</h5>
           <p className="text-[11px] text-slate-200 leading-relaxed font-medium italic">{text}</p>
@@ -469,12 +437,27 @@ const DividendTracker: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
   
-  const [isChartModalOpen, setIsChartModalOpen] = useState(false);
   const [isInformationModalOpen, setIsInformationModalOpen] = useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
   const [showAllDividends, setShowAllDividends] = useState(false);
   const [calendarSearch, setCalendarSearch] = useState('');
   const [istanbulTime, setIstanbulTime] = useState('');
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+
+  useEffect(() => {
+    const accepted = localStorage.getItem('dividend_disclaimer_accepted');
+    if (!accepted) {
+      setShowDisclaimer(true);
+    }
+  }, []);
+
+  const handleDisclaimerConfirm = () => {
+    if (disclaimerAccepted) {
+      localStorage.setItem('dividend_disclaimer_accepted', 'true');
+      setShowDisclaimer(false);
+    }
+  };
 
   useEffect(() => {
     const updateTime = () => {
@@ -493,7 +476,7 @@ const DividendTracker: React.FC = () => {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    const isAnyModalOpen = isChartModalOpen || isInformationModalOpen || isCalculatorModalOpen || showAllDividends;
+    const isAnyModalOpen = isInformationModalOpen || isCalculatorModalOpen || showAllDividends;
     
     if (isAnyModalOpen) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -511,7 +494,7 @@ const DividendTracker: React.FC = () => {
       document.body.style.paddingRight = '0px';
       document.documentElement.style.overflow = 'unset';
     };
-  }, [isChartModalOpen, isInformationModalOpen, isCalculatorModalOpen, showAllDividends]);
+  }, [isInformationModalOpen, isCalculatorModalOpen, showAllDividends]);
 
   const fetchAlphaVantage = async (symbol: string) => {
     try {
@@ -699,7 +682,8 @@ const DividendTracker: React.FC = () => {
   // Status badge helper
   const getStatusBadge = (dividendDate?: Date | number | null) => {
     if (!dividendDate) return null;
-    const today = new Date('2026-04-29');
+    // Current date for simulation as per project context (May 6, 2026)
+    const today = new Date('2026-05-06');
     const target = new Date(dividendDate);
     
     // Normalize dates for day-only comparison
@@ -715,32 +699,44 @@ const DividendTracker: React.FC = () => {
       return (
         <span className={cn(badgeBase, "bg-blue-500/20 text-blue-400 border-blue-500/40 animate-pulse shadow-blue-500/5")}>
           <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-          DAĞITIM GÜNÜ
+          BUGÜN ÖDENİYOR
         </span>
       );
-    } else if (diffDays > 0 && diffDays <= 2) {
+    } else if (diffDays === 1) {
+      return (
+        <span className={cn(badgeBase, "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 animate-bounce shadow-emerald-500/5")}>
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+          YARIN ÖDENİYOR
+        </span>
+      );
+    } else if (diffDays > 1 && diffDays <= 5) {
       return (
         <span className={cn(badgeBase, "bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-amber-500/5")}>
           <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-          YAKLAŞTI ({diffDays}G)
+          ÇOK YAKIN ({diffDays} GÜN)
         </span>
       );
-    } else if (diffDays > 2 && diffDays <= 15) {
+    } else if (diffDays > 5 && diffDays <= 15) {
       return (
         <span className={cn(badgeBase, "bg-indigo-500/20 text-indigo-400 border-indigo-500/40 shadow-indigo-500/5")}>
           <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-          YAKIN DÖNEM
+          YAKLAŞIYOR ({diffDays} GÜN)
         </span>
       );
     } else if (diffDays < 0) {
       return (
         <span className={cn(badgeBase, "bg-slate-500/20 text-slate-400 border-slate-500/40")}>
           <div className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-          DAĞITILDI
+          ÖDEME TAMAMLANDI
         </span>
       );
     }
-    return null;
+    return (
+      <span className={cn(badgeBase, "bg-slate-800/40 text-slate-500 border-white/5")}>
+        <Calendar className="w-3 h-3" />
+        BEKLEMEDE
+      </span>
+    );
   };
 
   return (
@@ -753,7 +749,10 @@ const DividendTracker: React.FC = () => {
               <TrendingUp className="text-white w-5 h-5 md:w-6 md:h-6" />
             </div>
             <div>
-              <h1 className="text-lg md:text-xl font-black text-white tracking-tight uppercase italic leading-none">Temettü Takibi</h1>
+              <div className="flex flex-col gap-1">
+                <h1 className="text-lg md:text-xl font-black text-white tracking-tight uppercase italic leading-none">Temettü Dağıtımı & Takip</h1>
+                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Temettü Dağıtan Hisseler ve 2026 Tahmini</p>
+              </div>
               <p className="text-[8px] md:text-[10px] text-slate-500 font-black tracking-widest uppercase mt-0.5">Akıllı Yatırım Rehberi</p>
             </div>
           </div>
@@ -846,158 +845,284 @@ const DividendTracker: React.FC = () => {
               <div className="bg-slate-900 border border-white/5 rounded-[48px] overflow-hidden shadow-2xl flex flex-col relative group">
                 <div className="absolute inset-0 bg-indigo-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
                 
-                <div className="p-10 md:p-14 flex flex-col relative">
+                <div className="p-8 md:p-10 flex flex-col relative">
                   {/* Decorative Symbol Background */}
-                  <div className="absolute top-0 right-0 p-8 md:p-12 font-black text-white uppercase tracking-tighter leading-none italic text-[80px] md:text-[160px] opacity-[0.03] select-none pointer-events-none overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 md:p-10 font-black text-white uppercase tracking-tighter leading-none italic text-[60px] md:text-[120px] opacity-[0.02] select-none pointer-events-none overflow-hidden">
                     {data.symbol}
                   </div>
 
                   <div className="relative z-10">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-10 pb-8 border-b border-white/5">
-                      <div className="flex flex-col md:flex-row md:items-center gap-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pb-6 border-b border-white/5">
+                      <div className="flex flex-col md:flex-row md:items-center gap-4">
                         <div className="flex flex-col">
-                          <div className="flex items-center gap-3">
-                            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter italic leading-none">{data.symbol}</h2>
-                            <div className="flex items-center gap-2">
-                              {(data as any).verification && (
-                                <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
-                                    {(data as any).verification.sources_count} KAYNAKTAN DOĞRULANDI
-                                  </span>
-                                </div>
-                              )}
-                              <button 
-                                onClick={() => fetchData(data.symbol, true)}
-                                className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group"
-                                title="Verileri Tazele"
-                              >
-                                <RefreshCw className={`w-4 h-4 text-white/40 group-hover:text-white ${loading ? 'animate-spin' : ''}`} />
-                              </button>
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter italic leading-none">{data.symbol}</h2>
+                            <div className="h-6 w-px bg-white/10 mx-2" />
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-tight max-w-[250px]">{data.summary.price.longName}</div>
                           </div>
-                          <div className="flex items-center flex-wrap gap-3 mt-4">
-                            <span className="px-4 py-1.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl border border-indigo-500/20">
-                              {data.summary.assetProfile?.sector || 'Sektör Verisi Yok'}
+                          <div className="flex items-center flex-wrap gap-2 mt-2">
+                            <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] font-black uppercase tracking-widest rounded border border-indigo-500/20">
+                              {data.summary.summaryDetail.sector || 'Sektör Verisi Yok'}
                             </span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[9px] italic whitespace-nowrap">Unified Engine v2.2.0</span>
-                              {(data as any).verification?.last_sync && (
-                                <span className="text-emerald-500/60 font-black uppercase tracking-widest text-[8px] border border-emerald-500/20 px-2 py-0.5 rounded-md">
-                                  SON SENK: {(data as any).verification.last_sync}
-                                </span>
-                              )}
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded">
+                              <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                              <span className="text-emerald-400 font-black uppercase tracking-widest text-[7px]">CANLI VERİ AKTİF</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded border border-white/5">
+                              <Clock className="w-2 h-2 text-slate-500" />
+                              <span className="text-slate-400 font-bold uppercase tracking-widest text-[7px]">
+                                SENK: {data.verification.last_sync}
+                              </span>
                             </div>
                           </div>
                         </div>
-                        <div className="h-16 w-px bg-white/10 hidden md:block" />
-                        <div className="flex flex-row md:flex-col items-baseline md:items-start gap-4 md:gap-0">
-                          <div className="text-3xl md:text-4xl font-black text-white italic tracking-tighter leading-none mb-2 order-1 md:order-none">
-                            {formatCurrency(data.summary.price?.regularMarketPrice, data.symbol)}
+
+                        <div className="h-12 w-px bg-white/10 hidden md:block" />
+
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col border-r border-white/5 pr-4">
+                              <div className="text-2xl font-black text-white italic tracking-tighter leading-none mb-0.5">
+                                {formatCurrency(data.summary.price.regularMarketPrice, data.symbol)}
+                              </div>
+                              <div className={cn(
+                                "text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1",
+                                (data.summary.price?.regularMarketChangePercent || 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                              )}>
+                                {(data.summary.price?.regularMarketChangePercent || 0) >= 0 ? <TrendingUp className="w-2 h-2" /> : <TrendingUp className="w-2 h-2 rotate-180" />}
+                                {(data.summary.price?.regularMarketChangePercent || 0) >= 0 ? '+' : ''}
+                                {formatPercent(data.summary.price?.regularMarketChangePercent)}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="flex flex-col">
+                                <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Günlük Aralık</span>
+                                <div className="text-[9px] font-bold text-slate-300">
+                                  {data.summary.price.dayLow && data.summary.price.dayHigh ? (
+                                    `${formatCurrency(data.summary.price.dayLow, data.symbol)} - ${formatCurrency(data.summary.price.dayHigh, data.symbol)}`
+                                  ) : (
+                                    '---'
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Hacim</span>
+                                <div className="text-[9px] font-bold text-slate-300">
+                                  {formatLargeNumber(data.summary.price.volume)}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div className={cn(
-                            "text-sm font-black uppercase tracking-widest flex items-center gap-1 order-2 md:order-none",
-                            (data.summary.price?.regularMarketChangePercent || 0) >= 0 ? "text-emerald-400" : "text-rose-400"
-                          )}>
-                            {(data.summary.price?.regularMarketChangePercent || 0) >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingUp className="w-4 h-4 rotate-180" />}
-                            {(data.summary.price?.regularMarketChangePercent || 0) >= 0 ? '+' : ''}
-                            {formatPercent(data.summary.price?.regularMarketChangePercent)}
+
+                          {/* Data Sources sub-row */}
+                          <div className="flex items-center gap-3">
+                            <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">DOĞRULANAN KAYNAKLAR:</span>
+                            <div className="flex items-center gap-2">
+                              <div className={cn("flex items-center gap-1 transition-opacity", data.verification.yahoo_verified ? "opacity-100" : "opacity-30")}>
+                                <div className="w-2.5 h-2.5 rounded-full bg-purple-500 flex items-center justify-center text-[5px] font-bold text-white">Y</div>
+                                <span className={cn("text-[7px] font-bold", data.verification.yahoo_verified ? "text-purple-400" : "text-slate-500")}>YAHOO</span>
+                              </div>
+                              <div className={cn("flex items-center gap-1 transition-opacity", data.verification.google_verified ? "opacity-100" : "opacity-30")}>
+                                <div className="w-2.5 h-2.5 rounded-full bg-blue-500 flex items-center justify-center text-[5px] font-bold text-white">G</div>
+                                <span className={cn("text-[7px] font-bold", data.verification.google_verified ? "text-blue-400" : "text-slate-500")}>GOOGLE</span>
+                              </div>
+                              <div className={cn("flex items-center gap-1 transition-opacity", data.verification.investing_verified ? "opacity-100" : "opacity-30")}>
+                                <div className="w-2.5 h-2.5 rounded-full bg-orange-500 flex items-center justify-center text-[5px] font-bold text-white">I</div>
+                                <span className={cn("text-[7px] font-bold", data.verification.investing_verified ? "text-orange-400" : "text-slate-500")}>INVESTING</span>
+                              </div>
+                            </div>
+                            <div className="h-2 w-px bg-white/10" />
+                            <div className="flex items-center gap-1">
+                              <ShieldCheck className={cn("w-2 h-2", data.verification.sources_count >= 2 ? "text-emerald-500 animate-pulse" : "text-slate-500")} />
+                              <span className={cn("text-[7px] font-black uppercase tracking-widest", data.verification.sources_count >= 2 ? "text-emerald-400" : "text-slate-600")}>
+                                {data.verification.sources_count >= 2 ? 'ÇAPRAZ DOĞRULAMA AKTİF' : 'TEK KAYNAKDAN ÇEKİLİYOR'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button 
                           onClick={() => { setActiveTab('overview'); setIsInformationModalOpen(true); }}
-                          className="flex items-center gap-2.5 px-5 py-3 bg-slate-950 text-white rounded-2xl border border-white/5 hover:border-indigo-500/30 shadow-inner group transition-all font-black text-[10px] uppercase tracking-widest"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-slate-950 text-white rounded-xl border border-white/5 hover:border-indigo-500/30 group transition-all font-black text-[9px] uppercase tracking-widest"
                         >
-                          <Activity className="w-3.5 h-3.5 text-indigo-500 group-hover:text-indigo-400 transition-colors" />
-                          Şirket Profili
+                          <Activity className="w-3 h-3 text-indigo-500" />
+                          Profil
                         </button>
 
                         <button 
                           onClick={() => { setActiveTab('history'); setIsInformationModalOpen(true); }}
-                          className="flex items-center gap-2.5 px-5 py-3 bg-slate-950 text-white rounded-2xl border border-white/5 hover:border-orange-500/30 shadow-inner group transition-all font-black text-[10px] uppercase tracking-widest"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-slate-950 text-white rounded-xl border border-white/5 hover:border-orange-500/30 group transition-all font-black text-[9px] uppercase tracking-widest"
                         >
-                          <HistoryIcon className="w-3.5 h-3.5 text-orange-500 group-hover:text-orange-400 transition-colors" />
-                          Ödeme Geçmişi
+                          <HistoryIcon className="w-3 h-3 text-orange-500" />
+                          Geçmiş
                         </button>
 
                         <button 
                           onClick={() => setIsCalculatorModalOpen(true)}
-                          className="flex items-center gap-2.5 px-5 py-3 bg-slate-950 text-white rounded-2xl border border-white/5 hover:border-emerald-500/30 transition-all font-black text-[10px] uppercase tracking-widest"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-slate-950 text-white rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all font-black text-[9px] uppercase tracking-widest"
                         >
-                          <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                          <Calculator className="w-3 h-3 text-emerald-500" />
                           Tahmin
                         </button>
-
-                        <button 
-                          onClick={() => setIsChartModalOpen(true)}
-                          className="flex items-center gap-2.5 px-5 py-3 bg-indigo-600 shadow-xl shadow-indigo-600/20 text-white rounded-2xl border border-white/10 hover:scale-105 transition-all font-black text-[10px] uppercase tracking-widest"
-                        >
-                          <BarChart3 className="w-3.5 h-3.5" />
-                          Teknik
-                        </button>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-4 mb-12 bg-slate-950/40 p-5 md:p-4 rounded-3xl border border-white/5">
-                      <div className="flex items-center gap-4 w-full sm:w-auto">
-                        {data.summary.calendarEvents?.dividendDate && (
-                          <div className="flex flex-col flex-1 sm:flex-none sm:pr-6 sm:border-r border-white/5">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Ödeme Tarihi</span>
-                            <span className="text-sm sm:text-[12px] font-black text-white italic">{formatDate(data.summary.calendarEvents?.dividendDate)}</span>
-                          </div>
-                        )}
-                        {data.summary.calendarEvents?.exDividendDate && (
-                          <div className="flex flex-col flex-1 sm:flex-none sm:pr-6 sm:border-r border-white/5 sm:pl-2">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Hakediş (EX)</span>
-                            <span className="text-sm sm:text-[12px] font-black text-white italic">{formatDate(data.summary.calendarEvents?.exDividendDate)}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="w-full sm:w-auto sm:ml-auto flex items-center justify-center sm:justify-end border-t border-white/5 sm:border-0 pt-4 sm:pt-0">
-                        {getStatusBadge(data.summary.calendarEvents?.dividendDate)}
-                      </div>
-                    </div>
+
 
                     {/* Pro Metrics Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                       <div className="bg-slate-950/60 p-6 md:p-8 rounded-[32px] border border-white/5 relative overflow-hidden group hover:border-emerald-500/20 transition-all">
-                          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <DollarSign className="w-12 h-12 text-white" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                       {/* Hisse Başı Ödeme */}
+                       <div className="bg-slate-950/60 p-6 md:p-5 lg:p-6 rounded-[32px] border border-white/5 relative group hover:border-emerald-500/20 transition-all flex flex-col justify-center min-h-[140px]">
+                          <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+                            <DollarSign className="w-10 h-10 text-white" />
                           </div>
-                          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Hisse Başı Ödeme</div>
-                          <div className="text-3xl md:text-4xl font-black text-emerald-400 tracking-tighter italic mb-1">{formatCurrency(data.summary.summaryDetail?.dividendRate, data.symbol)}</div>
-                          <div className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">Temettü Tahmini</div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">HİSSE BAŞI ÖDEME</div>
+                            <InfoTooltip title="Temettü Tahmini" text="Analistlerin ve şirketin gelecek 12 ay için öngördüğü toplam hisse başı temettü miktarıdır." />
+                          </div>
+                          <div className="text-2xl md:text-3xl font-black text-emerald-400 tracking-tighter italic mb-1 truncate">
+                             {formatCurrency(
+                               (data.summary.summaryDetail as any)?.forwardDividendRate || 
+                               data.summary.summaryDetail?.dividendRate || 
+                               (avData?.DividendPerShare ? parseFloat(avData.DividendPerShare) : 0), 
+                               data.symbol
+                             )}
+                           </div>
+                           <div className="flex items-center gap-2">
+                              <div className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">
+                                {((data.summary.summaryDetail as any)?.forwardDividendRate || data.summary.summaryDetail?.dividendRate) > 0 ? 'TEMETTÜ TAHMİNİ' : (avData?.DividendPerShare ? 'ALPHA VANTAGE VERİSİ' : 'VERİ YOK')}
+                              </div>
+                           </div>
                        </div>
 
-                       <div className="bg-slate-950/60 p-6 md:p-8 rounded-[32px] border border-white/5 relative overflow-hidden group hover:border-indigo-500/20 transition-all">
-                          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <TrendingUp className="w-12 h-12 text-white" />
+                       {/* Temettü Verimi */}
+                       <div className="bg-slate-950/60 p-6 md:p-5 lg:p-6 rounded-[32px] border border-white/5 relative group hover:border-indigo-500/20 transition-all flex flex-col justify-center min-h-[140px]">
+                          <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+                            <TrendingUp className="w-10 h-10 text-white" />
                           </div>
-                          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Temettü Verimi</div>
-                          <div className="text-3xl md:text-4xl font-black text-indigo-400 tracking-tighter italic mb-1">{formatPercent(data.summary.summaryDetail?.dividendYield)}</div>
-                          <div className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">Yıllık Ortalama</div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Temettü Verimi</div>
+                            <InfoTooltip title="Temettü Verimi" text="Beklenen temettü ödemesinin hisse fiyatına oranıdır." />
+                          </div>
+                          <div className="text-2xl md:text-3xl font-black text-indigo-400 tracking-tighter italic mb-1 truncate">
+                            {formatPercent(
+                              (data.summary.summaryDetail as any)?.forwardDividendYield || 
+                              data.summary.summaryDetail?.dividendYield || 
+                              (avData?.DividendYield ? parseFloat(avData.DividendYield) : 0)
+                            )}
+                          </div>
+                          <div className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">
+                            {(data.summary.summaryDetail as any)?.forwardDividendYield > 0 ? 'Beklenen Verim' : (avData?.DividendYield ? 'Yıllık Ortalama' : 'VERİ YOK')}
+                          </div>
                        </div>
 
-                       <div className="bg-slate-950/60 p-6 md:p-8 rounded-[32px] border border-white/5 relative overflow-hidden group hover:border-amber-500/20 transition-all">
-                          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <HistoryIcon className="w-12 h-12 text-white" />
+                       {/* Payout Ratio */}
+                       <div className="bg-slate-950/60 p-6 md:p-5 lg:p-6 rounded-[32px] border border-white/5 relative group hover:border-amber-500/20 transition-all flex flex-col justify-center min-h-[140px]">
+                          <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+                            <HistoryIcon className="w-10 h-10 text-white" />
                           </div>
-                          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Payout Ratio</div>
-                          <div className="text-3xl md:text-4xl font-black text-amber-500 tracking-tighter italic mb-1">{formatPercent(data.summary.summaryDetail?.payoutRatio)}</div>
-                          <div className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">Kar Dağıtım %</div>
-                       </div>
-
-                       <div className="bg-slate-950/60 p-6 md:p-8 rounded-[32px] border border-white/5 relative overflow-hidden group hover:border-white/10 transition-all">
-                          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Endüstri / Sınıf</div>
-                          <div className="text-lg md:text-xl font-black text-white italic tracking-tight uppercase leading-snug mb-2 line-clamp-2 min-h-[3rem] items-center flex">
-                            {data.summary.assetProfile?.industry || '-'}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Payout Ratio</div>
+                            <InfoTooltip title="Payout Ratio" text="Şirketin kârının yüzde kaçını hissedarlarına dağıttığını gösterir." />
                           </div>
-                          <div className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">Varlık Sektörü</div>
+                          <div className="text-2xl md:text-3xl font-black text-amber-500 tracking-tighter italic mb-1 truncate">
+                            {formatPercent(
+                              data.summary.summaryDetail?.payoutRatio || 
+                              (avData?.PayoutRatio ? parseFloat(avData.PayoutRatio) : 0)
+                            )}
+                          </div>
+                          <div className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">Kar Dağıtım %</div>
                        </div>
                     </div>
+
+                    {/* Veri Bilgilendirme Notu */}
+                    {data.summary.summaryDetail.dividendRate === 0 && (
+                      <div className="mt-4 px-6 py-3 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center gap-3">
+                         <Info className="w-4 h-4 text-slate-500" />
+                         <p className="text-[11px] text-slate-500 font-medium">
+                            Tahminler 0 gelirse şirket son 1 yıldır hiç temettü ödememiş olması veya tüm global kaynakların aynı anda erişime kapalı olmasıdır.
+                         </p>
+                      </div>
+                    )}
+
+
+
+                    {/* Upcoming Highlights Bar Integration */}
+                    {popularUpcoming.filter(u => new Date(u.date) >= new Date('2026-05-06')).length > 0 && (
+                      <div className="mt-12 mb-12">
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
+                             <Zap className="w-5 h-5 text-indigo-400" />
+                          </div>
+                          <div>
+                             <h3 className="text-[12px] font-black text-white uppercase tracking-[0.3em] leading-none mb-1">En Yakın Temettüler</h3>
+                             <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Piyasa bazlı yaklaşan ödeme fırsatları</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          {[...popularUpcoming]
+                            .filter(u => new Date(u.date) >= new Date('2026-05-06'))
+                            .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                            .slice(0, 4)
+                            .map((u, i) => {
+                              const diffDays = Math.ceil((new Date(u.date).getTime() - new Date('2026-05-06').getTime()) / (1000 * 60 * 60 * 24));
+                              return (
+                                <button 
+                                  key={u.symbol + i}
+                                  onClick={() => { setSelectedSymbol(u.symbol); fetchData(u.symbol); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                  className="bg-slate-950/40 border border-white/5 hover:border-indigo-500/40 p-5 rounded-[24px] flex flex-col gap-3 group/lite transition-all text-left relative overflow-hidden"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-lg font-black text-white italic group-hover/lite:text-indigo-400 transition-colors uppercase">{u.symbol}</span>
+                                    <span className={cn(
+                                      "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
+                                      diffDays <= 3 ? "bg-emerald-500/20 text-emerald-400 animate-pulse" : "bg-white/5 text-slate-400"
+                                    )}>
+                                      {diffDays === 0 ? 'BUGÜN' : `${diffDays} GÜN`}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Dağıtım</div>
+                                    <div className="text-sm font-black text-white/90 italic">{formatDate(new Date(u.date))}</div>
+                                  </div>
+                                </button>
+                              );
+                            })
+                          }
+                        </div>
+                      </div>
+                    )}
+
+                    {(data.summary.calendarEvents?.dividendDate || data.summary.calendarEvents?.exDividendDate) && (
+                      <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-4 mb-12 bg-slate-950/40 p-5 md:p-4 rounded-3xl border border-white/5">
+                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                          {data.summary.calendarEvents?.dividendDate && (
+                            <div className="flex flex-col flex-1 sm:flex-none sm:pr-6 sm:border-r border-white/5">
+                              <div className="flex items-center gap-1 mb-1">
+                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Ödeme Tarihi</span>
+                                <InfoTooltip title="Ödeme Tarihi" text="Şirketin temettü ödemesini hissedarların hesaplarına yatıracağı resmi tarihtir." />
+                              </div>
+                              <span className="text-sm sm:text-[12px] font-black text-white italic">{formatDate(data.summary.calendarEvents?.dividendDate)}</span>
+                            </div>
+                          )}
+                          {data.summary.calendarEvents?.exDividendDate && (
+                            <div className="flex flex-col flex-1 sm:flex-none sm:pr-6 sm:border-r border-white/5 sm:pl-2">
+                              <div className="flex items-center gap-1 mb-1">
+                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Hakediş (EX)</span>
+                                <InfoTooltip title="Hakediş Tarihi" text="Temettü hakkı kazanmak için hissenin en geç bu tarihten önceki son işlem günü elinizde olması gerekir." />
+                              </div>
+                              <span className="text-sm sm:text-[12px] font-black text-white italic">{formatDate(data.summary.calendarEvents?.exDividendDate)}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="w-full sm:w-auto sm:ml-auto flex items-center justify-center sm:justify-end border-t border-white/5 sm:border-0 pt-4 sm:pt-0">
+                          {getStatusBadge(data.summary.calendarEvents?.dividendDate)}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Piyasa Görüşü Section - Professional & Informational */}
                     <div className="mt-10 pt-10 border-t border-white/5">
@@ -1022,7 +1147,7 @@ const DividendTracker: React.FC = () => {
                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                            {/* Analist Konsensüsü */}
                            <div className="bg-slate-950/50 border border-white/5 rounded-[32px] p-6 md:p-8 flex flex-col group/consensus relative min-h-[160px] md:min-h-0">
                               <div className="absolute top-6 right-6 transition-transform cursor-help z-20">
@@ -1083,6 +1208,22 @@ const DividendTracker: React.FC = () => {
                                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/40" />
                                 <span className="text-[9px] font-black text-indigo-500/80 uppercase tracking-widest">12 Aylık Hedef</span>
                               </div>
+                           </div>
+
+                           {/* Endüstri / Sektör */}
+                           <div className="bg-slate-950/50 border border-white/5 rounded-[32px] p-6 md:p-8 flex flex-col group/industry relative min-h-[160px] md:min-h-0 overflow-hidden">
+                              <Layers className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 rotate-12 group-hover:scale-110 group-hover:rotate-0 transition-all duration-700" />
+                              
+                              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 relative z-10">Endüstri</span>
+                              <div className="text-xl font-black text-white italic tracking-tight uppercase leading-snug mb-2 line-clamp-2 relative z-10">
+                                 {data.summary.summaryDetail.industry || 'VERİ BEKLENİYOR'}
+                              </div>
+                              <div className="mt-auto flex items-center gap-2 relative z-10">
+                                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/40" />
+                                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                                    {data.summary.summaryDetail.sector || 'TANIMSIZ SEKTÖR'}
+                                 </span>
+                               </div>
                            </div>
 
                            {/* İşlem Platformu / Aracı Kurum */}
@@ -1173,49 +1314,79 @@ const DividendTracker: React.FC = () => {
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                     {sortedDividends
                       .filter(d => {
-                         const isAfterToday = new Date(d.date) >= new Date('2026-04-20');
+                         const today = new Date('2026-05-06');
+                         const itemDate = new Date(d.date);
+                         const isRecentOrFuture = itemDate >= new Date(today.getTime() - (15 * 24 * 60 * 60 * 1000)); 
                          const matchesSearch = calendarSearch === '' || 
-                                              d.symbol.toLowerCase().includes(calendarSearch.toLowerCase()) || 
-                                              d.name.toLowerCase().includes(calendarSearch.toLowerCase());
-                         return isAfterToday && matchesSearch;
+                                               d.symbol.toLowerCase().includes(calendarSearch.toLowerCase()) || 
+                                               d.name.toLowerCase().includes(calendarSearch.toLowerCase());
+                         return isRecentOrFuture && matchesSearch;
                       })
                       .slice(0, 17)
-                      .map((item) => (
-                      <button 
-                        key={item.symbol + item.date}
-                        onClick={() => {
-                          setSelectedSymbol(item.symbol);
-                          fetchData(item.symbol);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className="p-5 rounded-xl bg-slate-950/60 border border-white/5 hover:border-indigo-500/50 hover:bg-slate-900 transition-all flex flex-col items-start justify-between group/calendar relative overflow-hidden shadow-xl hover:shadow-indigo-500/5 text-left h-36"
-                      >
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover/calendar:opacity-20 transition-opacity">
-                          <TrendingUp className="w-16 h-16 text-white rotate-12" />
-                        </div>
-                        
-                        <div className="w-full flex justify-between items-start">
-                          <div className="text-xl font-black text-white group-hover/calendar:text-indigo-400 transition-colors uppercase italic tracking-tighter leading-none">{item.symbol}</div>
-                          {item.confirmed && (
-                            <div className="px-1.5 py-0.5 bg-indigo-600 text-[6px] font-black text-white uppercase italic tracking-widest rounded shadow-lg z-20">
-                              KESİN
-                            </div>
-                          )}
-                        </div>
+                      .map((item) => {
+                        const today = new Date('2026-05-06');
+                        const target = new Date(item.date);
+                        const diffTime = target.getTime() - today.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        const isVerySoon = diffDays >= 0 && diffDays <= 7;
+                        const isPast = diffDays < 0;
 
-                        <div className="w-full mt-auto space-y-3">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-3 h-3 text-slate-600" />
-                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{item.date.split('-')[2]} {item.month.split(' ')[0]}</div>
-                          </div>
-                          
-                          <div className="w-full flex items-center justify-between pt-2 border-t border-white/5">
-                             <div className="text-[8px] text-slate-600 font-black uppercase tracking-widest">VERİM</div>
-                             <div className="text-sm font-black text-emerald-400 italic leading-none">{item.yield}</div>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+                        return (
+                          <button 
+                            key={item.symbol + item.date}
+                            onClick={() => {
+                              setSelectedSymbol(item.symbol);
+                              fetchData(item.symbol);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className={cn(
+                              "p-5 rounded-xl border transition-all flex flex-col items-start justify-between group/calendar relative overflow-hidden shadow-xl text-left h-40",
+                              isVerySoon ? "bg-indigo-600/10 border-indigo-500 shadow-indigo-500/10" : "bg-slate-950/60 border-white/5 hover:border-indigo-500/50 hover:bg-slate-900"
+                            )}
+                          >
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover/calendar:opacity-20 transition-opacity">
+                              <TrendingUp className="w-16 h-16 text-white rotate-12" />
+                            </div>
+                            
+                            <div className="w-full flex justify-between items-start">
+                              <div className="text-xl font-black text-white group-hover/calendar:text-indigo-400 transition-colors uppercase italic tracking-tighter leading-none">{item.symbol}</div>
+                              {item.confirmed && !isPast && (
+                                <div className="px-1.5 py-0.5 bg-indigo-600 text-[6px] font-black text-white uppercase italic tracking-widest rounded shadow-lg z-20 animate-pulse">
+                                  KESİN
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="w-full mt-auto space-y-2">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-1.5">
+                                  <Calendar className="w-3 h-3 text-slate-600" />
+                                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">
+                                    {item.date.split('-')[2]} {item.month.split(' ')[0]}
+                                  </div>
+                                </div>
+                                {isVerySoon && (
+                                  <div className="text-[9px] font-black text-emerald-400 uppercase tracking-tighter flex items-center gap-1">
+                                    <Clock className="w-2.5 h-2.5" />
+                                    {diffDays === 0 ? 'BUGÜN' : `${diffDays} GÜN KALDI`}
+                                  </div>
+                                )}
+                                {isPast && (
+                                  <div className="text-[9px] font-black text-slate-500 uppercase tracking-tighter flex items-center gap-1">
+                                    <ShieldCheck className="w-2.5 h-2.5" />
+                                    TAMAMLANDI
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="w-full flex items-center justify-between pt-2 border-t border-white/5">
+                                 <div className="text-[8px] text-slate-600 font-black uppercase tracking-widest">VERİM</div>
+                                 <div className="text-sm font-black text-emerald-400 italic leading-none">{item.yield}</div>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
                     <button 
                       onClick={() => setShowAllDividends(true)}
                       className="p-5 rounded-xl bg-indigo-600/5 border-2 border-dashed border-indigo-500/20 hover:border-indigo-500/50 hover:bg-indigo-600/10 transition-all flex flex-col items-center justify-center gap-3 group/all h-36"
@@ -1346,7 +1517,7 @@ const DividendTracker: React.FC = () => {
                         <div>
                           <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Hesaplama Standartı</div>
                           <div className="text-xs font-bold text-slate-300">
-                            1000 <span className="text-[10px] text-slate-500 mx-1">×</span> {formatCurrency(data?.summary?.summaryDetail?.dividendRate || 0, data.symbol)} <span className="text-indigo-400 ml-1">(Hisse Başı Tahmini Temettü)</span>
+                            1000 <span className="text-[10px] text-slate-500 mx-1">×</span> {formatCurrency((data?.summary?.summaryDetail as any).forwardDividendRate || data?.summary?.summaryDetail?.dividendRate || 0, data.symbol)} <span className="text-indigo-400 ml-1">(Hisse Başı Tahmini Temettü)</span>
                           </div>
                         </div>
                       </div>
@@ -1366,9 +1537,7 @@ const DividendTracker: React.FC = () => {
                     <div className="flex-shrink-0 text-center md:text-right relative z-10 flex flex-col items-center md:items-end scale-100">
                       <div className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.4em] mb-3 opacity-60">Yıllık Temettü Getirisi</div>
                       <div className="text-5xl md:text-7xl font-black text-emerald-400 italic tracking-tighter drop-shadow-2xl">
-                        {data?.summary?.summaryDetail?.dividendRate ? 
-                          formatCurrency(1000 * data.summary.summaryDetail.dividendRate, data.symbol) : 
-                          formatCurrency(1000 * 24.5, data.symbol)}
+                        {formatCurrency(1000 * ((data?.summary?.summaryDetail as any).forwardDividendRate || data?.summary?.summaryDetail?.dividendRate || 0), data.symbol)}
                       </div>
                     <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -1404,6 +1573,33 @@ const DividendTracker: React.FC = () => {
                   {sym}
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+        {!data && !loading && !error && (
+          <div className="mt-20 pt-20 border-t border-white/5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-left">
+              <div className="space-y-4">
+                <h4 className="text-xs font-black text-indigo-400 uppercase tracking-[0.3em]">Temettü Dağıtımı Nedir?</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                  <strong>Temettü dağıtımı</strong>, bir şirketin elde ettiği kârın bir kısmını ortaklarına nakit veya hisse senedi olarak paylaştırmasıdır. 
+                  Yatırımcılar için pasif gelir kaynağı oluşturan bu süreç, şirketin finansal gücünü ve sürdürülebilirliğini temsil eder.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <h4 className="text-xs font-black text-indigo-400 uppercase tracking-[0.3em]">Temettü Dağıtan Hisseler 2026</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                  Borsa İstanbul (BIST) ve global piyasalarda <strong>temettü dağıtan hisseler</strong>, portföy çeşitlendirmesinde kritik rol oynar. 
+                  Karlısın üzerinde <strong>2026 temettü takvimi</strong> ile yaklaşan ödemeleri takip edebilir, 12 aylık projeksiyonlarla gelecekteki temettü gelirinizi hesaplayabilirsiniz.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <h4 className="text-xs font-black text-indigo-400 uppercase tracking-[0.3em]">Unified Data & Tahminler</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                  Uygulamamız, <strong>temettü veren şirketler</strong> için sadece geçmiş verileri değil, Unified Data Engine sayesinde analistlerin 12 aylık hedef fiyat ve <strong>temettü verimi</strong> tahminlerini de sunar. 
+                  Akıllı filtreleme ile en yüksek verime sahip şirketleri saniyeler içinde analiz edin.
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -1463,7 +1659,7 @@ const DividendTracker: React.FC = () => {
                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 blur-[100px] rounded-full -mr-20 -mt-20" />
                            <div className="relative z-10">
                              <p className="text-slate-300 leading-relaxed font-medium text-xl">
-                               {(avData && avData.Description) || data.summary.assetProfile?.longBusinessSummary || 'Şirket özeti bu sembol için mevcut değil.'}
+                               {(avData && avData.Description) || data.summary.assetProfile?.longBusinessSummary || 'Bu şirket için detaylı profil özeti şu an mevcut değil.'}
                              </p>
                            </div>
                          </div>
@@ -1646,68 +1842,6 @@ const DividendTracker: React.FC = () => {
 
       </footer>
 
-      {/* Chart Dialog Popup */}
-      <AnimatePresence>
-        {isChartModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsChartModalOpen(false)}
-              className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, rotateX: 20 }}
-              animate={{ opacity: 1, scale: 1, rotateX: 0 }}
-              exit={{ opacity: 0, scale: 0.9, rotateX: 20 }}
-              className="relative w-full max-w-6xl h-[85vh] bg-slate-950 border border-white/10 rounded-[48px] shadow-[0_0_150px_rgba(79,70,229,0.3)] overflow-hidden flex flex-col"
-            >
-               <div className="p-8 border-b border-white/5 flex items-center justify-between bg-slate-900/50 backdrop-blur-md">
-                 <div className="flex items-center gap-6">
-                   <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-xl shadow-indigo-500/10">
-                     <TrendingUp className="text-indigo-400 w-7 h-7" />
-                   </div>
-                   <div>
-                     <div className="flex items-center gap-3 mb-1">
-                       <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none">{data.symbol} Teknik Analiz</h3>
-                       <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-lg text-[8px] font-black italic border border-indigo-500/30">PRO CHART V2</span>
-                     </div>
-                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] italic">Gelişmiş TradingView Entegrasyonu</p>
-                   </div>
-                 </div>
-                 
-                 <div className="flex items-center gap-4">
-                    <a 
-                      href={`https://www.tradingview.com/symbols/BIST-${data.symbol.replace('.IS', '')}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 rounded-2xl text-[10px] font-black text-slate-300 transition-all uppercase tracking-widest border border-white/5"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" /> DIŞARIDA AÇ
-                    </a>
-                    <div className="w-px h-8 bg-white/10 hidden md:block" />
-                    <button 
-                      onClick={() => setIsChartModalOpen(false)}
-                      className="flex items-center gap-2.5 px-6 py-3 bg-white text-slate-950 hover:bg-slate-100 rounded-2xl text-[11px] font-black transition-all uppercase tracking-widest shadow-xl shadow-white/5 active:scale-95"
-                    >
-                      <Minimize2 className="w-4 h-4" /> KAPAT
-                    </button>
-                 </div>
-               </div>
-               <div className="flex-1 bg-black relative">
-                 <TradingViewWidget symbol={data.symbol} />
-                 
-                 {/* Watermark/Fallback instruction */}
-                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none opacity-20">
-                    <p className="text-[10px] font-black text-white uppercase tracking-[0.5em] italic">Karlısın Finansal Analiz Paneli</p>
-                 </div>
-               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       {/* Sticky Legal Disclaimer */}
       <div className="fixed bottom-0 left-0 right-0 z-50 p-3 bg-slate-950/80 backdrop-blur-xl border-t border-white/5 pointer-events-none md:pointer-events-auto">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
@@ -1779,6 +1913,75 @@ const DividendTracker: React.FC = () => {
                   </div>
                 ))}
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Disclaimer Modal */}
+      <AnimatePresence>
+        {showDisclaimer && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-[40px] shadow-2xl p-10 flex flex-col items-center text-center overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-500" />
+              
+              <div className="w-20 h-20 bg-yellow-500/10 rounded-[30px] flex items-center justify-center mb-8 text-yellow-500">
+                <AlertTriangle className="w-10 h-10" />
+              </div>
+
+              <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4">Önemli Bilgilendirme</h3>
+              
+              <p className="text-slate-400 text-sm font-medium leading-relaxed mb-10">
+                Uygulama içerisinde sunulan tüm veriler, grafikler ve analizler <strong>bilgilendirme amaçlıdır</strong> ve kesinlikle <span className="text-white">yatırım tavsiyesi taşımamaktadır.</span> Finansal adımlarınızı kendi stratejinize ve bağımsız araştırmalarınıza göre belirleyin.
+              </p>
+
+              <div className="w-full space-y-6">
+                <label className="flex items-center justify-center gap-3 cursor-pointer group">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="peer sr-only" 
+                      checked={disclaimerAccepted}
+                      onChange={(e) => setDisclaimerAccepted(e.target.checked)}
+                    />
+                    <div className="w-6 h-6 rounded-lg border-2 border-white/10 bg-white/5 transition-all peer-checked:bg-white peer-checked:border-white group-hover:border-white/30 flex items-center justify-center">
+                      <Check className={cn("w-4 h-4 text-slate-900 transition-opacity", disclaimerAccepted ? "opacity-100" : "opacity-0")} />
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors">
+                    Okudum ve Anladım
+                  </span>
+                </label>
+
+                <button
+                  disabled={!disclaimerAccepted}
+                  onClick={handleDisclaimerConfirm}
+                  className={cn(
+                    "w-full py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3",
+                    disclaimerAccepted 
+                      ? "bg-white text-slate-900 hover:bg-white/90 shadow-lg shadow-white/10 active:scale-[0.98]" 
+                      : "bg-white/5 text-white/20 cursor-not-allowed border border-white/5"
+                  )}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Anladım, Devam Et
+                </button>
+              </div>
+
+              {/* Decorative elements */}
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-yellow-500/5 blur-[80px] rounded-full" />
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/5 blur-[80px] rounded-full" />
             </motion.div>
           </div>
         )}

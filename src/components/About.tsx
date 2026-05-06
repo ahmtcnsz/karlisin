@@ -7,28 +7,28 @@ export default function About() {
   const sections = [
     {
       icon: <Target className="text-indigo-400" size={24} />,
-      title: "Akıllı SaaS Çözümü",
-      text: "Karlısın, e-ticaret satıcılarının ve yatırımcıların finansal süreçlerini daha akıllı, hızlı ve şeffaf hale getirmek için geliştirilmiş bir SaaS aracıdır."
+      title: "Finansal Şeffaflık",
+      text: "Karlısın, yatırımcıların ve e-ticaret satıcılarının karmaşık rakamlar arasında kaybolmasını engelleyen, Unified Data Engine ile güçlendirilmiş bir analiz platformudur."
     },
     {
       icon: <ShieldCheck className="text-emerald-400" size={24} />,
-      title: "Karmaşıklığa Son",
-      text: "Finansal kararlar alırken kâr hesaplamak çoğu zaman karmaşık ve zaman alıcıdır. Komisyon oranları, vergiler ve gizli giderler doğru fiyatı belirlemeyi zorlaştırır. Karlısın ile bu karmaşıklığı ortadan kaldırıyoruz."
+      title: "Veriye Dayalı Güven",
+      text: "Finansal kararlar alırken sadece tahminlerle değil, BIST ve global piyasalardan anlık akan doğrulanmış verilerle hareket etmenizi sağlıyoruz. Temettü dağıtımı ve vergi hesaplamalarında %100 hassasiyet hedefliyoruz."
     },
     {
       icon: <Zap className="text-amber-400" size={24} />,
-      title: "Gerçek Kârlılık",
-      text: "Karlısın ile kullanıcılar, ürünlerinin veya yatırımlarının gerçek kârlılığını saniyeler içinde analiz edebilir, daha doğru kararlar alabilir ve işlerini büyütmeye odaklanabilir."
+      title: "Hızlı Analiz",
+      text: "Saatler süren manuel veri toplama süreçlerini saniyelere indiriyoruz. Temettü dağıtan hisseleri keşfedin, 2026 maaş projeksiyonunuzu yapın veya pazar kârınızı anında hesaplayın."
     },
     {
       icon: <TrendingUp className="text-purple-400" size={24} />,
       title: "Misyonumuz",
-      text: "Amacımız; e-ticaret satıcılarının günlük kâr analizlerinden, çalışanların maaş ve vergi hesaplamalarına kadar finansal her adımda rehberlik etmektir. Vizyonumuzun bir parçası olarak, yatırımcılar için Türkiye'nin en gelişmiş temettü takip ve analiz araçlarını inşa etmeyi hedefliyoruz."
+      text: "E-ticaret operasyonlarından borsa yatırımlarına kadar, her ölçekten kullanıcının finansal okuryazarlığını artırmak ve doğru yatırım stratejileri kurmalarına teknolojik rehberlik etmektir."
     },
     {
       icon: <Users className="text-rose-400" size={24} />,
-      title: "Sürekli Gelişim",
-      text: "Sürekli gelişen bir ürünüz. Kullanıcı geri bildirimlerini merkeze alıyor, ürünü her geçen gün daha güçlü hale getiriyoruz."
+      title: "Topluluk Odaklı",
+      text: "Kullanıcı geri bildirimleriyle şekillenen modüler yapımız sayesinde, finans dünyasının değişen dinamiklerine en hızlı uyum sağlayan araç setini sunuyoruz."
     }
   ];
 
@@ -53,7 +53,7 @@ export default function About() {
           transition={{ delay: 0.1 }}
           className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-8 leading-tight"
         >
-          Satıcılar için <br />
+          Veriye Dayalı <br />
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Şeffaf Gelecek.</span>
         </motion.h1>
         <motion.p 
@@ -62,7 +62,7 @@ export default function About() {
           transition={{ delay: 0.2 }}
           className="text-xl text-slate-400 font-medium max-w-3xl mx-auto"
         >
-          E-ticaret yolculuğunuzda rakamların gücünü yanınıza alın. Karmaşık tablolarla değil, doğru kararlarla büyüyün.
+          Yatırım ve ticaret yolculuğunuzda Unified Data Engine gücünü yanınıza alın. Karmaşık tablolarla değil, doğru ve anlık verilerle büyüyün.
         </motion.p>
       </div>
 
@@ -91,30 +91,30 @@ export default function About() {
         ))}
       </div>
 
-      {/* Philosophy Section */}
+      {/* Technology Section */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
         className="mt-20 p-12 md:p-20 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-[60px] border border-white/10 text-center relative overflow-hidden"
       >
-        <div className="relative z-10 max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-5xl font-black text-white mb-8">Neden Karlısın?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-12 italic uppercase tracking-tighter italic">Unified Data Engine</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-left">
             <div className="space-y-4">
               <div className="text-indigo-400 font-black text-4xl">01.</div>
-              <h4 className="text-white font-bold text-xl">Basitlik</h4>
-              <p className="text-slate-400 text-sm font-medium">Karmaşıklıktan arınmış, herkesin saniyeler içinde kullanabileceği bir arayüz.</p>
+              <h4 className="text-white font-bold text-xl uppercase tracking-wider">Hassas Veri</h4>
+              <p className="text-slate-400 text-sm font-medium">Global ve yerel (BIST) veri kaynaklarını tek bir kanalda birleştirerek en düşük hata payıyla çalışıyoruz.</p>
             </div>
             <div className="space-y-4">
               <div className="text-purple-400 font-black text-4xl">02.</div>
-              <h4 className="text-white font-bold text-xl">Hız</h4>
-              <p className="text-slate-400 text-sm font-medium">Saatler süren manuel hesaplamaları saniyelere indiren güçlü altyapı.</p>
+              <h4 className="text-white font-bold text-xl uppercase tracking-wider">Akıllı Projeksiyon</h4>
+              <p className="text-slate-400 text-sm font-medium">2026 temettü dağıtımı ve maaş tahminleri için yapay zeka destekli analiz modelleri kullanıyoruz.</p>
             </div>
             <div className="space-y-4">
               <div className="text-rose-400 font-black text-4xl">03.</div>
-              <h4 className="text-white font-bold text-xl">Şeffaflık</h4>
-              <p className="text-slate-400 text-sm font-medium">Görünmeyen hiçbir gider kalmayacak şekilde tüm maliyet kalemleri önünüzde.</p>
+              <h4 className="text-white font-bold text-xl uppercase tracking-wider">Tam Entegrasyon</h4>
+              <p className="text-slate-400 text-sm font-medium">E-Ticaret maliyetlerinden borsa analizi süreçlerine kadar tüm finansal adımlarınızı tek merkezden yönetiyoruz.</p>
             </div>
           </div>
         </div>

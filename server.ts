@@ -66,6 +66,48 @@ function getRandomUserAgent() {
  * Cross-verifies data from multiple sources with 12h caching
  */
 class UnifiedDataService {
+  private static async fetchInvesting(symbol: string) {
+    try {
+      // Investing.com is sensitive to headers. We try a lookup approach.
+      // For BIST: symbol is typically EREGL.IS
+      const clean = symbol.replace('.IS', '').toLowerCase();
+      const url = `https://www.investing.com/search/?q=${encodeURIComponent(symbol)}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+      
+      const html = await response.text();
+      
+      // Look for data points in search result or redirect
+      const priceMatch = html.match(/id="last_last"[^>]*>([\d,.]+)</) || html.match(/"last":([\d,.]+)/);
+      const yieldMatch = html.match(/>Div Yield<[\s\S]*?>([\d,.]+)%/);
+      const targetMatch = html.match(/>1y Target Est<[\s\S]*?>([\d,.]+)</) || html.match(/"target":([\d,.]+)/);
+      
+      // Range and Volume for Investing
+      const rangeMatch = html.match(/>Day's Range<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</);
+      const volumeMatch = html.match(/>Volume<[\s\S]*?>([\d,.]+)</);
+
+      if (priceMatch) {
+         return {
+           price: parseFloat(priceMatch[1].replace(',', '')),
+           dividendYield: yieldMatch ? parseFloat(yieldMatch[1].replace(',', '.')) / 100 : 0,
+           targetMeanPrice: targetMatch ? parseFloat(targetMatch[1].replace(',', '')) : 0,
+           dayHigh: rangeMatch ? parseFloat(rangeMatch[2].replace(',', '')) : 0,
+           dayLow: rangeMatch ? parseFloat(rangeMatch[1].replace(',', '')) : 0,
+           volume: volumeMatch ? parseFloat(volumeMatch[1].replace(/[^\d.]/g, '')) : 0,
+           source: 'Investing'
+         };
+      }
+      
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   static async getFullStockData(symbol: string) {
     const cleanSymbol = symbol.toUpperCase().trim();
     const cacheKey = `unified_v2.2_${cleanSymbol}`;
@@ -79,48 +121,59 @@ class UnifiedDataService {
     console.log(`[UnifiedDS v2.2] Starting heavy aggregation for: ${cleanSymbol}`);
     
     // Providers to run in parallel
-    const [yahoo, google, av] = await Promise.allSettled([
+    const [yahoo, google, av, investing] = await Promise.allSettled([
       this.fetchYahoo(cleanSymbol),
       this.fetchGoogle(cleanSymbol),
-      this.fetchAlphaVantage(cleanSymbol)
+      this.fetchAlphaVantage(cleanSymbol),
+      this.fetchInvesting(cleanSymbol)
     ]);
 
     const results: any = {
       yahoo: yahoo.status === 'fulfilled' ? yahoo.value : null,
       google: google.status === 'fulfilled' ? google.value : null,
-      av: av.status === 'fulfilled' ? av.value : null
+      av: av.status === 'fulfilled' ? av.value : null,
+      investing: investing.status === 'fulfilled' ? investing.value : null
     };
 
-    // CROSS-VERIFICATION LOGIC
-    const primary = results.yahoo || results.google || results.av;
-    if (!primary) throw new Error(`${cleanSymbol} için hiçbir veri kaynağına ulaşılamadı. (Limit aşımı veya geçersiz sembol)`);
-
+    // CROSS-VERIFICATION & AUGMENTATION LOGIC
+    // Hybrid approach: Prefer Yahoo for complex metrics, Google for live price, AlphaV for fallback
     const aggregated = {
       symbol: cleanSymbol,
-      version: '2.2.0',
-      source: 'Unified Engine v2.2',
+      version: '2.6.0',
+      source: 'Unified Engine v2.6 (Discovery + Fallback)',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
-          regularMarketPrice: { 
-            value: results.google?.price || results.yahoo?.price || results.av?.price || 0 
-          },
-          longName: results.yahoo?.name || results.google?.name || results.av?.name || cleanSymbol,
-          currency: results.yahoo?.currency || results.google?.currency || results.av?.currency || 'TRY'
+          regularMarketPrice: (cleanSymbol.endsWith('.IS') ? (results.yahoo?.price || results.google?.price) : (results.google?.price || results.yahoo?.price)) || results.investing?.price || results.av?.price || 0,
+          longName: results.yahoo?.name || results.google?.name || results.investing?.name || results.av?.name || cleanSymbol,
+          currency: results.yahoo?.currency || results.google?.currency || results.investing?.currency || results.av?.currency || 'TRY',
+          regularMarketChangePercent: results.yahoo?.changePercent || results.google?.changePercent || 0,
+          dayHigh: results.yahoo?.dayHigh || results.google?.dayHigh || results.investing?.dayHigh || 0,
+          dayLow: results.yahoo?.dayLow || results.google?.dayLow || results.investing?.dayLow || 0,
+          volume: results.yahoo?.volume || results.google?.volume || results.investing?.volume || results.av?.volume || 0
         },
         summaryDetail: {
-          dividendYield: { 
-            value: results.yahoo?.dividendYield || results.av?.dividendYield || 0 
-          },
-          dividendRate: { 
-            value: results.yahoo?.dividendRate || results.av?.dividendRate || 0 
-          },
-          marketCap: { 
-            value: results.yahoo?.marketCap || results.av?.marketCap || results.google?.marketCap || 0 
-          },
-          trailingPE: { value: results.yahoo?.pe || results.av?.pe || 0 },
-          fiftyTwoWeekHigh: { value: results.yahoo?.high52 || 0 },
-          fiftyTwoWeekLow: { value: results.yahoo?.low52 || 0 }
+          dividendYield: results.yahoo?.dividendYield || results.investing?.dividendYield || results.av?.dividendYield || results.google?.dividendYield || 0,
+          dividendRate: results.yahoo?.dividendRate || results.investing?.dividendRate || results.av?.dividendRate || results.google?.dividendRate || 0,
+          forwardDividendRate: results.yahoo?.forwardDividendRate || results.av?.dividendRate || results.google?.dividendRate || 0,
+          forwardDividendYield: results.yahoo?.forwardDividendYield || results.av?.dividendYield || results.google?.dividendYield || 0,
+          payoutRatio: results.yahoo?.payoutRatio || results.av?.payoutRatio || results.investing?.payoutRatio || 0,
+          marketCap: results.yahoo?.marketCap || results.av?.marketCap || results.google?.marketCap || results.investing?.marketCap || 0,
+          trailingPE: results.yahoo?.pe || results.av?.pe || results.investing?.pe || 0,
+          fiftyTwoWeekHigh: results.yahoo?.high52 || results.av?.high52 || results.investing?.high52 || 0,
+          fiftyTwoWeekLow: results.yahoo?.low52 || results.av?.low52 || results.investing?.low52 || 0,
+          industry: results.yahoo?.industry || results.google?.industry || results.av?.industry || results.investing?.industry || null,
+          sector: results.yahoo?.sector || results.google?.sector || results.av?.sector || results.investing?.sector || null
+        },
+        assetProfile: {
+          longBusinessSummary: results.yahoo?.longBusinessSummary || results.av?.Description || null,
+          website: results.yahoo?.website || results.av?.Website || null
+        },
+        financialData: {
+          recommendationKey: results.yahoo?.recommendationKey || null,
+          targetMeanPrice: results.yahoo?.targetMeanPrice || results.google?.targetMeanPrice || results.investing?.targetMeanPrice || results.av?.targetMeanPrice || 0,
+          numberOfAnalystOpinions: results.yahoo?.numberOfAnalystOpinions || 0,
+          isTechnicalTarget: false
         }
       },
       history: results.yahoo?.history || [],
@@ -129,9 +182,69 @@ class UnifiedDataService {
         google_verified: !!results.google,
         yahoo_verified: !!results.yahoo,
         alpha_vantage_verified: !!results.av,
-        last_sync: new Date().toLocaleTimeString('tr-TR')
+        investing_verified: !!results.investing,
+        last_sync: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       }
     };
+
+    // --- FALLBACK CALCULATION ENGINE ---
+    const prc = aggregated.summary.price.regularMarketPrice;
+    const sd = aggregated.summary.summaryDetail;
+
+    // 0. Target Price Fallback: If 0, use 52w High as a technical target
+    if (aggregated.summary.financialData.targetMeanPrice === 0 && sd.fiftyTwoWeekHigh > 0) {
+      aggregated.summary.financialData.targetMeanPrice = sd.fiftyTwoWeekHigh;
+      aggregated.summary.financialData.isTechnicalTarget = true;
+    }
+
+    // 1. Calculate from History: If rate/yield is 0, sum dividends from last 12 months
+    if (sd.dividendRate === 0 && aggregated.history && aggregated.history.length > 0) {
+      const oneYearAgo = (Date.now() / 1000) - (365 * 24 * 60 * 60);
+      const recentDividends = aggregated.history
+        .filter(h => h.date >= oneYearAgo)
+        .reduce((sum, h) => sum + (h.amount || h.adjClose || 0), 0); 
+      
+      // If we found dividends in history but not in summary
+      if (recentDividends > 0) {
+        sd.dividendRate = recentDividends;
+        console.log(`[UnifiedDS] Extracted ${recentDividends} from history for ${cleanSymbol}`);
+      }
+    }
+
+    // 2. Cross-Calculate Yield + Price -> Rate
+    if (sd.dividendRate === 0 && sd.dividendYield > 0 && prc > 0) {
+      sd.dividendRate = sd.dividendYield * prc;
+    }
+    
+    // 3. Forward Yield + Price -> Forward Rate
+    if (sd.forwardDividendRate === 0 && sd.forwardDividendYield > 0 && prc > 0) {
+      sd.forwardDividendRate = sd.forwardDividendYield * prc;
+    }
+
+    // 4. Projection: If Forward Rate is 0, use Trailing Rate
+    if (sd.forwardDividendRate === 0 && sd.dividendRate > 0) {
+      sd.forwardDividendRate = sd.dividendRate;
+    }
+
+    // 5. Final Yield Recalculation: If we have Rate but Yield is still 0
+    if (sd.forwardDividendYield === 0 && sd.forwardDividendRate > 0 && prc > 0) {
+      sd.forwardDividendYield = sd.forwardDividendRate / prc;
+    }
+    
+    if (sd.dividendYield === 0 && sd.dividendRate > 0 && prc > 0) {
+      sd.dividendYield = sd.dividendRate / prc;
+    }
+
+    // 6. Payout Ratio Fallback: Often missing for BIST stocks
+    if ((sd.payoutRatio === 0 || !sd.payoutRatio) && (sd.dividendRate > 0 || sd.forwardDividendRate > 0)) {
+       const eps = results.yahoo?.eps || results.av?.eps || 0;
+       const rate = sd.forwardDividendRate || sd.dividendRate;
+       if (eps > 0 && rate > 0) {
+         sd.payoutRatio = rate / eps;
+         console.log(`[UnifiedDS] Calculated Payout Ratio ${sd.payoutRatio} (Rate: ${rate} / EPS: ${eps}) for ${cleanSymbol}`);
+       }
+    }
+    // ------------------------------------
 
     // Cache for 12 hours (43200s)
     cache.set(cacheKey, aggregated, 43200);
@@ -157,18 +270,38 @@ class UnifiedDataService {
           }
         } catch (e) {}
 
-        const summary = await yf.quoteSummary(t, { modules: ['summaryDetail'] }).catch(() => null);
+        const summary = await yf.quoteSummary(t, { modules: ['summaryDetail', 'assetProfile', 'defaultKeyStatistics', 'financialData'] }).catch(() => null);
+
+        // Debug log for data discovery
+        if (summary) {
+           console.log(`[Discovery] ${t} - Yield: ${summary.summaryDetail?.dividendYield?.value}, Rate: ${summary.summaryDetail?.dividendRate?.value}, Payout: ${summary.summaryDetail?.payoutRatio?.value}`);
+        }
 
         return {
           price: quote.regularMarketPrice,
           name: quote.longName || quote.shortName,
           currency: quote.currency,
-          dividendYield: quote.trailingAnnualDividendYield || summary?.summaryDetail?.dividendYield?.value || 0,
-          dividendRate: quote.trailingAnnualDividendRate || summary?.summaryDetail?.dividendRate?.value || 0,
+          changePercent: quote.regularMarketChangePercent,
+          dividendYield: quote.trailingAnnualDividendYield || quote.dividendYield || summary?.summaryDetail?.dividendYield?.value || summary?.defaultKeyStatistics?.yield?.value || summary?.defaultKeyStatistics?.lastDividendYield?.value || 0,
+          dividendRate: quote.trailingAnnualDividendRate || quote.dividendRate || summary?.summaryDetail?.dividendRate?.value || summary?.defaultKeyStatistics?.lastDividendValue?.value || 0,
+          forwardDividendRate: summary?.summaryDetail?.forwardDividendRate?.value || quote.dividendRate || summary?.defaultKeyStatistics?.lastDividendValue?.value || 0,
+          forwardDividendYield: summary?.summaryDetail?.forwardDividendYield?.value || quote.dividendYield || 0,
+          payoutRatio: summary?.summaryDetail?.payoutRatio?.value || summary?.defaultKeyStatistics?.payoutRatio?.value || quote.payoutRatio || 0,
+          eps: summary?.defaultKeyStatistics?.trailingEps?.value || summary?.financialData?.earningsPerShare?.value || 0,
           marketCap: quote.marketCap,
-          pe: quote.trailingPE,
-          high52: quote.fiftyTwoWeekHigh,
-          low52: quote.fiftyTwoWeekLow,
+          pe: quote.trailingPE || summary?.summaryDetail?.trailingPE?.value || 0,
+          high52: quote.fiftyTwoWeekHigh || summary?.summaryDetail?.fiftyTwoWeekHigh?.value || 0,
+          low52: quote.fiftyTwoWeekLow || summary?.summaryDetail?.fiftyTwoWeekLow?.value || 0,
+          dayHigh: quote.regularMarketDayHigh || 0,
+          dayLow: quote.regularMarketDayLow || 0,
+          volume: quote.regularMarketVolume || 0,
+          recommendationKey: summary?.financialData?.recommendationKey,
+          targetMeanPrice: summary?.financialData?.targetMeanPrice?.value || 0,
+          numberOfAnalystOpinions: summary?.financialData?.numberOfAnalystOpinions?.value || 0,
+          industry: summary?.assetProfile?.industry,
+          sector: summary?.assetProfile?.sector,
+          longBusinessSummary: summary?.assetProfile?.longBusinessSummary,
+          website: summary?.assetProfile?.website,
           history
         };
       } catch (e) {}
@@ -194,10 +327,66 @@ class UnifiedDataService {
         const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/);
 
         if (priceMatch) {
+          // Attempt to extract extra metadata (Supports Turkish & English)
+          let dividendYield = 0;
+          let sector = null;
+          let industry = null;
+
+          // Google Finance labels in Turkish ("Kâr payı verimi") or English ("Dividend yield")
+          const yieldMatch = html.match(/>(?:Temettü verimi|Kâr payı verimi|Dividend yield)<[\s\S]*?<div[^>]*>([\d,.]+)%/i);
+          if (yieldMatch) {
+            dividendYield = parseFloat(yieldMatch[1].replace(',', '.')) / 100;
+          }
+
+          // Try to get hard Dividend Rate (Kâr payı) from Google Finance if available
+          let dividendRate = 0;
+          const rateMatch = html.match(/>(?:Kâr payı|Dividend|Hisse Başı Temettü)<[\s\S]*?<div[^>]*>([\d,.]+)</i);
+          if (rateMatch) {
+            dividendRate = parseFloat(rateMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
+          }
+
+          const sectorMatch = html.match(/>(?:Sektör|Sector)<[\s\S]*?<div[^>]*>([^<]+)</i);
+          if (sectorMatch) sector = sectorMatch[1].trim();
+
+          const industryMatch = html.match(/>(?:Endüstri|Industry)<[\s\S]*?<div[^>]*>([^<]+)</i);
+          if (industryMatch) industry = industryMatch[1].trim();
+          
+          const rangeMatch = html.match(/>(?:Günlük aralık|Day range)<[\s\S]*?<div[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
+          let dayLow = 0;
+          let dayHigh = 0;
+          if (rangeMatch) {
+             dayLow = parseFloat(rangeMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
+             dayHigh = parseFloat(rangeMatch[2].replace(/[^\d.,]/g, '').replace(',', '.'));
+          }
+
+          const volumeReg = html.match(/>(?:Hacim|Volume)<[\s\S]*?<div[^>]*>([\d,.\w]+)</i);
+          let volume = 0;
+          if (volumeReg) {
+             const cleanVol = volumeReg[1].trim().toUpperCase();
+             if (cleanVol.endsWith('M')) volume = parseFloat(cleanVol) * 1000000;
+             else if (cleanVol.endsWith('B')) volume = parseFloat(cleanVol) * 1000000000;
+             else if (cleanVol.endsWith('K')) volume = parseFloat(cleanVol) * 1000;
+             else volume = parseFloat(cleanVol.replace(/[^\d.,]/g, '').replace(',', '.'));
+          }
+
+          const targetMatch = html.match(/>(?:Fiyat Hedefi|Price Target)<[\s\S]*?<div[^>]*>([\d,.]+)</i);
+          let targetMeanPrice = 0;
+          if (targetMatch) {
+            targetMeanPrice = parseFloat(targetMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
+          }
+
           return {
-            price: parseFloat(priceMatch[1]),
+            price: parseFloat(priceMatch[1].replace(/[^\d.,]/g, '').replace(',', '.')),
             currency: currencyMatch ? currencyMatch[1] : 'TRY',
             name: nameMatch ? nameMatch[1] : symbol,
+            dividendYield,
+            dividendRate,
+            targetMeanPrice,
+            dayHigh,
+            dayLow,
+            volume,
+            sector,
+            industry,
             source: 'Google'
           };
         }
@@ -219,8 +408,14 @@ class UnifiedDataService {
           name: data.Name,
           dividendYield: parseFloat(data.DividendYield) || 0,
           dividendRate: parseFloat(data.DividendPerShare) || 0,
+          payoutRatio: parseFloat(data.PayoutRatio) || 0,
+          eps: parseFloat(data.EPS) || 0,
           marketCap: parseFloat(data.MarketCapitalization) || 0,
+          targetMeanPrice: parseFloat(data.AnalystTargetPrice) || 0,
+          volume: parseFloat(data.Volume) || 0,
           pe: parseFloat(data.PERatio) || 0,
+          industry: data.Industry,
+          sector: data.Sector,
           currency: data.Currency || 'TRY'
         };
       }

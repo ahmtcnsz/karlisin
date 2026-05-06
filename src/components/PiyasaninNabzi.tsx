@@ -67,13 +67,15 @@ export const MarketPulse = () => {
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="inline-flex items-center gap-3 px-5 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] mb-8"
+              className="inline-flex items-center justify-center mb-8"
             >
-              <div className="relative">
-                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-ping absolute inset-0" />
-                <div className="w-2 h-2 rounded-full bg-indigo-500 relative" />
+              <div className="inline-flex items-center gap-3 px-5 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em]">
+                <div className="relative">
+                  <div className="w-2 h-2 rounded-full bg-indigo-500 animate-ping absolute inset-0" />
+                  <div className="w-2 h-2 rounded-full bg-indigo-500 relative" />
+                </div>
+                YAKINDA: PİYASANIN NABZI v1.0
               </div>
-              YAKINDA: PİYASANIN NABZI v1.0
             </motion.div>
 
             <motion.h1 
