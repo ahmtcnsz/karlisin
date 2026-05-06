@@ -5,37 +5,49 @@ import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
-import yahooFinance from 'yahoo-finance2';
+import yahooFinanceModule from 'yahoo-finance2';
 import NodeCache from 'node-cache';
 
 // yahoo-finance2 v3+ sometimes requires explicit instantiation depending on the build target
-let yf: any = yahooFinance;
+// We use a more robust instantiation logic to fix the "Call new YahooFinance() first" error
+let yfInstance: any = null;
 
 function getYahooInstance() {
-  if (yf && typeof yf.quote === 'function') return yf;
+  if (yfInstance && typeof yfInstance.quote === 'function') return yfInstance;
   
   try {
-    // If it's a class/constructor
-    if (typeof yahooFinance === 'function') {
-      yf = new (yahooFinance as any)();
-    } else if ((yahooFinance as any).default && typeof (yahooFinance as any).default === 'function') {
-      yf = new (yahooFinance as any).default();
-    } else {
-      // Fallback singleton
-      yf = yahooFinance;
+    const rawModule: any = yahooFinanceModule;
+    
+    // 1. Try named export if available (class)
+    if (rawModule.YahooFinance && typeof rawModule.YahooFinance === 'function') {
+      yfInstance = new rawModule.YahooFinance();
+      console.log('[Karlısın-INIT] Yahoo Finance initialized via named YahooFinance class.');
+    } 
+    // 2. Try default export if it's a function (class)
+    else if (typeof rawModule === 'function') {
+      yfInstance = new rawModule();
+      console.log('[Karlısın-INIT] Yahoo Finance initialized via default class constructor.');
+    }
+    // 3. Try default.default (some ESM/CJS interop cases)
+    else if (rawModule.default && typeof rawModule.default === 'function') {
+      yfInstance = new rawModule.default();
+      console.log('[Karlısın-INIT] Yahoo Finance initialized via default.default constructor.');
+    }
+    // 4. Fallback to whatever we have
+    else {
+      yfInstance = rawModule.default || rawModule;
+      console.log('[Karlısın-INIT] Yahoo Finance falling back to singleton/module export.');
     }
 
-    if (yf && typeof yf.setGlobalConfig === 'function') {
-      yf.setGlobalConfig({ validation: { logErrors: false } });
+    if (yfInstance && typeof yfInstance.setGlobalConfig === 'function') {
+      yfInstance.setGlobalConfig({ validation: { logErrors: false } });
     }
   } catch (e) {
-    console.warn('[Karlısın-INIT] Yahoo Finance instance creation failed:', e);
+    console.warn('[Karlısın-INIT] Yahoo Finance instantiation failed:', e);
+    yfInstance = yahooFinanceModule; // Last resort fallback
   }
-  return yf;
+  return yfInstance;
 }
-
-// Global instance check
-getYahooInstance();
 
 // .env dosyasını yükle
 dotenv.config();
@@ -106,15 +118,15 @@ async function startServer() {
 
       let quote: any = null;
       let successfulTicker = '';
-      const yfInstance = getYahooInstance();
+      const currentYf = getYahooInstance();
 
       for (const t of tickers) {
         try {
           console.log(`[Karlısın-API] Yahoo trying: ${t}`);
-          if (!yfInstance || typeof yfInstance.quote !== 'function') {
+          if (!currentYf || typeof currentYf.quote !== 'function') {
              throw new Error('Yahoo Finance instance not available.');
           }
-          const q = await yfInstance.quote(t) as any;
+          const q = await currentYf.quote(t) as any;
           if (q && q.regularMarketPrice) {
             quote = q;
             successfulTicker = t;
@@ -123,18 +135,25 @@ async function startServer() {
         } catch (e: any) {
           console.warn(`[Karlısın-API] Yahoo quote failed for ${t}: ${e.message}`);
           errorLog.push(`Yahoo (${t}): ${e.message}`);
+          
+          // If we got the specific "new YahooFinance()" error, it means our instance is still bad
+          if (e.message.includes('new YahooFinance()')) {
+            console.error('[Karlısın-API] Critical: Yahoo instance corrupted, attempting forced re-init.');
+            yfInstance = null; // Force re-init on next call or next attempt
+          }
         }
       }
       
       // Secondary fallback: Yahoo search if direct quote failed
       if (!quote) {
         try {
+          const searchYf = getYahooInstance();
           console.log(`[Karlısın-API] Yahoo searching for: ${symbol}`);
-          const searchRes = await yfInstance.search(symbol);
+          const searchRes = await searchYf.search(symbol);
           if (searchRes?.quotes?.length > 0) {
             const bestMatch = searchRes.quotes[0].symbol;
             console.log(`[Karlısın-API] Found match via search: ${bestMatch}`);
-            const q = await yfInstance.quote(bestMatch) as any;
+            const q = await searchYf.quote(bestMatch) as any;
             if (q && q.regularMarketPrice) {
               quote = q;
               successfulTicker = bestMatch;
@@ -163,8 +182,9 @@ async function startServer() {
           }
         };
 
+        const postYf = getYahooInstance();
         try {
-          const fullSummary = await yfInstance.quoteSummary(successfulTicker, {
+          const fullSummary = await postYf.quoteSummary(successfulTicker, {
             modules: ['summaryDetail', 'assetProfile', 'defaultKeyStatistics']
           });
           if (fullSummary) {
@@ -178,7 +198,7 @@ async function startServer() {
         try {
           const now = new Date();
           const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
-          const history = await yfInstance.chart(successfulTicker, {
+          const history = await postYf.chart(successfulTicker, {
             period1: fiveYearsAgo,
             period2: now,
             events: 'dividends'
@@ -224,12 +244,25 @@ async function startServer() {
         if (gRes.ok) {
           const html = await gRes.text();
           // Improved regex for Google Finance data
+          let priceValue: number | null = null;
+          
           const priceMatch = html.match(/data-last-price="([^"]+)"/);
-          const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/);
+          if (priceMatch) {
+            priceValue = parseFloat(priceMatch[1]);
+          } else {
+            // Fallback price regex (often used in Google Finance)
+            const fallbackPriceMatch = html.match(/<div[^>]*class="[^"]*YMlKec fxS7h[^"]*"[^>]*>([^<]+)<\/div>/);
+            if (fallbackPriceMatch) {
+              // Extract numerical value from string like "₺120.40"
+              const val = fallbackPriceMatch[1].replace(/[^\d.,]/g, '').replace(',', '.');
+              priceValue = parseFloat(val);
+            }
+          }
+
+          const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/) || html.match(/<div[^>]*class="[^"]*VfPpkd-mRLv6[^"]*"[^>]*>([^<]+)<\/div>/);
           const currencyMatch = html.match(/data-currency-code="([^"]+)"/);
 
-          if (priceMatch) {
-            const priceValue = parseFloat(priceMatch[1]);
+          if (priceValue && !isNaN(priceValue)) {
             const result = {
               symbol: gt,
               source: 'google-finance',
@@ -638,7 +671,8 @@ async function startServer() {
 
     // 1. TRY YAHOO SEARCH
     try {
-      const results = await yahooFinance.search(query) as any;
+      const searchYf = getYahooInstance();
+      const results = await searchYf.search(query) as any;
       if (results && results.quotes) {
         allResults = (results.quotes || [])
           .filter((q: any) => q.isYahooFinance || q.symbol)
@@ -696,6 +730,16 @@ async function startServer() {
       status: 'ok', 
       time: new Date().toISOString(), 
       env_key: !!process.env.RESEND_API_KEY 
+    });
+  });
+
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      time: new Date().toISOString(),
+      cache_keys: cache.keys().length,
+      node_version: process.versions.node,
+      env: process.env.NODE_ENV
     });
   });
 
@@ -891,6 +935,19 @@ async function startServer() {
       vite.middlewares(req, res, next);
     });
   }
+
+  // Global Error Handler (MUST BE LAST)
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[Karlısın-BUG] Kritik Hata:', err);
+    if (req.path.startsWith('/api')) {
+      return res.status(500).json({ 
+        error: 'Sunucu hatası', 
+        message: err.message,
+        path: req.path
+      });
+    }
+    res.status(500).send('Internal Server Error');
+  });
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);

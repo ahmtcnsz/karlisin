@@ -607,35 +607,41 @@ const DividendTracker: React.FC = () => {
     setAvCashFlow(null);
     try {
       console.log(`[DividendTracker] Veri çekiliyor: ${symbol}`);
-      // Use query parameter to avoid dot issues in paths
       const url = `/api/dividends?symbol=${encodeURIComponent(symbol)}`;
+      console.log(`[DividendTracker] Çekiliyor: ${url}`);
+      
       const res = await fetch(url);
-      const text = await res.text();
       
-      let json;
-      try {
-        json = JSON.parse(text);
-      } catch (e) {
-        console.error('[DividendTracker] JSON Parse Hatası. Uzunluk:', text.length, 'Gelen ilk 100 karakter:', text.substring(0, 100));
-        if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
-          throw new Error('Sunucu veriyi doğru formatta göndermedi (HTML). Lütfen tekrar deneyin.');
-        }
-        throw new Error(`Sunucu beklenen formatta (JSON) yanıt vermedi. Durum: ${res.status}.`);
-      }
-      
+      // Önce status kontrolü
       if (!res.ok) {
-        let errorMsg = json.message || json.error || 'Veri çekme hatası';
-        
-        // Detailed error info for Turkish users if multiple sources failed
-        if (json.details && Array.isArray(json.details)) {
-          console.warn('[DividendTracker] Kaynak hataları:', json.details);
-          if (json.details.some((d: string) => d.toLowerCase().includes('limit'))) {
-            errorMsg = 'Günlük veri limiti doldu. Bir süre sonra tekrar deneyin.';
+        let errorMsg = 'Veri çekme hatası';
+        try {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const json = await res.json();
+            errorMsg = json.message || json.error || errorMsg;
+            if (json.details && Array.isArray(json.details)) {
+              if (json.details.some((d: string) => d.toLowerCase().includes('limit'))) {
+                errorMsg = 'Günlük veri limiti doldu. Lütfen bir süre sonra tekrar deneyin.';
+              }
+            }
+          } else {
+            errorMsg = `Sunucu hatası (${res.status})`;
           }
+        } catch (e) {
+          errorMsg = `Sunucu hatası (${res.status})`;
         }
-        
         throw new Error(errorMsg);
       }
+      
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error('[DividendTracker] Beklenmeyen yanıt formatı:', text.substring(0, 200));
+        throw new Error('Sunucu veriyi doğru formatta göndermedi (JSON bekleniyordu). Lütfen sayfayı yenileyip tekrar deneyin.');
+      }
+      
+      const json = await res.json();
       
       if (!json || !json.summary) {
         throw new Error('Sembol verisi eksik veya hatalı.');
