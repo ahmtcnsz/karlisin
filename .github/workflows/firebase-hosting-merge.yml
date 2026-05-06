@@ -14,13 +14,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: 'npm'
       - name: Install and Build
         run: |
           npm ci --legacy-peer-deps
           npm run build
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Firebase Deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0551179549 }}
