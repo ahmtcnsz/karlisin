@@ -843,16 +843,26 @@ async function startServer() {
   const isProduction = process.env.NODE_ENV === 'production';
   
   if (isProduction) {
-    const distPath = path.join(__dirname, 'dist');
-    app.use(express.static(distPath));
+    const distPath = path.resolve(process.cwd(), 'dist');
+    console.log(`[Karlısın-INIT] Production mode. Serving from: ${distPath}`);
     
-    // API rotaları zaten yukarıda catch-all (/api/*) ile yakalandığı için buraya sadece non-API 404'ler düşer
+    // Serve static files first
+    app.use(express.static(distPath, { index: false }));
+    
     app.get('*', (req, res) => {
-      // Eğer bir şekilde /api ile başlayan bir istek buraya gelirse 404 JSON dön
-      if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: 'API rotası bulunamadı.' });
+      // Don't serve HTML for API or asset-like paths that missed
+      if (req.path.startsWith('/api') || req.path.includes('.')) {
+        console.warn(`[Karlısın-404] Missing asset or API: ${req.path}`);
+        return res.status(404).json({ error: 'Not found', path: req.path });
       }
-      res.sendFile(path.join(distPath, 'index.html'));
+      
+      const indexPath = path.join(distPath, 'index.html');
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error(`[Karlısın-Error] Failed to send index.html:`, err);
+          res.status(500).send('Frontend build not found or inaccessible.');
+        }
+      });
     });
   } else {
     const vite = await createViteServer({
