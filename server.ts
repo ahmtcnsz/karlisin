@@ -50,22 +50,33 @@ const __dirname = path.dirname(__filename);
 // 12-Hour Data Engine Cache (43200 seconds)
 const cache = new NodeCache({ stdTTL: 43200 });
 
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1'
+];
+
+function getRandomUserAgent() {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
 /**
- * UNIFIED DATA SERVICE
- * Cross-verifies data from BIST, Yahoo, Google and Alpha Vantage
+ * UNIFIED DATA SERVICE v2.1
+ * Cross-verifies data from multiple sources with 12h caching
  */
 class UnifiedDataService {
   static async getFullStockData(symbol: string) {
     const cleanSymbol = symbol.toUpperCase().trim();
-    const cacheKey = `unified_v1_${cleanSymbol}`;
+    const cacheKey = `unified_v2.1_${cleanSymbol}`;
     
     const cached = cache.get(cacheKey);
     if (cached) {
-      console.log(`[UnifiedDS] Cache hit: ${cleanSymbol}`);
+      console.log(`[UnifiedDS v2.1] Cache hit: ${cleanSymbol}`);
       return cached;
     }
 
-    console.log(`[UnifiedDS] Starting aggregation for: ${cleanSymbol}`);
+    console.log(`[UnifiedDS v2.1] Starting heavy aggregation for: ${cleanSymbol}`);
     
     // Providers to run in parallel
     const [yahoo, google, av] = await Promise.allSettled([
@@ -81,17 +92,16 @@ class UnifiedDataService {
     };
 
     // CROSS-VERIFICATION LOGIC
-    // We pick the best pieces from each source
     const primary = results.yahoo || results.google || results.av;
-    if (!primary) throw new Error('Yeterli veri kaynağına ulaşılamadı.');
+    if (!primary) throw new Error(`${cleanSymbol} için hiçbir veri kaynağına ulaşılamadı. (Limit aşımı veya geçersiz sembol)`);
 
     const aggregated = {
       symbol: cleanSymbol,
-      source: 'aggregated',
+      version: '2.1.0',
+      source: 'Unified Engine v2.1',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
-          // Cross-verify price: Prefer Google for potentially fresher BIST price
           regularMarketPrice: { 
             value: results.google?.price || results.yahoo?.price || results.av?.price || 0 
           },
@@ -99,7 +109,6 @@ class UnifiedDataService {
           currency: results.yahoo?.currency || results.google?.currency || results.av?.currency || 'TRY'
         },
         summaryDetail: {
-          // Cross-verify Dividends
           dividendYield: { 
             value: results.yahoo?.dividendYield || results.av?.dividendYield || 0 
           },
@@ -119,18 +128,18 @@ class UnifiedDataService {
         sources_count: Object.values(results).filter(v => !!v).length,
         google_verified: !!results.google,
         yahoo_verified: !!results.yahoo,
-        alpha_vantage_verified: !!results.av
+        alpha_vantage_verified: !!results.av,
+        last_sync: new Date().toLocaleTimeString('tr-TR')
       }
     };
 
-    // Persist for 12 hours (43200 seconds)
+    // Cache for 12 hours (43200s)
     cache.set(cacheKey, aggregated, 43200);
     return aggregated;
   }
 
   private static async fetchYahoo(symbol: string) {
     const yf = getYahoo();
-    // Map to BIST if needed
     const tickers = symbol.includes('.') ? [symbol] : [`${symbol}.IS`, symbol];
     
     for (const t of tickers) {
@@ -143,7 +152,9 @@ class UnifiedDataService {
           const now = new Date();
           const p1 = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
           const chart = await yf.chart(t, { period1: p1, period2: now, events: 'dividends' });
-          if (chart?.events?.dividends) history = JSON.parse(JSON.stringify(chart.events.dividends));
+          if (chart?.events?.dividends) {
+            history = Object.values(JSON.parse(JSON.stringify(chart.events.dividends)));
+          }
         } catch (e) {}
 
         const summary = await yf.quoteSummary(t, { modules: ['summaryDetail'] }).catch(() => null);
@@ -152,8 +163,8 @@ class UnifiedDataService {
           price: quote.regularMarketPrice,
           name: quote.longName || quote.shortName,
           currency: quote.currency,
-          dividendYield: quote.trailingAnnualDividendYield || summary?.summaryDetail?.dividendYield || 0,
-          dividendRate: quote.trailingAnnualDividendRate || summary?.summaryDetail?.dividendRate || 0,
+          dividendYield: quote.trailingAnnualDividendYield || summary?.summaryDetail?.dividendYield?.value || 0,
+          dividendRate: quote.trailingAnnualDividendRate || summary?.summaryDetail?.dividendRate?.value || 0,
           marketCap: quote.marketCap,
           pe: quote.trailingPE,
           high52: quote.fiftyTwoWeekHigh,
@@ -166,27 +177,32 @@ class UnifiedDataService {
   }
 
   private static async fetchGoogle(symbol: string) {
-    const gt = symbol.includes('.') ? `IST:${symbol.split('.')[0]}` : `IST:${symbol}`;
-    try {
-      const res = await fetch(`https://www.google.com/finance/quote/${gt}`, {
-        headers: { 'User-Agent': 'Mozilla/5.0' }
-      });
-      if (!res.ok) return null;
-      const html = await res.text();
-      
-      const priceMatch = html.match(/data-last-price="([^"]+)"/);
-      const currencyMatch = html.match(/data-currency-code="([^"]+)"/);
-      const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/);
+    const tickers = [symbol];
+    if (!symbol.includes('.')) tickers.unshift(`IST:${symbol}`);
+    else if (symbol.endsWith('.IS')) tickers.unshift(`IST:${symbol.split('.')[0]}`);
 
-      if (priceMatch) {
-        return {
-          price: parseFloat(priceMatch[1]),
-          currency: currencyMatch ? currencyMatch[1] : 'TRY',
-          name: nameMatch ? nameMatch[1] : symbol,
-          source: 'Google'
-        };
-      }
-    } catch (e) {}
+    for (const gt of tickers) {
+      try {
+        const res = await fetch(`https://www.google.com/finance/quote/${gt}`, {
+          headers: { 'User-Agent': getRandomUserAgent() }
+        });
+        if (!res.ok) continue;
+        const html = await res.text();
+        
+        const priceMatch = html.match(/data-last-price="([^"]+)"/);
+        const currencyMatch = html.match(/data-currency-code="([^"]+)"/);
+        const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/);
+
+        if (priceMatch) {
+          return {
+            price: parseFloat(priceMatch[1]),
+            currency: currencyMatch ? currencyMatch[1] : 'TRY',
+            name: nameMatch ? nameMatch[1] : symbol,
+            source: 'Google'
+          };
+        }
+      } catch (e) {}
+    }
     return null;
   }
 
@@ -194,7 +210,6 @@ class UnifiedDataService {
     const key = process.env.ALPHA_VANTAGE_API_KEY;
     if (!key || key === 'YOUR_AV_KEY') return null;
     
-    // AV format for BIST is SYMBOL.IST
     const avt = symbol.includes('.') ? symbol.replace('.IS', '.IST') : `${symbol}.IST`;
     try {
       const res = await fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${avt}&apikey=${key}`);

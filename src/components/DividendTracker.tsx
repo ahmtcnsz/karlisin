@@ -871,7 +871,14 @@ const DividendTracker: React.FC = () => {
                             <span className="px-4 py-1.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl border border-indigo-500/20">
                               {data.summary.assetProfile?.sector || 'Sektör Verisi Yok'}
                             </span>
-                            <span className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[9px] italic whitespace-nowrap">Canlı Analiz Paneli v2.0</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[9px] italic whitespace-nowrap">Unified Engine v2.1.0</span>
+                              {(data as any).verification?.last_sync && (
+                                <span className="text-emerald-500/60 font-black uppercase tracking-widest text-[8px] border border-emerald-500/20 px-2 py-0.5 rounded-md">
+                                  SON SENK: {(data as any).verification.last_sync}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="h-16 w-px bg-white/10 hidden md:block" />
