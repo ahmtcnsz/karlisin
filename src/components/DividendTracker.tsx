@@ -46,7 +46,6 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
-import DisclaimerModal from './DisclaimerModal';
 
 // 2026 Comprehensive Expected Dividend Calendar (Updated for Full 2026 Season)
 const popularUpcoming = [
@@ -1900,12 +1899,6 @@ const DividendTracker: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
-
-      <DisclaimerModal 
-        title="Yatırım Bilgilendirmesi"
-        content="Uygulama içerisinde sunulan tüm veriler, grafikler ve analizler <strong>bilgilendirme amaçlıdır</strong> ve kesinlikle <span className='text-white'>yatırım tavsiyesi taşımamaktadır.</span> Finansal adımlarınızı kendi stratejinize ve bağımsız araştırmalarınıza göre belirleyin."
-        storageKey="dividend_disclaimer_v1"
-      />
     </div>
   );
 };
