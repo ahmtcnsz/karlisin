@@ -150,9 +150,11 @@ const popularUpcoming = [
  * This ensures the app opens with the most relevant (hottest) stock currently in the season.
  */
 const getHottestDividendSymbol = () => {
-  // Get current date in Istanbul
+  // Get current date in Istanbul (UTC+3)
   const now = new Date();
-  const istanbulDate = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Istanbul' }));
+  // Offset for UTC+3 (Istanbul)
+  const istanbulTime = new Date(now.getTime() + (3 * 3600000));
+  const istanbulDate = new Date(istanbulTime.getFullYear(), istanbulTime.getMonth(), istanbulTime.getDate());
   istanbulDate.setHours(0, 0, 0, 0);
   
   // Sort by date ascending
@@ -169,7 +171,7 @@ const getHottestDividendSymbol = () => {
     return upcoming[0].symbol;
   }
   
-  // Fallback to EREGL if no upcoming or empty list
+  // Fallback to highest yield or first in list
   return sorted.length > 0 ? sorted[0].symbol : 'EREGL.IS';
 };
 
@@ -840,11 +842,11 @@ const DividendTracker: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter italic leading-none">{data.symbol}</h2>
                             <div className="h-6 w-px bg-white/10 mx-2" />
-                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-tight max-w-[250px]">{data.summary.price.longName}</div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-tight max-w-[250px]">{data.summary.price?.longName || data.symbol}</div>
                           </div>
                           <div className="flex items-center flex-wrap gap-2 mt-2">
                             <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] font-black uppercase tracking-widest rounded border border-indigo-500/20">
-                              {data.summary.summaryDetail.sector || 'Sektör Verisi Yok'}
+                              {data.summary.summaryDetail?.sector || 'Sektör Verisi Yok'}
                             </span>
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded">
                               <div className="w-1 h-1 rounded-full bg-emerald-500" />
@@ -865,7 +867,7 @@ const DividendTracker: React.FC = () => {
                           <div className="flex items-center gap-4">
                             <div className="flex flex-col border-r border-white/5 pr-4">
                               <div className="text-2xl font-black text-white italic tracking-tighter leading-none mb-0.5">
-                                {formatCurrency(data.summary.price.regularMarketPrice, data.symbol)}
+                                {formatCurrency(data.summary.price?.regularMarketPrice, data.symbol)}
                               </div>
                               <div className={cn(
                                 "text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1",
@@ -881,8 +883,8 @@ const DividendTracker: React.FC = () => {
                               <div className="flex flex-col">
                                 <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Günlük Aralık</span>
                                 <div className="text-[9px] font-bold text-slate-300">
-                                  {data.summary.price.dayLow && data.summary.price.dayHigh ? (
-                                    `${formatCurrency(data.summary.price.dayLow, data.symbol)} - ${formatCurrency(data.summary.price.dayHigh, data.symbol)}`
+                                  {data.summary.price?.dayLow && data.summary.price?.dayHigh ? (
+                                    `${formatCurrency(data.summary.price?.dayLow, data.symbol)} - ${formatCurrency(data.summary.price?.dayHigh, data.symbol)}`
                                   ) : (
                                     '---'
                                   )}
@@ -891,7 +893,7 @@ const DividendTracker: React.FC = () => {
                               <div className="flex flex-col">
                                 <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Hacim</span>
                                 <div className="text-[9px] font-bold text-slate-300">
-                                  {formatLargeNumber(data.summary.price.volume)}
+                                  {formatLargeNumber(data.summary.price?.volume)}
                                 </div>
                               </div>
                             </div>
@@ -1021,7 +1023,7 @@ const DividendTracker: React.FC = () => {
                     </div>
 
                     {/* Veri Bilgilendirme Notu */}
-                    {data.summary.summaryDetail.dividendRate === 0 && (
+                    {data.summary.summaryDetail?.dividendRate === 0 && (
                       <div className="mt-4 px-6 py-3 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center gap-3">
                          <Info className="w-4 h-4 text-slate-500" />
                          <p className="text-[11px] text-slate-500 font-medium">
@@ -1198,12 +1200,12 @@ const DividendTracker: React.FC = () => {
                               
                               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 relative z-10">Endüstri</span>
                               <div className="text-xl font-black text-white italic tracking-tight uppercase leading-snug mb-2 line-clamp-2 relative z-10">
-                                 {data.summary.summaryDetail.industry || 'VERİ BEKLENİYOR'}
+                                 {data.summary.summaryDetail?.industry || 'VERİ BEKLENİYOR'}
                               </div>
                               <div className="mt-auto flex items-center gap-2 relative z-10">
                                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/40" />
                                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                                    {data.summary.summaryDetail.sector || 'TANIMSIZ SEKTÖR'}
+                                    {data.summary.summaryDetail?.sector || 'TANIMSIZ SEKTÖR'}
                                  </span>
                                </div>
                            </div>

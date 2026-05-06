@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
-import { TrendingUp, PieChart, Bell, Wallet, LineChart, CheckCircle2, Loader2 } from 'lucide-react';
+import { TrendingUp, PieChart, Bell, Wallet, LineChart, CheckCircle, Loader2 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -151,7 +151,7 @@ export default function Mortgage() {
               animate={{ opacity: 1, scale: 1 }}
               className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-2xl flex flex-col items-center gap-3"
             >
-              <CheckCircle2 className="text-emerald-400" size={40} />
+              <CheckCircle className="text-emerald-400" size={40} />
               <h4 className="text-white font-black text-lg">Sıraya Eklendiniz!</h4>
               <p className="text-emerald-400/80 text-sm font-medium">Güncellemeleri e-posta adresinize göndereceğiz.</p>
               <button 

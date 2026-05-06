@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle2, ArrowLeft, Share2 } from 'lucide-react';
+import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle, ArrowLeft, Share2 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 
@@ -720,7 +720,7 @@ export default function Blog() {
             {status === 'success' ? (
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl">
                 <div className="flex flex-col items-center gap-2">
-                  <CheckCircle2 className="text-emerald-400" size={32} />
+                  <CheckCircle className="text-emerald-400" size={32} />
                   <p className="text-white font-bold text-lg">Bültene Abone Oldunuz!</p>
                   <p className="text-emerald-400/80 text-sm">Analizlerimizi size ulaştırmak için sabırsızlanıyoruz.</p>
                 </div>
