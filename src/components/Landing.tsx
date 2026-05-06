@@ -13,7 +13,6 @@ import {
   PieChart
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import DisclaimerModal from './DisclaimerModal';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -392,12 +391,6 @@ export default function Landing() {
           </motion.div>
         </div>
       </section>
-
-      <DisclaimerModal 
-        title="Genel Bilgilendirme"
-        content="Karlısın platformu üzerindeki tüm hesaplama araçları ve sunulan veriler <strong>stratejik karar destek amaçlıdır.</strong> Finansal operasyonlarınızı ve yatırımlarınızı kendi risk yönetiminize ve bağımsız analizlerinize dayanarak gerçekleştirmelisiniz."
-        storageKey="landing_disclaimer_v1"
-      />
     </div>
   );
 }

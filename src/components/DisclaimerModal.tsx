@@ -15,12 +15,13 @@ export default function DisclaimerModal({ title, content, storageKey }: Disclaim
 
   useEffect(() => {
     try {
-      const state = localStorage.getItem(storageKey);
-      if (!state) {
-        setIsOpen(true);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const state = localStorage.getItem(storageKey);
+        if (!state) {
+          setIsOpen(true);
+        }
       }
     } catch (e) {
-      // Fail silently for localStorage issues
       console.warn("Storage access failed", e);
     }
   }, [storageKey]);
@@ -28,7 +29,9 @@ export default function DisclaimerModal({ title, content, storageKey }: Disclaim
   const handleConfirm = () => {
     if (accepted) {
       try {
-        localStorage.setItem(storageKey, 'true');
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.setItem(storageKey, 'true');
+        }
       } catch (e) {}
       setIsOpen(false);
     }
@@ -37,7 +40,10 @@ export default function DisclaimerModal({ title, content, storageKey }: Disclaim
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-hidden"
+          style={{ isolation: 'isolate' }}
+        >
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -52,24 +58,33 @@ export default function DisclaimerModal({ title, content, storageKey }: Disclaim
           >
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-500" />
             
-            <div className="w-20 h-20 bg-yellow-500/10 rounded-[30px] flex items-center justify-center mb-8 text-yellow-500">
+            <div className="w-20 h-20 bg-yellow-500/10 rounded-[30px] flex items-center justify-center mb-8 text-yellow-500 shadow-inner">
               <AlertTriangle className="w-10 h-10" />
             </div>
 
-            <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4">{title}</h3>
+            <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4 leading-tight">
+              {title || 'Bilgilendirme'}
+            </h3>
             
             <div className="text-slate-400 text-sm font-medium leading-relaxed mb-10">
-              <p dangerouslySetInnerHTML={{ __html: content }} />
+              <p dangerouslySetInnerHTML={{ __html: content || '' }} />
             </div>
 
             <div className="w-full space-y-6">
-              <label className="flex items-center justify-center gap-3 cursor-pointer group">
+              <label 
+                className="flex items-center justify-center gap-3 cursor-pointer group select-none"
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).tagName !== 'INPUT') {
+                    setAccepted(!accepted);
+                  }
+                }}
+              >
                 <div className="relative">
                   <input 
                     type="checkbox" 
                     className="peer sr-only" 
                     checked={accepted}
-                    onChange={(e) => setAccepted(e.target.checked)}
+                    readOnly
                   />
                   <div className="w-6 h-6 rounded-lg border-2 border-white/10 bg-white/5 transition-all peer-checked:bg-white peer-checked:border-white group-hover:border-white/30 flex items-center justify-center">
                     <Check className={cn("w-4 h-4 text-slate-900 transition-opacity", accepted ? "opacity-100" : "opacity-0")} />
@@ -84,9 +99,9 @@ export default function DisclaimerModal({ title, content, storageKey }: Disclaim
                 disabled={!accepted}
                 onClick={handleConfirm}
                 className={cn(
-                  "w-full py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3",
+                  "w-full py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-[0.98]",
                   accepted 
-                    ? "bg-white text-slate-900 hover:bg-white/90 shadow-lg shadow-white/10 active:scale-[0.98]" 
+                    ? "bg-white text-slate-900 hover:bg-white/90 shadow-lg shadow-white/10" 
                     : "bg-white/5 text-white/20 cursor-not-allowed border border-white/5"
                 )}
               >

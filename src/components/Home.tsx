@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bolt, ChevronDown, Verified, Timer, BarChart3, Smartphone, RefreshCw, Shield, ArrowUpRight, TrendingUp, AlertCircle, FileSpreadsheet, Percent, Info, Calculator, Truck, Wrench, MessageSquare, X, Mail, Send } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import DisclaimerModal from './DisclaimerModal';
 
 export default function Home() {
   const [market, setMarket] = useState('Trendyol');
@@ -926,12 +925,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <DisclaimerModal 
-        title="Pazar Kâr Analizi Bilgilendirmesi"
-        content="Hesaplanan komisyon, kargo ve KDV tutarları girilen verilere dayalı projeksiyonlardır. Pazaryerlerinin dinamik komisyon değişiklikleri ve kampanya katılım payları nedeniyle <strong>gerçekleşen rakamlarla farklılık gösterebilir.</strong> Satış kararlarınızı panellerinizdeki güncel oranları teyit ederek alınız."
-        storageKey="marketplace_disclaimer_v1"
-      />
     </div>
   );
 }

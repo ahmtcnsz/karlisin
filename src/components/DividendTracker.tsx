@@ -29,8 +29,6 @@ import {
   Loader2,
   AlertCircle,
   AlertTriangle,
-  Check,
-  CheckCircle2,
   LayoutGrid,
   Activity,
   Maximize2,
