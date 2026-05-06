@@ -27,6 +27,7 @@ import {
   ListFilter
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import DisclaimerModal from './DisclaimerModal';
 import { 
   PieChart, 
   Pie, 
@@ -1472,6 +1473,12 @@ export default function SalaryCalculator() {
             </div>
           </div>
       </section>
+      
+      <DisclaimerModal 
+        title="Maaş Hesaplama Bilgilendirmesi"
+        content="Bu araç tarafından sunulan hesaplamalar, en güncel vergi mevzuatı ve SGK parametrelerine dayanmaktadır ancak <strong>resmi bir bordro niteliği taşımaz.</strong> Nihai maaş verileriniz için kurumunuzun insan kaynakları birimine danışmanızı öneririz."
+        storageKey="salary_disclaimer_v1"
+      />
     </div>
   );
 }

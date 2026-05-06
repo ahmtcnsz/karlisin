@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
+import DisclaimerModal from './DisclaimerModal';
 
 // 2026 Comprehensive Expected Dividend Calendar (Updated for Full 2026 Season)
 const popularUpcoming = [
@@ -442,22 +443,6 @@ const DividendTracker: React.FC = () => {
   const [showAllDividends, setShowAllDividends] = useState(false);
   const [calendarSearch, setCalendarSearch] = useState('');
   const [istanbulTime, setIstanbulTime] = useState('');
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
-
-  useEffect(() => {
-    const accepted = localStorage.getItem('dividend_disclaimer_accepted');
-    if (!accepted) {
-      setShowDisclaimer(true);
-    }
-  }, []);
-
-  const handleDisclaimerConfirm = () => {
-    if (disclaimerAccepted) {
-      localStorage.setItem('dividend_disclaimer_accepted', 'true');
-      setShowDisclaimer(false);
-    }
-  };
 
   useEffect(() => {
     const updateTime = () => {
@@ -1918,74 +1903,11 @@ const DividendTracker: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Disclaimer Modal */}
-      <AnimatePresence>
-        {showDisclaimer && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-[40px] shadow-2xl p-10 flex flex-col items-center text-center overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-500" />
-              
-              <div className="w-20 h-20 bg-yellow-500/10 rounded-[30px] flex items-center justify-center mb-8 text-yellow-500">
-                <AlertTriangle className="w-10 h-10" />
-              </div>
-
-              <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-4">Önemli Bilgilendirme</h3>
-              
-              <p className="text-slate-400 text-sm font-medium leading-relaxed mb-10">
-                Uygulama içerisinde sunulan tüm veriler, grafikler ve analizler <strong>bilgilendirme amaçlıdır</strong> ve kesinlikle <span className="text-white">yatırım tavsiyesi taşımamaktadır.</span> Finansal adımlarınızı kendi stratejinize ve bağımsız araştırmalarınıza göre belirleyin.
-              </p>
-
-              <div className="w-full space-y-6">
-                <label className="flex items-center justify-center gap-3 cursor-pointer group">
-                  <div className="relative">
-                    <input 
-                      type="checkbox" 
-                      className="peer sr-only" 
-                      checked={disclaimerAccepted}
-                      onChange={(e) => setDisclaimerAccepted(e.target.checked)}
-                    />
-                    <div className="w-6 h-6 rounded-lg border-2 border-white/10 bg-white/5 transition-all peer-checked:bg-white peer-checked:border-white group-hover:border-white/30 flex items-center justify-center">
-                      <Check className={cn("w-4 h-4 text-slate-900 transition-opacity", disclaimerAccepted ? "opacity-100" : "opacity-0")} />
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors">
-                    Okudum ve Anladım
-                  </span>
-                </label>
-
-                <button
-                  disabled={!disclaimerAccepted}
-                  onClick={handleDisclaimerConfirm}
-                  className={cn(
-                    "w-full py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3",
-                    disclaimerAccepted 
-                      ? "bg-white text-slate-900 hover:bg-white/90 shadow-lg shadow-white/10 active:scale-[0.98]" 
-                      : "bg-white/5 text-white/20 cursor-not-allowed border border-white/5"
-                  )}
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Anladım, Devam Et
-                </button>
-              </div>
-
-              {/* Decorative elements */}
-              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-yellow-500/5 blur-[80px] rounded-full" />
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/5 blur-[80px] rounded-full" />
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <DisclaimerModal 
+        title="Yatırım Bilgilendirmesi"
+        content="Uygulama içerisinde sunulan tüm veriler, grafikler ve analizler <strong>bilgilendirme amaçlıdır</strong> ve kesinlikle <span className='text-white'>yatırım tavsiyesi taşımamaktadır.</span> Finansal adımlarınızı kendi stratejinize ve bağımsız araştırmalarınıza göre belirleyin."
+        storageKey="dividend_disclaimer_v1"
+      />
     </div>
   );
 };
