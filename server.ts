@@ -247,10 +247,24 @@ async function startServer() {
   // DIVIDEND API (Unified Engine: Yahoo + Google + Alpha Vantage)
   app.get('/api/dividends', async (req, res) => {
     const symbol = (req.query.symbol as string || '').toUpperCase().trim();
+    const forceRefresh = req.query.refresh === 'true';
+
     if (!symbol) return res.status(400).json({ error: 'Sembol eksik' });
+
+    // Cache bypass for forced refresh
+    if (forceRefresh) {
+      console.log(`[UnifiedDS] Force refreshing: ${symbol}`);
+      cache.del(`unified_v1_${symbol}`);
+    }
 
     try {
       const data = await UnifiedDataService.getFullStockData(symbol);
+      
+      // Ensure we always return a fresh-looking response
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       res.json(data);
     } catch (err: any) {
       console.error(`[Karlısın-API] Aggregation failed for ${symbol}:`, err.message);

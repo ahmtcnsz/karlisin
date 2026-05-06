@@ -34,6 +34,7 @@ import {
   Maximize2,
   Minimize2,
   ShieldCheck,
+  RefreshCw,
   MousePointer2,
   ChevronDown,
   Clock,
@@ -600,7 +601,7 @@ const DividendTracker: React.FC = () => {
     }
   };
 
-  const fetchData = async (symbol: string) => {
+  const fetchData = async (symbol: string, forceRefresh = false) => {
     setLoading(true);
     setError(null);
     setAvData(null);
@@ -610,7 +611,7 @@ const DividendTracker: React.FC = () => {
     setAvEarnings(null);
     setAvCashFlow(null);
     try {
-      const url = `/api/dividends?symbol=${encodeURIComponent(symbol)}`;
+      const url = `/api/dividends?symbol=${encodeURIComponent(symbol)}${forceRefresh ? '&refresh=true' : ''}`;
       const res = await fetch(url);
       
       if (!res.ok) {
@@ -848,14 +849,23 @@ const DividendTracker: React.FC = () => {
                         <div className="flex flex-col">
                           <div className="flex items-center gap-3">
                             <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter italic leading-none">{data.symbol}</h2>
-                            {(data as any).verification && (
-                              <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                                <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
-                                  {(data as any).verification.sources_count} KAYNAKTAN DOĞRULANDI
-                                </span>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {(data as any).verification && (
+                                <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+                                    {(data as any).verification.sources_count} KAYNAKTAN DOĞRULANDI
+                                  </span>
+                                </div>
+                              )}
+                              <button 
+                                onClick={() => fetchData(data.symbol, true)}
+                                className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group"
+                                title="Verileri Tazele"
+                              >
+                                <RefreshCw className={`w-4 h-4 text-white/40 group-hover:text-white ${loading ? 'animate-spin' : ''}`} />
+                              </button>
+                            </div>
                           </div>
                           <div className="flex items-center flex-wrap gap-3 mt-4">
                             <span className="px-4 py-1.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl border border-indigo-500/20">
