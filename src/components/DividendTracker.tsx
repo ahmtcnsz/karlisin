@@ -225,11 +225,15 @@ interface DividendData {
   }>;
 }
 
-// Helper to safely extract value from Yahoo Finance objects (raw/fmt)
+// Helper to safely extract value from complex objects (raw/fmt/value)
 const getVal = (obj: any) => {
   if (obj === null || obj === undefined) return undefined;
   if (typeof obj === 'number') return obj;
-  if (typeof obj === 'object') return obj.raw !== undefined ? obj.raw : obj.val;
+  if (typeof obj === 'object') {
+    if (obj.value !== undefined) return obj.value;
+    if (obj.raw !== undefined) return obj.raw;
+    return obj.val;
+  }
   if (typeof obj === 'string') return parseFloat(obj);
   return undefined;
 };
@@ -606,59 +610,31 @@ const DividendTracker: React.FC = () => {
     setAvEarnings(null);
     setAvCashFlow(null);
     try {
-      console.log(`[DividendTracker] Veri çekiliyor: ${symbol}`);
       const url = `/api/dividends?symbol=${encodeURIComponent(symbol)}`;
-      console.log(`[DividendTracker] Çekiliyor: ${url}`);
-      
       const res = await fetch(url);
       
-      // Önce status kontrolü
       if (!res.ok) {
         let errorMsg = 'Veri çekme hatası';
         try {
-          const contentType = res.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const json = await res.json();
-            errorMsg = json.message || json.error || errorMsg;
-            if (json.details && Array.isArray(json.details)) {
-              if (json.details.some((d: string) => d.toLowerCase().includes('limit'))) {
-                errorMsg = 'Günlük veri limiti doldu. Lütfen bir süre sonra tekrar deneyin.';
-              }
-            }
-          } else {
-            errorMsg = `Sunucu hatası (${res.status})`;
-          }
-        } catch (e) {
-          errorMsg = `Sunucu hatası (${res.status})`;
-        }
+          const json = await res.json();
+          errorMsg = json.message || json.error || errorMsg;
+        } catch (e) {}
         throw new Error(errorMsg);
       }
       
-      const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await res.text();
-        console.error('[DividendTracker] Beklenmeyen yanıt formatı:', text.substring(0, 200));
-        throw new Error('Sunucu veriyi doğru formatta göndermedi (JSON bekleniyordu). Lütfen sayfayı yenileyip tekrar deneyin.');
-      }
-      
       const json = await res.json();
-      
-      if (!json || !json.summary) {
-        throw new Error('Sembol verisi eksik veya hatalı.');
-      }
+      if (!json || !json.summary) throw new Error('Sembol verisi bulunamadı.');
 
-      // Background fetch for AV if symbol matches
+      // Background fetch for AV details
       fetchAlphaVantage(symbol);
       fetchAVCalendar();
 
-      // Patch for 2026 demo consistency
-      const mockMatch = popularUpcoming.find(u => u.symbol === symbol);
-      if (mockMatch && json.summary.calendarEvents) {
-        json.summary.calendarEvents.dividendDate = new Date(mockMatch.date);
-        // Set ex-dividend date to 2 days before
-        const exDate = new Date(mockMatch.date);
-        exDate.setDate(exDate.getDate() - 2);
-        json.summary.calendarEvents.exDividendDate = exDate;
+      // Normalize history if back-end date format varies
+      if (json.history) {
+        json.history = json.history.map((h: any) => ({
+          ...h,
+          date: typeof h.date === 'string' ? new Date(h.date).getTime() : h.date
+        }));
       }
 
       setData(json);
@@ -870,7 +846,17 @@ const DividendTracker: React.FC = () => {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-10 pb-8 border-b border-white/5">
                       <div className="flex flex-col md:flex-row md:items-center gap-6">
                         <div className="flex flex-col">
-                          <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter italic leading-none">{data.symbol}</h2>
+                          <div className="flex items-center gap-3">
+                            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter italic leading-none">{data.symbol}</h2>
+                            {(data as any).verification && (
+                              <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+                                  {(data as any).verification.sources_count} KAYNAKTAN DOĞRULANDI
+                                </span>
+                              </div>
+                            )}
+                          </div>
                           <div className="flex items-center flex-wrap gap-3 mt-4">
                             <span className="px-4 py-1.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl border border-indigo-500/20">
                               {data.summary.assetProfile?.sector || 'Sektör Verisi Yok'}

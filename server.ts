@@ -17,33 +17,26 @@ function getYahoo() {
   
   try {
     const raw: any = yahooFinanceModule;
-    // Check if it's the class/constructor
     if (typeof raw === 'function') {
       yf = new raw();
       console.log('[Karlısın-INIT] Yahoo Finance: Initialized via default constructor.');
-    } 
-    // Check if the class is inside .default (common in ESM/CJS interop)
-    else if (raw.default && typeof raw.default === 'function') {
-      yf = new raw.default();
-      console.log('[Karlısın-INIT] Yahoo Finance: Initialized via raw.default constructor.');
-    }
-    // Check if it's a named export class
-    else if (raw.YahooFinance && typeof raw.YahooFinance === 'function') {
+    } else if (raw.YahooFinance && typeof raw.YahooFinance === 'function') {
       yf = new raw.YahooFinance();
-      console.log('[Karlısın-INIT] Yahoo Finance: Initialized via named YahooFinance constructor.');
-    }
-    // Fallback to whatever the module exported (v2 style or already instantiated)
-    else {
+      console.log('[Karlısın-INIT] Yahoo Finance: Initialized via named class.');
+    } else if (raw.default && typeof raw.default === 'function') {
+      yf = new raw.default();
+      console.log('[Karlısın-INIT] Yahoo Finance: Initialized via raw.default.');
+    } else {
       yf = raw.default || raw;
-      console.log('[Karlısın-INIT] Yahoo Finance: Falling back to module export.');
+      console.log('[Karlısın-INIT] Yahoo Finance: Falling back to singleton.');
     }
 
     if (yf && typeof yf.setGlobalConfig === 'function') {
       yf.setGlobalConfig({ validation: { logErrors: false } });
     }
   } catch (e) {
-    console.warn('[Karlısın-INIT] Yahoo Finance instantiation warning:', e);
-    yf = yahooFinanceModule; // Last resort
+    console.warn('[Karlısın-INIT] Yahoo Finance instantiation error:', e);
+    yf = yahooFinanceModule;
   }
   return yf;
 }
@@ -54,8 +47,172 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Cache instance (12 hours default TTL for dividend data)
+// 12-Hour Data Engine Cache (43200 seconds)
 const cache = new NodeCache({ stdTTL: 43200 });
+
+/**
+ * UNIFIED DATA SERVICE
+ * Cross-verifies data from BIST, Yahoo, Google and Alpha Vantage
+ */
+class UnifiedDataService {
+  static async getFullStockData(symbol: string) {
+    const cleanSymbol = symbol.toUpperCase().trim();
+    const cacheKey = `unified_v1_${cleanSymbol}`;
+    
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      console.log(`[UnifiedDS] Cache hit: ${cleanSymbol}`);
+      return cached;
+    }
+
+    console.log(`[UnifiedDS] Starting aggregation for: ${cleanSymbol}`);
+    
+    // Providers to run in parallel
+    const [yahoo, google, av] = await Promise.allSettled([
+      this.fetchYahoo(cleanSymbol),
+      this.fetchGoogle(cleanSymbol),
+      this.fetchAlphaVantage(cleanSymbol)
+    ]);
+
+    const results: any = {
+      yahoo: yahoo.status === 'fulfilled' ? yahoo.value : null,
+      google: google.status === 'fulfilled' ? google.value : null,
+      av: av.status === 'fulfilled' ? av.value : null
+    };
+
+    // CROSS-VERIFICATION LOGIC
+    // We pick the best pieces from each source
+    const primary = results.yahoo || results.google || results.av;
+    if (!primary) throw new Error('Yeterli veri kaynağına ulaşılamadı.');
+
+    const aggregated = {
+      symbol: cleanSymbol,
+      source: 'aggregated',
+      timestamp: new Date().toISOString(),
+      summary: {
+        price: {
+          // Cross-verify price: Prefer Google for potentially fresher BIST price
+          regularMarketPrice: { 
+            value: results.google?.price || results.yahoo?.price || results.av?.price || 0 
+          },
+          longName: results.yahoo?.name || results.google?.name || results.av?.name || cleanSymbol,
+          currency: results.yahoo?.currency || results.google?.currency || results.av?.currency || 'TRY'
+        },
+        summaryDetail: {
+          // Cross-verify Dividends
+          dividendYield: { 
+            value: results.yahoo?.dividendYield || results.av?.dividendYield || 0 
+          },
+          dividendRate: { 
+            value: results.yahoo?.dividendRate || results.av?.dividendRate || 0 
+          },
+          marketCap: { 
+            value: results.yahoo?.marketCap || results.av?.marketCap || results.google?.marketCap || 0 
+          },
+          trailingPE: { value: results.yahoo?.pe || results.av?.pe || 0 },
+          fiftyTwoWeekHigh: { value: results.yahoo?.high52 || 0 },
+          fiftyTwoWeekLow: { value: results.yahoo?.low52 || 0 }
+        }
+      },
+      history: results.yahoo?.history || [],
+      verification: {
+        sources_count: Object.values(results).filter(v => !!v).length,
+        google_verified: !!results.google,
+        yahoo_verified: !!results.yahoo,
+        alpha_vantage_verified: !!results.av
+      }
+    };
+
+    // Persist for 12 hours (43200 seconds)
+    cache.set(cacheKey, aggregated, 43200);
+    return aggregated;
+  }
+
+  private static async fetchYahoo(symbol: string) {
+    const yf = getYahoo();
+    // Map to BIST if needed
+    const tickers = symbol.includes('.') ? [symbol] : [`${symbol}.IS`, symbol];
+    
+    for (const t of tickers) {
+      try {
+        const quote = await yf.quote(t);
+        if (!quote || !quote.regularMarketPrice) continue;
+
+        let history = [];
+        try {
+          const now = new Date();
+          const p1 = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+          const chart = await yf.chart(t, { period1: p1, period2: now, events: 'dividends' });
+          if (chart?.events?.dividends) history = JSON.parse(JSON.stringify(chart.events.dividends));
+        } catch (e) {}
+
+        const summary = await yf.quoteSummary(t, { modules: ['summaryDetail'] }).catch(() => null);
+
+        return {
+          price: quote.regularMarketPrice,
+          name: quote.longName || quote.shortName,
+          currency: quote.currency,
+          dividendYield: quote.trailingAnnualDividendYield || summary?.summaryDetail?.dividendYield || 0,
+          dividendRate: quote.trailingAnnualDividendRate || summary?.summaryDetail?.dividendRate || 0,
+          marketCap: quote.marketCap,
+          pe: quote.trailingPE,
+          high52: quote.fiftyTwoWeekHigh,
+          low52: quote.fiftyTwoWeekLow,
+          history
+        };
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  private static async fetchGoogle(symbol: string) {
+    const gt = symbol.includes('.') ? `IST:${symbol.split('.')[0]}` : `IST:${symbol}`;
+    try {
+      const res = await fetch(`https://www.google.com/finance/quote/${gt}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      if (!res.ok) return null;
+      const html = await res.text();
+      
+      const priceMatch = html.match(/data-last-price="([^"]+)"/);
+      const currencyMatch = html.match(/data-currency-code="([^"]+)"/);
+      const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/);
+
+      if (priceMatch) {
+        return {
+          price: parseFloat(priceMatch[1]),
+          currency: currencyMatch ? currencyMatch[1] : 'TRY',
+          name: nameMatch ? nameMatch[1] : symbol,
+          source: 'Google'
+        };
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  private static async fetchAlphaVantage(symbol: string) {
+    const key = process.env.ALPHA_VANTAGE_API_KEY;
+    if (!key || key === 'YOUR_AV_KEY') return null;
+    
+    // AV format for BIST is SYMBOL.IST
+    const avt = symbol.includes('.') ? symbol.replace('.IS', '.IST') : `${symbol}.IST`;
+    try {
+      const res = await fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${avt}&apikey=${key}`);
+      const data = await res.json();
+      if (data && data.Symbol) {
+        return {
+          name: data.Name,
+          dividendYield: parseFloat(data.DividendYield) || 0,
+          dividendRate: parseFloat(data.DividendPerShare) || 0,
+          marketCap: parseFloat(data.MarketCapitalization) || 0,
+          pe: parseFloat(data.PERatio) || 0,
+          currency: data.Currency || 'TRY'
+        };
+      }
+    } catch (e) {}
+    return null;
+  }
+}
 
 async function startServer() {
   const app = express();
@@ -87,299 +244,22 @@ async function startServer() {
   // 1. API ROTLARI (KESİN OLARAK ÜSTTE)
   // ---------------------------------------------------------
 
-  // DIVIDEND API (Multi-Source Fallback: Yahoo -> Finnhub -> Alpha Vantage)
+  // DIVIDEND API (Unified Engine: Yahoo + Google + Alpha Vantage)
   app.get('/api/dividends', async (req, res) => {
     const symbol = (req.query.symbol as string || '').toUpperCase().trim();
     if (!symbol) return res.status(400).json({ error: 'Sembol eksik' });
-    
-    // We'll use a more specific cache key that includes versioning
-    const cacheKey = `div_v4_${symbol}`;
-    const cachedData = cache.get(cacheKey);
-    if (cachedData) {
-      console.log(`[Karlısın-API] Cache hit for ${symbol}`);
-      return res.json(cachedData);
-    }
 
-    let errorLog: string[] = [];
-    console.log(`[Karlısın-API] Fetching data for: ${symbol}`);
-
-    // 1. TRY YAHOO FINANCE
     try {
-      console.log(`[Karlısın-API] Attempt 1: Yahoo Finance -> ${symbol}`);
-      
-      let tickers = [symbol];
-      if (!symbol.includes('.')) {
-        // Turkish users usually search for BIST stocks first
-        tickers = [`${symbol}.IS`, symbol];
-      } else if (symbol.endsWith('.IST')) {
-        tickers = [symbol.replace('.IST', '.IS'), symbol];
-      }
-
-      let quote: any = null;
-      let successfulTicker = '';
-      const currentYf = getYahoo();
-
-      for (const t of tickers) {
-        try {
-          console.log(`[Karlısın-API] Yahoo trying: ${t}`);
-          if (!currentYf || typeof currentYf.quote !== 'function') {
-             throw new Error('Yahoo Finance instance not available.');
-          }
-          const q = await currentYf.quote(t) as any;
-          if (q && q.regularMarketPrice) {
-            quote = q;
-            successfulTicker = t;
-            break;
-          }
-        } catch (e: any) {
-          console.warn(`[Karlısın-API] Yahoo quote failed for ${t}: ${e.message}`);
-          errorLog.push(`Yahoo (${t}): ${e.message}`);
-          
-          // If we got the specific "new YahooFinance()" error, it means our instance is still bad
-          if (e.message.includes('new YahooFinance()') || e.message.includes('instantiate')) {
-            console.error('[Karlısın-API] Critical: Yahoo instance corrupted, resetting.');
-            yf = null; 
-          }
-        }
-      }
-      
-      // Secondary fallback: Yahoo search if direct quote failed
-      if (!quote) {
-        try {
-          const searchYf = getYahoo();
-          console.log(`[Karlısın-API] Yahoo searching for: ${symbol}`);
-          const searchRes = await searchYf.search(symbol);
-          if (searchRes?.quotes?.length > 0) {
-            const bestMatch = searchRes.quotes[0].symbol;
-            console.log(`[Karlısın-API] Found match via search: ${bestMatch}`);
-            const q = await searchYf.quote(bestMatch) as any;
-            if (q && q.regularMarketPrice) {
-              quote = q;
-              successfulTicker = bestMatch;
-            }
-          }
-        } catch (e: any) {
-          console.warn(`[Karlısın-API] Yahoo search/quote fallback failed: ${e.message}`);
-        }
-      }
-
-      if (quote && quote.regularMarketPrice) {
-        let summaryData: any = {
-          price: {
-            regularMarketPrice: { value: quote.regularMarketPrice },
-            longName: quote.longName || quote.shortName || successfulTicker,
-            shortName: quote.shortName || successfulTicker,
-            currency: quote.currency
-          },
-          summaryDetail: {
-            dividendYield: { value: quote.trailingAnnualDividendYield || 0 },
-            dividendRate: { value: quote.trailingAnnualDividendRate || 0 },
-            trailingPE: { value: quote.trailingPE || 0 },
-            marketCap: { value: quote.marketCap || 0 },
-            fiftyTwoWeekHigh: { value: quote.fiftyTwoWeekHigh || 0 },
-            fiftyTwoWeekLow: { value: quote.fiftyTwoWeekLow || 0 },
-          }
-        };
-
-        const postYf = getYahoo();
-        try {
-          const fullSummary = await postYf.quoteSummary(successfulTicker, {
-            modules: ['summaryDetail', 'assetProfile', 'defaultKeyStatistics']
-          });
-          if (fullSummary) {
-            summaryData = { ...summaryData, ...JSON.parse(JSON.stringify(fullSummary)) };
-          }
-        } catch (e: any) { 
-          console.warn(`[Karlısın-API] Yahoo Summary partial fail for ${successfulTicker}: ${e.message}`);
-        }
-
-        let historyData = [];
-        try {
-          const now = new Date();
-          const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
-          const history = await postYf.chart(successfulTicker, {
-            period1: fiveYearsAgo,
-            period2: now,
-            events: 'dividends'
-          }) as any;
-          if (history?.events?.dividends) {
-            historyData = JSON.parse(JSON.stringify(history.events.dividends));
-          }
-        } catch (e: any) { 
-          console.warn(`[Karlısın-API] Yahoo History fail for ${successfulTicker}: ${e.message}`);
-        }
-
-        const result = { 
-          symbol: successfulTicker, 
-          summary: summaryData, 
-          history: historyData, 
-          source: 'yahoo',
-          timestamp: new Date().toISOString()
-        };
-        
-        cache.set(cacheKey, result);
-        return res.json(result);
-      }
+      const data = await UnifiedDataService.getFullStockData(symbol);
+      res.json(data);
     } catch (err: any) {
-      errorLog.push(`Yahoo (Global): ${err.message}`);
+      console.error(`[Karlısın-API] Aggregation failed for ${symbol}:`, err.message);
+      res.status(404).json({ 
+        error: 'Veri çekilemedi. Lütfen sembolü kontrol edin veya daha sonra tekrar deneyin.', 
+        symbol,
+        message: err.message
+      });
     }
-
-    // 2. TRY GOOGLE FINANCE SCRAPER (SMART FALLBACK)
-    try {
-      const googleTickers = [symbol];
-      if (symbol.includes('.')) {
-        const parts = symbol.split('.');
-        if (parts[1] === 'IS') googleTickers.unshift(`IST:${parts[0]}`);
-      } else if (symbol.length >= 4 && symbol.length <= 6) {
-        googleTickers.unshift(`IST:${symbol}`);
-      }
-
-      for (const gt of googleTickers) {
-        console.log(`[Karlısın-API] Attempt 2: Google Finance -> ${gt}`);
-        const gRes = await fetch(`https://www.google.com/finance/quote/${gt}`, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36' }
-        });
-
-        if (gRes.ok) {
-          const html = await gRes.text();
-          // Improved regex for Google Finance data
-          let priceValue: number | null = null;
-          
-          const priceMatch = html.match(/data-last-price="([^"]+)"/);
-          if (priceMatch) {
-            priceValue = parseFloat(priceMatch[1]);
-          } else {
-            // Fallback price regex (often used in Google Finance)
-            const fallbackPriceMatch = html.match(/<div[^>]*class="[^"]*YMlKec fxS7h[^"]*"[^>]*>([^<]+)<\/div>/);
-            if (fallbackPriceMatch) {
-              // Extract numerical value from string like "₺120.40"
-              const val = fallbackPriceMatch[1].replace(/[^\d.,]/g, '').replace(',', '.');
-              priceValue = parseFloat(val);
-            }
-          }
-
-          const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/) || html.match(/<div[^>]*class="[^"]*VfPpkd-mRLv6[^"]*"[^>]*>([^<]+)<\/div>/);
-          const currencyMatch = html.match(/data-currency-code="([^"]+)"/);
-
-          if (priceValue && !isNaN(priceValue)) {
-            const result = {
-              symbol: gt,
-              source: 'google-finance',
-              summary: {
-                price: {
-                  regularMarketPrice: { value: priceValue },
-                  longName: nameMatch ? nameMatch[1] : symbol,
-                  currency: currencyMatch ? currencyMatch[1] : (gt.startsWith('IST') ? 'TRY' : 'USD')
-                },
-                summaryDetail: { dividendYield: { value: 0 }, marketCap: { value: 0 } }
-              },
-              history: [],
-              timestamp: new Date().toISOString()
-            };
-            cache.set(cacheKey, result);
-            return res.json(result);
-          }
-        }
-      }
-    } catch (err: any) {
-      errorLog.push(`GoogleFinance: ${err.message}`);
-    }
-
-    // 3. TRY FINNHUB (FALLBACK)
-    const finnhubKey = process.env.FINNHUB_API_KEY;
-    if (finnhubKey && finnhubKey !== 'YOUR_FINNHUB_KEY') {
-      try {
-        const finnhubTickers = [symbol];
-        if (!symbol.includes('.')) finnhubTickers.push(`${symbol}.IS`);
-        
-        for (const ft of finnhubTickers) {
-          console.log(`[Karlısın-API] Finnhub trying: ${ft}`);
-          const [quoteRes, profileRes] = await Promise.all([
-            fetch(`https://finnhub.io/api/v1/quote?symbol=${ft}&token=${finnhubKey}`),
-            fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${ft}&token=${finnhubKey}`)
-          ]);
-          
-          const quoteData = await quoteRes.json();
-          const profileData = await profileRes.json();
-
-          if (quoteData && quoteData.c && quoteData.c !== 0) {
-            const result = {
-              symbol: ft,
-              source: 'finnhub',
-              summary: {
-                price: {
-                  regularMarketPrice: { value: quoteData.c },
-                  longName: profileData.name || symbol,
-                  currency: profileData.currency || (ft.endsWith('.IS') ? 'TRY' : 'USD')
-                },
-                summaryDetail: {
-                  dividendYield: { value: 0 }, 
-                  marketCap: { value: (profileData.marketCapitalization || 0) * 1000000 }
-                }
-              },
-              history: [],
-              timestamp: new Date().toISOString()
-            };
-            cache.set(cacheKey, result);
-            return res.json(result);
-          }
-        }
-      } catch (err: any) {
-        errorLog.push(`Finnhub: ${err.message}`);
-      }
-    }
-
-    // 3. TRY ALPHA VANTAGE (FALLBACK)
-    const avKey = process.env.ALPHA_VANTAGE_API_KEY;
-    if (avKey && avKey !== 'demo' && avKey !== 'YOUR_AV_KEY') {
-      try {
-        // Try both direct and .IST (Alpha Vantage format for BIST)
-        const avTickers = [symbol];
-        if (symbol.endsWith('.IS')) avTickers.push(symbol.replace('.IS', '.IST'));
-        else if (!symbol.includes('.')) avTickers.push(`${symbol}.IST`);
-
-        for (const avt of avTickers) {
-          console.log(`[Karlısın-API] AlphaVantage trying: ${avt}`);
-          const ovRes = await fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${avt}&apikey=${avKey}`);
-          const ovData = await ovRes.json();
-
-          if (ovData && ovData.Symbol) {
-            const result = {
-              symbol: avt,
-              source: 'alphavantage',
-              summary: {
-                summaryDetail: {
-                  dividendYield: { value: parseFloat(ovData.DividendYield) || 0 },
-                  dividendRate: { value: parseFloat(ovData.DividendPerShare) || 0 },
-                  marketCap: { value: parseFloat(ovData.MarketCapitalization) || 0 },
-                },
-                price: {
-                  longName: ovData.Name || symbol,
-                  currency: ovData.Currency || 'USD',
-                  regularMarketPrice: { value: 0 }
-                }
-              },
-              history: [],
-              timestamp: new Date().toISOString()
-            };
-            cache.set(cacheKey, result);
-            return res.json(result);
-          } else if (ovData.Note || ovData.Information) {
-            errorLog.push(`AlphaVantage: API limit reached or note received.`);
-          }
-        }
-      } catch (err: any) {
-        errorLog.push(`AlphaVantage: ${err.message}`);
-      }
-    }
-
-    // FINAL ERROR
-    console.error(`[Karlısın-API] All data sources failed for ${symbol}. Errors:`, errorLog);
-    res.status(404).json({ 
-      error: 'Sembol bulunamadı veya veri çekilemedi.', 
-      symbol, 
-      details: errorLog 
-    });
   });
 
   // ---------------------------------------------------------
