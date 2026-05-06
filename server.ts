@@ -844,7 +844,7 @@ async function startServer() {
   
   if (isProduction) {
     const distPath = path.resolve(__dirname, 'dist');
-    console.log(`[Karlısın-INIT] Versiyon: 2.2.1`);
+    console.log(`[Karlısın-INIT] Versiyon: 2.2.1-stable`);
     console.log(`[Karlısın-INIT] Production modu aktif.`);
     console.log(`[Karlısın-INIT] Statik dosya yolu: ${distPath}`);
     
@@ -852,10 +852,14 @@ async function startServer() {
     app.use(express.static(distPath, { index: false }));
     
     app.get('*', (req, res) => {
-      // API rotalarını atla
+      // API rotalarını atla - Eğer buraya geldiyse rewrite kuralı çalışmıyor demektir
       if (req.path.startsWith('/api')) {
-        console.warn(`[Karlısın-404] API bulunamadı: ${req.path}`);
-        return res.status(404).json({ error: 'API bulunamadı', path: req.path });
+        console.warn(`[Karlısın-FATAL] API isteği statik catch-all'a düştü! Rewrite ayarlarını kontrol edin: ${req.path}`);
+        return res.status(404).json({ 
+          error: 'API Endpoint Not Found on Server', 
+          message: 'Bu hata Firebase Hosting rewrite kurallarının yanlış yapılandırıldığını gösterir.',
+          path: req.path 
+        });
       }
 
       const indexPath = path.join(distPath, 'index.html');

@@ -628,8 +628,8 @@ const DividendTracker: React.FC = () => {
       
       if (!contentType || !contentType.includes('application/json')) {
         const text = await res.text();
-        console.error('[DividendTracker] Beklenmeyen yanıt (HTML olabilir):', text.substring(0, 500));
-        throw new Error('Sunucu JSON yerine HTML döndürdü. Bu genellikle bir ağ hatası veya rota problemidir.');
+        console.error('[DividendTracker] Beklenmeyen yanıt (HTML/Düz metin):', text.substring(0, 500));
+        throw new Error('Sunucu JSON yerine HTML (veya sayfa) döndürdü. Lütfen firebase.json rewrites ayarlarını kontrol edin.');
       }
 
       const json = await res.json();
