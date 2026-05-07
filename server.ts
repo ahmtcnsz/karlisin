@@ -108,7 +108,8 @@ class UnifiedDataService {
               'User-Agent': getRandomUserAgent(),
               'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
               'Referer': 'https://www.google.com/',
-              'Cache-Control': 'no-cache'
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
             }
           });
           
@@ -134,30 +135,41 @@ class UnifiedDataService {
 
           if (priceMatch) {
              const rawPrice = priceMatch[1];
-             // Handle Turkish formatting (1.234,56)
+             // Ultra-resilient float parser for tr-TR (1.234,56 or 213,40)
              let price = 0;
-             if (rawPrice.includes(',') && rawPrice.includes('.')) {
-               price = parseFloat(rawPrice.replace(/\./g, '').replace(',', '.'));
-             } else if (rawPrice.includes(',')) {
-               price = parseFloat(rawPrice.replace(',', '.'));
+             const cleanPrice = rawPrice.replace(/\s/g, '');
+             if (cleanPrice.includes(',') && cleanPrice.includes('.')) {
+               price = parseFloat(cleanPrice.replace(/\./g, '').replace(',', '.'));
+             } else if (cleanPrice.includes(',')) {
+               price = parseFloat(cleanPrice.replace(',', '.'));
              } else {
-               price = parseFloat(rawPrice);
+               price = parseFloat(cleanPrice);
              }
 
              if (isNaN(price) || price === 0) continue;
 
              const divYield = yieldMatch ? parseFloat(yieldMatch[1].toString().replace(',', '.')) / 100 : 0;
              
-             // Additional Fields
-             const targetMatch = html.match(/>1y Target Est<[\s\S]*?>([\d,.]+)</) || html.match(/"target":([\d,.]+)/);
-             const rangeMatch = html.match(/>Day's Range<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) || html.match(/>Günlük Aralık<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</);
-             const volumeMatch = html.match(/>Volume<[\s\S]*?>([\d,.]+)</) || html.match(/>Hacim<[\s\S]*?>([\d,.]+)</);
+             // Additional Fields - Scraped with extreme flexibility for TR locale
+             const targetMatch = html.match(/>1y Target Est<[\s\S]*?>([\d,.]+)</) || html.match(/"target":([\d,.]+)/) || html.match(/>1 Yıllık Hedef Fiyat<[\s\S]*?>([\d,.]+)</);
+             
+             const rangeMatch = 
+               html.match(/>Day's Range<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) || 
+               html.match(/>Günlük Aralık<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) ||
+               html.match(/>Gün İçi Aralık<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) ||
+               html.match(/"range":"([\d,.]+)\s*-\s*([\d,.]+)"/);
 
-             console.log(`[Investing] Success for ${symbol} @ ${price} (Yield: ${divYield}) via ${url}`);
+             const volumeMatch = 
+               html.match(/>Volume<[\s\S]*?>([\d,.]+)</) || 
+               html.match(/>Hacim<[\s\S]*?>([\d,.]+)</) ||
+               html.match(/"volume":([\d,.]+)/) ||
+               html.match(/data-test="volume-value">([\d,.]+)</);
+
+             console.log(`[Investing] Success for ${symbol} @ ${price} via ${url}`);
              return {
                price,
                dividendYield: divYield,
-               targetMeanPrice: targetMatch ? parseFloat(targetMatch[1].toString().replace(',', '')) : 0,
+               targetMeanPrice: targetMatch ? parseFloat(targetMatch[1].toString().replace(/\./g, '').replace(',', '.')) : 0,
                dayHigh: rangeMatch ? parseFloat(rangeMatch[2].replace(/\./g, '').replace(',', '.')) : 0,
                dayLow: rangeMatch ? parseFloat(rangeMatch[1].replace(/\./g, '').replace(',', '.')) : 0,
                volume: volumeMatch ? parseFloat(volumeMatch[1].replace(/[^\d.]/g, '')) : 0,
@@ -199,7 +211,7 @@ class UnifiedDataService {
 
   static async getFullStockData(symbol: string, forceRefresh = false) {
     const cleanSymbol = symbol.toUpperCase().trim();
-    const cacheKey = `unified_v2.9.3_${cleanSymbol}`;
+    const cacheKey = `unified_v3.0.0_${cleanSymbol}`;
     
     const cached = cache.get(cacheKey) as any;
     if (cached && !forceRefresh) {
@@ -208,7 +220,7 @@ class UnifiedDataService {
       }
     }
 
-    console.log(`[UnifiedDS v2.9.3] Aggregating multi-source for: ${cleanSymbol}`);
+    console.log(`[UnifiedDS v3.0.0] Aggregating multi-source for: ${cleanSymbol}`);
     
     // Providers to run in parallel
     const [yahoo, google, av, investing, finnhub] = await Promise.allSettled([
@@ -253,8 +265,8 @@ class UnifiedDataService {
     // CROSS-VERIFICATION & AUGMENTATION LOGIC
     const aggregated = {
       symbol: cleanSymbol,
-      version: '2.9.3',
-      source: 'Unified Engine v2.9.3 (Hybrid Analytics)',
+      version: '3.0.0',
+      source: 'Unified Engine v3.0 (ZIRHLI PROD)',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
@@ -503,24 +515,24 @@ class UnifiedDataService {
 
           if (pe > 0 && priceVal > 0) eps = priceVal / pe;
 
-          const rangeMatch = html.match(/>(?:Günlük aralık|Gün içi aralık|Gün içi aralığı|Day range)<[\s\S]*?<div[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
+          const rangeMatch = html.match(/>(?:Günlük aralık|Gün içi aralık|Gün içi aralığı|Day range)<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</i);
           if (rangeMatch) {
              dayLow = parseFloat(rangeMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
              dayHigh = parseFloat(rangeMatch[2].replace(/[^\d.,]/g, '').replace(',', '.'));
           }
 
-          const yearRangeMatch = html.match(/>(?:52 haftalık aralık|52-week range)<[\s\S]*?<div[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
+          const yearRangeMatch = html.match(/>(?:52 haftalık aralık|52-week range)<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</i);
           if (yearRangeMatch) {
             low52 = parseFloat(yearRangeMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
             high52 = parseFloat(yearRangeMatch[2].replace(/[^\d.,]/g, '').replace(',', '.'));
           }
 
-          const volumeReg = html.match(/>(?:Hacim|Volume)<[\s\S]*?<div[^>]*>([\d,.\w\s]+)</i);
+          const volumeReg = html.match(/>(?:Hacim|Volume)<[\s\S]*?>([\d,.\w\s]+)</i);
           if (volumeReg) {
              const cleanVol = volumeReg[1].trim().toUpperCase().replace(/\s/g, '');
-             if (cleanVol.includes('M')) volume = parseFloat(cleanVol.replace('M', '').replace(',', '.')) * 1000000;
-             else if (cleanVol.includes('B')) volume = parseFloat(cleanVol.replace('B', '').replace(',', '.')) * 1000000000;
-             else if (cleanVol.includes('K')) volume = parseFloat(cleanVol.replace('K', '').replace(',', '.')) * 1000;
+             if (cleanVol.includes('M') || cleanVol.includes('MN')) volume = parseFloat(cleanVol.replace('MN', '').replace('M', '').replace(',', '.')) * 1000000;
+             else if (cleanVol.includes('B') || cleanVol.includes('ML')) volume = parseFloat(cleanVol.replace('ML', '').replace('B', '').replace(',', '.')) * 1000000000;
+             else if (cleanVol.includes('K') || cleanVol.includes('B')) volume = parseFloat(cleanVol.replace('B', '').replace('K', '').replace(',', '.')) * 1000;
              else volume = parseFloat(cleanVol.replace(/[^\d.,]/g, '').replace(',', '.'));
           }
 
@@ -632,10 +644,10 @@ async function startServer() {
 
   // Debug Version API
   app.get('/api/version', (req, res) => {
-    res.json({ version: '2.9.3', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
+    res.json({ version: '3.0.0', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
   });
 
-  // DIVIDEND API (Unified Engine: v2.9.3)
+  // DIVIDEND API (Unified Engine: v3.0.0)
   app.get('/api/dividends', async (req, res) => {
     const symbol = (req.query.symbol as string || '').toUpperCase().trim();
     const forceRefresh = req.query.refresh === 'true';
@@ -645,7 +657,7 @@ async function startServer() {
     // Cache bypass for forced refresh
     if (forceRefresh) {
       console.log(`[UnifiedDS] Force refreshing: ${symbol}`);
-      cache.del(`unified_v2.9.3_${symbol}`);
+      cache.del(`unified_v3.0.0_${symbol}`);
     }
 
     try {
