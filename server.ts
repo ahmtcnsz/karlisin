@@ -147,11 +147,20 @@ class UnifiedDataService {
              if (isNaN(price) || price === 0) continue;
 
              const divYield = yieldMatch ? parseFloat(yieldMatch[1].toString().replace(',', '.')) / 100 : 0;
+             
+             // Additional Fields
+             const targetMatch = html.match(/>1y Target Est<[\s\S]*?>([\d,.]+)</) || html.match(/"target":([\d,.]+)/);
+             const rangeMatch = html.match(/>Day's Range<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) || html.match(/>Günlük Aralık<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</);
+             const volumeMatch = html.match(/>Volume<[\s\S]*?>([\d,.]+)</) || html.match(/>Hacim<[\s\S]*?>([\d,.]+)</);
 
              console.log(`[Investing] Success for ${symbol} @ ${price} (Yield: ${divYield}) via ${url}`);
              return {
                price,
                dividendYield: divYield,
+               targetMeanPrice: targetMatch ? parseFloat(targetMatch[1].toString().replace(',', '')) : 0,
+               dayHigh: rangeMatch ? parseFloat(rangeMatch[2].replace(/\./g, '').replace(',', '.')) : 0,
+               dayLow: rangeMatch ? parseFloat(rangeMatch[1].replace(/\./g, '').replace(',', '.')) : 0,
+               volume: volumeMatch ? parseFloat(volumeMatch[1].replace(/[^\d.]/g, '')) : 0,
                source: 'Investing'
              };
           }
@@ -190,7 +199,7 @@ class UnifiedDataService {
 
   static async getFullStockData(symbol: string, forceRefresh = false) {
     const cleanSymbol = symbol.toUpperCase().trim();
-    const cacheKey = `unified_v2.9.1_${cleanSymbol}`;
+    const cacheKey = `unified_v2.9.3_${cleanSymbol}`;
     
     const cached = cache.get(cacheKey) as any;
     if (cached && !forceRefresh) {
@@ -199,7 +208,7 @@ class UnifiedDataService {
       }
     }
 
-    console.log(`[UnifiedDS v2.9.1] Aggregating multi-source for: ${cleanSymbol}`);
+    console.log(`[UnifiedDS v2.9.3] Aggregating multi-source for: ${cleanSymbol}`);
     
     // Providers to run in parallel
     const [yahoo, google, av, investing, finnhub] = await Promise.allSettled([
@@ -244,8 +253,8 @@ class UnifiedDataService {
     // CROSS-VERIFICATION & AUGMENTATION LOGIC
     const aggregated = {
       symbol: cleanSymbol,
-      version: '2.9.1',
-      source: 'Unified Engine v2.9.1 (Multi-API + Hybrid Scrapers)',
+      version: '2.9.3',
+      source: 'Unified Engine v2.9.3 (Hybrid Analytics)',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
@@ -474,13 +483,18 @@ class UnifiedDataService {
           let dividendRate = 0;
           let pe = 0;
           let eps = 0;
+          let high52 = 0;
+          let low52 = 0;
+          let dayLow = 0;
+          let dayHigh = 0;
+          let volume = 0;
 
           // Yield Patterns
           const yieldMatch = html.match(/>(?:Temettü verimi|Kâr payı verimi|Dividend yield)<[\s\S]*?<div[^>]*>([\d,.]+)%/i);
           if (yieldMatch) dividendYield = parseFloat(yieldMatch[1].replace(',', '.')) / 100;
 
           // Rate Patterns
-          const rateMatch = html.match(/>(?:Kâr payı|Dividend|Hisse Başı Temettü)<[\s\S]*?<div[^>]*>([\d,.]+)</i);
+          const rateMatch = html.match(/>(?:Son temettü|Last dividend|Kâr payı|Dividend|Hisse Başı Temettü)<[\s\S]*?<div[^>]*>([\d,.]+)</i);
           if (rateMatch) dividendRate = parseFloat(rateMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
 
           // PE Ratio Patterns
@@ -488,6 +502,27 @@ class UnifiedDataService {
           if (peMatch) pe = parseFloat(peMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
 
           if (pe > 0 && priceVal > 0) eps = priceVal / pe;
+
+          const rangeMatch = html.match(/>(?:Günlük aralık|Gün içi aralık|Gün içi aralığı|Day range)<[\s\S]*?<div[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
+          if (rangeMatch) {
+             dayLow = parseFloat(rangeMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
+             dayHigh = parseFloat(rangeMatch[2].replace(/[^\d.,]/g, '').replace(',', '.'));
+          }
+
+          const yearRangeMatch = html.match(/>(?:52 haftalık aralık|52-week range)<[\s\S]*?<div[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
+          if (yearRangeMatch) {
+            low52 = parseFloat(yearRangeMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
+            high52 = parseFloat(yearRangeMatch[2].replace(/[^\d.,]/g, '').replace(',', '.'));
+          }
+
+          const volumeReg = html.match(/>(?:Hacim|Volume)<[\s\S]*?<div[^>]*>([\d,.\w\s]+)</i);
+          if (volumeReg) {
+             const cleanVol = volumeReg[1].trim().toUpperCase().replace(/\s/g, '');
+             if (cleanVol.includes('M')) volume = parseFloat(cleanVol.replace('M', '').replace(',', '.')) * 1000000;
+             else if (cleanVol.includes('B')) volume = parseFloat(cleanVol.replace('B', '').replace(',', '.')) * 1000000000;
+             else if (cleanVol.includes('K')) volume = parseFloat(cleanVol.replace('K', '').replace(',', '.')) * 1000;
+             else volume = parseFloat(cleanVol.replace(/[^\d.,]/g, '').replace(',', '.'));
+          }
 
           const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/) || html.match(/class="Dd939e"[^>]*>([^<]+)</) || html.match(/"name":"([^"]+)"/);
 
@@ -499,6 +534,11 @@ class UnifiedDataService {
             dividendRate,
             pe,
             eps,
+            high52,
+            low52,
+            dayLow,
+            dayHigh,
+            volume,
             source: 'Google'
           };
         }
@@ -592,10 +632,10 @@ async function startServer() {
 
   // Debug Version API
   app.get('/api/version', (req, res) => {
-    res.json({ version: '2.9.1', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
+    res.json({ version: '2.9.3', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
   });
 
-  // DIVIDEND API (Unified Engine: v2.9.1)
+  // DIVIDEND API (Unified Engine: v2.9.3)
   app.get('/api/dividends', async (req, res) => {
     const symbol = (req.query.symbol as string || '').toUpperCase().trim();
     const forceRefresh = req.query.refresh === 'true';
@@ -605,7 +645,7 @@ async function startServer() {
     // Cache bypass for forced refresh
     if (forceRefresh) {
       console.log(`[UnifiedDS] Force refreshing: ${symbol}`);
-      cache.del(`unified_v2.9.1_${symbol}`);
+      cache.del(`unified_v2.9.3_${symbol}`);
     }
 
     try {

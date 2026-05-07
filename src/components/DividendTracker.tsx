@@ -940,7 +940,7 @@ const DividendTracker: React.FC = () => {
                             <div className="h-2 w-px bg-white/10" />
                             <div className="flex items-center gap-1">
                               <ShieldCheck className={cn("w-2 h-2", (data?.verification?.sources_count || 0) >= 2 ? "text-emerald-500 animate-pulse" : "text-slate-500")} />
-                              <span className={cn("text-[7px] font-black uppercase tracking-widest", (data?.verification?.sources_count || 0) >= 2 ? "text-emerald-400" : "text-slate-600")}>
+                              <span className={cn("text-[7px] font-black uppercase tracking-widest", (data?.verification?.sources_count || 0) >= 2 ? "text-emerald-400" : "text-rose-500")}>
                                 {(data?.verification?.sources_count || 0) >= 2 ? 'ÇAPRAZ DOĞRULAMA AKTİF' : 'TEK KAYNAKDAN ÇEKİLİYOR'}
                               </span>
                             </div>
