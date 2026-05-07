@@ -436,6 +436,8 @@ const DividendTracker: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
+  const [isInformationModalOpen, setIsInformationModalOpen] = useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
   const [showAllDividends, setShowAllDividends] = useState(false);
   const [calendarSearch, setCalendarSearch] = useState('');
@@ -458,7 +460,7 @@ const DividendTracker: React.FC = () => {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    const isAnyModalOpen = isCalculatorModalOpen || showAllDividends;
+    const isAnyModalOpen = isInformationModalOpen || isCalculatorModalOpen || showAllDividends;
     
     if (isAnyModalOpen) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -927,15 +929,15 @@ const DividendTracker: React.FC = () => {
 
                       <div className="flex flex-wrap items-center gap-2">
                         <button 
-                          onClick={() => setIsCalculatorModalOpen(true)}
+                          onClick={() => { setActiveTab('overview'); setIsInformationModalOpen(true); }}
                           className="flex items-center gap-2 px-4 py-2.5 bg-slate-950 text-white rounded-xl border border-white/5 hover:border-indigo-500/30 group transition-all font-black text-[9px] uppercase tracking-widest"
                         >
                           <Activity className="w-3 h-3 text-indigo-500" />
-                          Hesapla
+                          Profil
                         </button>
 
                         <button 
-                          onClick={() => setIsCalculatorModalOpen(true)}
+                          onClick={() => { setActiveTab('history'); setIsInformationModalOpen(true); }}
                           className="flex items-center gap-2 px-4 py-2.5 bg-slate-950 text-white rounded-xl border border-white/5 hover:border-orange-500/30 group transition-all font-black text-[9px] uppercase tracking-widest"
                         >
                           <HistoryIcon className="w-3 h-3 text-orange-500" />
@@ -1386,13 +1388,19 @@ const DividendTracker: React.FC = () => {
                  {/* Mobile Analysis Buttons */}
                  <div className="lg:hidden grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => setIsCalculatorModalOpen(true)}
+                      onClick={() => {
+                        setActiveTab('overview');
+                        setIsInformationModalOpen(true);
+                      }}
                       className="p-5 rounded-2xl bg-slate-900 border border-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-white transition-all text-center"
                     >
                       GELİŞMİŞ ANALİZ
                     </button>
                     <button
-                      onClick={() => setIsCalculatorModalOpen(true)}
+                      onClick={() => {
+                        setActiveTab('history');
+                        setIsInformationModalOpen(true);
+                      }}
                       className="p-5 rounded-2xl bg-slate-900 border border-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-white transition-all text-center"
                     >
                       ÖDEME GEÇMİŞİ
@@ -1581,6 +1589,148 @@ const DividendTracker: React.FC = () => {
         )}
       </main>
 
+      <AnimatePresence>
+        {isInformationModalOpen && data && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsInformationModalOpen(false)}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-6xl h-[85vh] bg-slate-950 border border-white/10 rounded-[40px] shadow-[0_0_100px_rgba(79,70,229,0.15)] overflow-hidden flex flex-col"
+            >
+               {/* Modal Header */}
+               <div className="px-10 py-8 border-b border-white/5 bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                 <div className="flex items-center gap-5">
+                   <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-xl">
+                     <TrendingUp className="text-indigo-400 w-8 h-8" />
+                   </div>
+                   <div>
+                     <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none mb-1">
+                       {activeTab === 'overview' ? 'ŞİRKET PROFİLİ' : 'ÖDEME GEÇMİŞİ'}
+                     </h3>
+                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">
+                       {activeTab === 'overview' ? `${data?.symbol} HAKKINDA DETAYLI BİLGİ` : `${data?.symbol} DİVİDEND VERİLERİ`}
+                     </p>
+                   </div>
+                 </div>
+
+                 <button 
+                  onClick={() => setIsInformationModalOpen(false)}
+                  className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black text-white transition-all uppercase tracking-widest border border-white/10"
+                 >
+                   KAPAT
+                 </button>
+               </div>
+
+               {/* Modal Body */}
+               <div className="flex-1 overflow-y-auto p-10 scrollbar-hide">
+                 <AnimatePresence mode="wait">
+                    {activeTab === 'overview' && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="max-w-4xl mx-auto"
+                      >
+                         <div className="bg-slate-900/50 border border-white/5 rounded-[40px] p-12 shadow-xl overflow-hidden relative font-sans">
+                           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 blur-[100px] rounded-full -mr-20 -mt-20" />
+                           <div className="relative z-10">
+                             <p className="text-slate-300 leading-relaxed font-medium text-xl">
+                               {(avData && avData.Description) || data?.summary?.assetProfile?.longBusinessSummary || 'Bu şirket için detaylı profil özeti şu an mevcut değil.'}
+                             </p>
+                           </div>
+                         </div>
+                      </motion.div>
+                    )}
+
+                    {activeTab === 'history' && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="space-y-6"
+                      >
+                        {data?.history && data.history.length > 0 ? (
+                          Object.entries(
+                            data.history.sort((a,b) => b.date - a.date).reduce((acc, item) => {
+                              const year = new Date(item.date * 1000).getFullYear();
+                              if (!acc[year]) acc[year] = [];
+                              acc[year].push(item);
+                              return acc;
+                            }, {} as Record<number, typeof data.history>)
+                          ).sort((a, b) => Number(b[0]) - Number(a[0])).map(([year, items]) => (
+                            <div key={year} className="bg-slate-900 border border-white/5 rounded-[32px] overflow-hidden shadow-2xl">
+                              <div className="px-8 py-5 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                                <h3 className="text-xl font-black text-white italic tracking-tighter">{year} ÖDEME GEÇMİŞİ</h3>
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-950 px-3 py-1 rounded-lg border border-white/10">
+                                  {items.length} ÖDEME
+                                </span>
+                              </div>
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                  <tbody className="divide-y divide-white/5">
+                                    {items.map((item, idx) => (
+                                      <tr key={idx} className="group hover:bg-white/[0.02] transition-colors">
+                                        <td className="px-8 py-5">
+                                          <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-white/5 flex flex-col items-center justify-center border border-white/5">
+                                              <span className="text-[9px] font-black text-slate-500 uppercase">
+                                                {(() => {
+                                                  const d = new Date(item.date * 1000);
+                                                  return isNaN(d.getTime()) ? '-' : d.toLocaleString('tr-TR', { month: 'short' });
+                                                })()}
+                                              </span>
+                                              <span className="text-lg font-black text-white leading-none">
+                                                {(() => {
+                                                  const d = new Date(item.date * 1000);
+                                                  return isNaN(d.getTime()) ? '-' : d.getDate();
+                                                })()}
+                                              </span>
+                                            </div>
+                                            <div>
+                                              <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-0.5">Ödeme Tarihi</div>
+                                              <div className="text-sm font-bold text-white">{formatDate(item.date * 1000)}</div>
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                          <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-0.5">Lot Başına Net</div>
+                                          <div className="text-xl font-black text-emerald-400 tracking-tighter">
+                                            {formatCurrency(item.amount, data?.symbol)}
+                                          </div>
+                                        </td>
+                                        <td className="px-8 py-5 text-right">
+                                          <span className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase rounded-xl border border-emerald-500/20 tracking-widest">KESİNLEŞTİ</span>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="bg-slate-900 border border-white/5 rounded-[32px] p-20 text-center">
+                            <HistoryIcon className="w-16 h-16 text-slate-800 mx-auto mb-6" />
+                            <p className="text-slate-500 font-black uppercase text-xs tracking-[0.2em] italic">Bu sembol için geçmiş veri bulunamadı.</p>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+
+                 </AnimatePresence>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isCalculatorModalOpen && data && (
