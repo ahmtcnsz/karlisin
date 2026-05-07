@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import TahminMotoru from './TahminMotoru';
 import { 
   LineChart, 
   Line, 
@@ -174,8 +175,6 @@ const getHottestDividendSymbol = () => {
   // Fallback to highest yield or first in list
   return sorted.length > 0 ? sorted[0].symbol : 'EREGL.IS';
 };
-
-import TahminMotoru from './TahminMotoru';
 
 interface DividendData {
   symbol: string;

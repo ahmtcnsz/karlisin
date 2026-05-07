@@ -190,7 +190,7 @@ class UnifiedDataService {
 
   static async getFullStockData(symbol: string, forceRefresh = false) {
     const cleanSymbol = symbol.toUpperCase().trim();
-    const cacheKey = `unified_v2.8_${cleanSymbol}`;
+    const cacheKey = `unified_v2.9_${cleanSymbol}`;
     
     const cached = cache.get(cacheKey) as any;
     if (cached && !forceRefresh) {
@@ -244,8 +244,8 @@ class UnifiedDataService {
     // CROSS-VERIFICATION & AUGMENTATION LOGIC
     const aggregated = {
       symbol: cleanSymbol,
-      version: '2.8.0',
-      source: 'Unified Engine v2.8 (Multi-API + Hybrid Scrapers)',
+      version: '2.9.0',
+      source: 'Unified Engine v2.9 (Multi-API + Hybrid Scrapers)',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
@@ -592,7 +592,7 @@ async function startServer() {
 
   // Debug Version API
   app.get('/api/version', (req, res) => {
-    res.json({ version: '2.8.0', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
+    res.json({ version: '2.9.0', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
   });
 
   // DIVIDEND API (Unified Engine: Yahoo + Google + Alpha Vantage + Finnhub)
@@ -605,7 +605,7 @@ async function startServer() {
     // Cache bypass for forced refresh
     if (forceRefresh) {
       console.log(`[UnifiedDS] Force refreshing: ${symbol}`);
-      cache.del(`unified_v2.8_${symbol}`);
+      cache.del(`unified_v2.9_${symbol}`);
     }
 
     try {
