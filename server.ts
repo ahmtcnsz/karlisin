@@ -190,7 +190,7 @@ class UnifiedDataService {
 
   static async getFullStockData(symbol: string, forceRefresh = false) {
     const cleanSymbol = symbol.toUpperCase().trim();
-    const cacheKey = `unified_v2.9_${cleanSymbol}`;
+    const cacheKey = `unified_v2.9.1_${cleanSymbol}`;
     
     const cached = cache.get(cacheKey) as any;
     if (cached && !forceRefresh) {
@@ -199,7 +199,7 @@ class UnifiedDataService {
       }
     }
 
-    console.log(`[UnifiedDS v2.8] Aggregating multi-source for: ${cleanSymbol}`);
+    console.log(`[UnifiedDS v2.9.1] Aggregating multi-source for: ${cleanSymbol}`);
     
     // Providers to run in parallel
     const [yahoo, google, av, investing, finnhub] = await Promise.allSettled([
@@ -244,8 +244,8 @@ class UnifiedDataService {
     // CROSS-VERIFICATION & AUGMENTATION LOGIC
     const aggregated = {
       symbol: cleanSymbol,
-      version: '2.9.0',
-      source: 'Unified Engine v2.9 (Multi-API + Hybrid Scrapers)',
+      version: '2.9.1',
+      source: 'Unified Engine v2.9.1 (Multi-API + Hybrid Scrapers)',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
@@ -508,7 +508,7 @@ class UnifiedDataService {
   }
 
   private static async fetchAlphaVantage(symbol: string) {
-    const key = process.env.ALPHA_VANTAGE_API_KEY;
+    const key = process.env.ALPHA_VANTAGE_API_KEY || '59M2UN3BINTUJO7J';
     if (!key || key === 'YOUR_AV_KEY') return null;
     
     const variants = [symbol];
@@ -592,10 +592,10 @@ async function startServer() {
 
   // Debug Version API
   app.get('/api/version', (req, res) => {
-    res.json({ version: '2.9.0', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
+    res.json({ version: '2.9.1', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
   });
 
-  // DIVIDEND API (Unified Engine: Yahoo + Google + Alpha Vantage + Finnhub)
+  // DIVIDEND API (Unified Engine: v2.9.1)
   app.get('/api/dividends', async (req, res) => {
     const symbol = (req.query.symbol as string || '').toUpperCase().trim();
     const forceRefresh = req.query.refresh === 'true';
@@ -605,11 +605,11 @@ async function startServer() {
     // Cache bypass for forced refresh
     if (forceRefresh) {
       console.log(`[UnifiedDS] Force refreshing: ${symbol}`);
-      cache.del(`unified_v2.9_${symbol}`);
+      cache.del(`unified_v2.9.1_${symbol}`);
     }
 
     try {
-      const data = await UnifiedDataService.getFullStockData(symbol);
+      const data = await UnifiedDataService.getFullStockData(symbol, forceRefresh);
       
       // Ensure we always return a fresh-looking response
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');

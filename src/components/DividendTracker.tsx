@@ -585,13 +585,14 @@ const DividendTracker: React.FC = () => {
     try {
       const url = `/api/dividends?symbol=${encodeURIComponent(symbol)}${forceRefresh ? '&refresh=true' : ''}`;
       const res = await fetch(url);
-      
       const contentType = res.headers.get('content-type');
+      
       if (!res.ok) {
-        let errorMsg = 'Veri çekme hatası';
+        let errorMsg = `Bağlantı Hatası (${res.status})`;
         if (contentType && contentType.includes('application/json')) {
           const json = await res.json();
           errorMsg = json.message || json.error || errorMsg;
+          if (res.status === 429) errorMsg = "API Limitine Takıldı (Alpha Vantage)";
         } else {
           errorMsg = `Sunucu hatası: ${res.status} ${res.statusText}`;
         }
