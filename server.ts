@@ -68,57 +68,116 @@ function getRandomUserAgent() {
 class UnifiedDataService {
   private static async fetchInvesting(symbol: string) {
     try {
-      // Investing.com is sensitive to headers. We try a lookup approach.
-      // For BIST: symbol is typically EREGL.IS
       const clean = symbol.replace('.IS', '').toLowerCase();
-      const url = `https://www.investing.com/search/?q=${encodeURIComponent(symbol)}`;
+      const upper = clean.toUpperCase();
       
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-      });
-      
-      const html = await response.text();
-      
-      // Look for data points in search result or redirect
-      const priceMatch = html.match(/id="last_last"[^>]*>([\d,.]+)</) || html.match(/"last":([\d,.]+)/);
-      const yieldMatch = html.match(/>Div Yield<[\s\S]*?>([\d,.]+)%/);
-      const targetMatch = html.match(/>1y Target Est<[\s\S]*?>([\d,.]+)</) || html.match(/"target":([\d,.]+)/);
-      
-      // Range and Volume for Investing
-      const rangeMatch = html.match(/>Day's Range<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</);
-      const volumeMatch = html.match(/>Volume<[\s\S]*?>([\d,.]+)</);
+      const commonBistSlugs: Record<string, string> = {
+        'KCHOL': 'koc-holding',
+        'THYAO': 'turkish-airlines',
+        'ASELS': 'aselsan',
+        'EREGL': 'eregli-demir-celik',
+        'TUPRS': 'tupras',
+        'SAHOL': 'sabanci-holding',
+        'SISE': 'sise-cam',
+        'GARAN': 'turkiye-garanti-bankasi',
+        'AKBNK': 'akbank',
+        'ISCTR': 'is-bankasi-c',
+        'FROTO': 'ford-otosan',
+        'TOASO': 'tofas-turk-otomobil-fabrikasi',
+        'PETKM': 'petkim',
+        'ARCLK': 'arcelik-as',
+        'DOAS': 'dogus-otomotiv',
+        'BIMAS': 'bim-birlesik-magazalar',
+        'PGSUS': 'pegasus-hava-tasimaciligi'
+      };
 
-      if (priceMatch) {
-         return {
-           price: parseFloat(priceMatch[1].replace(',', '')),
-           dividendYield: yieldMatch ? parseFloat(yieldMatch[1].replace(',', '.')) / 100 : 0,
-           targetMeanPrice: targetMatch ? parseFloat(targetMatch[1].replace(',', '')) : 0,
-           dayHigh: rangeMatch ? parseFloat(rangeMatch[2].replace(',', '')) : 0,
-           dayLow: rangeMatch ? parseFloat(rangeMatch[1].replace(',', '')) : 0,
-           volume: volumeMatch ? parseFloat(volumeMatch[1].replace(/[^\d.]/g, '')) : 0,
-           source: 'Investing'
-         };
-      }
+      const slug = commonBistSlugs[upper] || clean;
+
+      const urls = [
+        `https://tr.investing.com/equities/${slug}-dividends`,
+        `https://tr.investing.com/equities/${slug}`,
+        `https://www.investing.com/equities/${slug}-dividends`,
+        `https://www.investing.com/equities/${slug}`,
+        `https://www.investing.com/search/?q=${encodeURIComponent(symbol)}`
+      ];
       
+      for (const url of urls) {
+        try {
+          const response = await fetch(url, {
+            headers: {
+              'User-Agent': getRandomUserAgent(),
+              'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+              'Referer': 'https://www.google.com/',
+              'Cache-Control': 'no-cache'
+            }
+          });
+          
+          if (!response.ok) continue;
+          const html = await response.text();
+          
+          const priceMatch = 
+            html.match(/id="last_last"[^>]*>([\d,.]+)</) || 
+            html.match(/"last":([\d,.]+)/) || 
+            html.match(/data-test="instrument-price-last"[^>]*>([\d,.]+)</) ||
+            html.match(/class="instrument-price_last[^>]*>([\d,.]+)</) ||
+            html.match(/last_last">([\d,.]+)</) ||
+            html.match(/data-realtime-value="([^"]+)"/) ||
+            html.match(/class="text-2xl[^>]*>([\d,.]+)</);
+
+          const yieldMatch = 
+            html.match(/>Div Yield<[\s\S]*?>([\d,.]+)%/) || 
+            html.match(/"yield":([\d,.]+)/) ||
+            html.match(/>Temettü Verimi<[\s\S]*?>([\d,.]+)%/) ||
+            html.match(/dividend_yield">([\d,.]+)%/) ||
+            html.match(/id="pair-details-yield">([\d,.]+)%/) ||
+            html.match(/data-test="dividend-yield-value">([\d,.]+)%/);
+
+          if (priceMatch) {
+             const rawPrice = priceMatch[1];
+             // Handle Turkish formatting (1.234,56)
+             let price = 0;
+             if (rawPrice.includes(',') && rawPrice.includes('.')) {
+               price = parseFloat(rawPrice.replace(/\./g, '').replace(',', '.'));
+             } else if (rawPrice.includes(',')) {
+               price = parseFloat(rawPrice.replace(',', '.'));
+             } else {
+               price = parseFloat(rawPrice);
+             }
+
+             if (isNaN(price) || price === 0) continue;
+
+             const divYield = yieldMatch ? parseFloat(yieldMatch[1].toString().replace(',', '.')) / 100 : 0;
+
+             console.log(`[Investing] Success for ${symbol} @ ${price} (Yield: ${divYield}) via ${url}`);
+             return {
+               price,
+               dividendYield: divYield,
+               source: 'Investing'
+             };
+          }
+        } catch (inner) {}
+      }
       return null;
     } catch (e) {
       return null;
     }
   }
 
-  static async getFullStockData(symbol: string) {
+  static async getFullStockData(symbol: string, forceRefresh = false) {
     const cleanSymbol = symbol.toUpperCase().trim();
-    const cacheKey = `unified_v2.2_${cleanSymbol}`;
+    const cacheKey = `unified_v2.7_${cleanSymbol}`;
     
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      console.log(`[UnifiedDS v2.2] Cache hit: ${cleanSymbol}`);
-      return cached;
+    const cached = cache.get(cacheKey) as any;
+    if (cached && !forceRefresh) {
+      // If cached price is 0, let's retry anyway to be resilient
+      if (cached.summary?.price?.regularMarketPrice > 0) {
+        console.log(`[UnifiedDS v2.7] Cache hit: ${cleanSymbol}`);
+        return cached;
+      }
+      console.log(`[UnifiedDS v2.7] Cache hit but price is 0, retrying for ${cleanSymbol}`);
     }
 
-    console.log(`[UnifiedDS v2.2] Starting heavy aggregation for: ${cleanSymbol}`);
+    console.log(`[UnifiedDS v2.7] Aggregating multi-source for: ${cleanSymbol}`);
     
     // Providers to run in parallel
     const [yahoo, google, av, investing] = await Promise.allSettled([
@@ -135,22 +194,52 @@ class UnifiedDataService {
       investing: investing.status === 'fulfilled' ? investing.value : null
     };
 
+    // Detailed Debugging for sources
+    console.log(`[UnifiedDS v2.7] ${cleanSymbol} Status:`, {
+      yahoo: yahoo.status === 'fulfilled' ? 'OK' : `FAIL: ${yahoo.reason}`,
+      google: google.status === 'fulfilled' ? 'OK' : `FAIL: ${google.reason}`,
+      av: av.status === 'fulfilled' ? 'OK' : `FAIL: ${av.reason}`,
+      investing: investing.status === 'fulfilled' ? 'OK' : `FAIL: ${investing.reason}`
+    });
+
+    if (results.av) {
+       console.log(`[UnifiedDS] Alpha Vantage SUCCESS for ${cleanSymbol}`);
+    } else if (process.env.ALPHA_VANTAGE_API_KEY) {
+       console.warn(`[UnifiedDS] Alpha Vantage FAILED despite API key availability for ${cleanSymbol}`);
+    }
+
+    if (!results.yahoo) console.warn(`[UnifiedDS] Yahoo failed for ${cleanSymbol}`);
+    if (!results.google) console.warn(`[UnifiedDS] Google failed for ${cleanSymbol}`);
+    if (!results.investing) console.warn(`[UnifiedDS] Investing failed for ${cleanSymbol}`);
+    
+    const getValidPrice = () => {
+      if (results.google?.price && results.google.price > 0) return results.google.price;
+      if (results.yahoo?.price && results.yahoo.price > 0) return results.yahoo.price;
+      if (results.investing?.price && results.investing.price > 0) return results.investing.price;
+      if (results.av?.price && results.av.price > 0) return results.av.price;
+      return 0;
+    };
+
+    const price = getValidPrice();
+    if (price === 0) {
+      console.error(`[UnifiedDS] CRITICAL: All price fetchers returned 0 or failed for ${cleanSymbol}.`);
+    }
+
     // CROSS-VERIFICATION & AUGMENTATION LOGIC
-    // Hybrid approach: Prefer Yahoo for complex metrics, Google for live price, AlphaV for fallback
     const aggregated = {
       symbol: cleanSymbol,
-      version: '2.6.0',
-      source: 'Unified Engine v2.6 (Discovery + Fallback)',
+      version: '2.7.1',
+      source: 'Unified Engine v2.7.1 (Resilient Priority)',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
-          regularMarketPrice: (cleanSymbol.endsWith('.IS') ? (results.yahoo?.price || results.google?.price) : (results.google?.price || results.yahoo?.price)) || results.investing?.price || results.av?.price || 0,
-          longName: results.yahoo?.name || results.google?.name || results.investing?.name || results.av?.name || cleanSymbol,
-          currency: results.yahoo?.currency || results.google?.currency || results.investing?.currency || results.av?.currency || 'TRY',
-          regularMarketChangePercent: results.yahoo?.changePercent || results.google?.changePercent || 0,
-          dayHigh: results.yahoo?.dayHigh || results.google?.dayHigh || results.investing?.dayHigh || 0,
-          dayLow: results.yahoo?.dayLow || results.google?.dayLow || results.investing?.dayLow || 0,
-          volume: results.yahoo?.volume || results.google?.volume || results.investing?.volume || results.av?.volume || 0
+          regularMarketPrice: price,
+          longName: results.google?.name || results.yahoo?.name || results.investing?.name || results.av?.name || cleanSymbol,
+          currency: results.google?.currency || results.yahoo?.currency || results.investing?.currency || results.av?.currency || 'TRY',
+          regularMarketChangePercent: results.google?.changePercent !== undefined ? results.google?.changePercent : (results.yahoo?.changePercent || 0),
+          dayHigh: results.google?.dayHigh || results.yahoo?.dayHigh || results.investing?.dayHigh || 0,
+          dayLow: results.google?.dayLow || results.yahoo?.dayLow || results.investing?.dayLow || 0,
+          volume: results.google?.volume || results.yahoo?.volume || results.investing?.volume || results.av?.volume || 0
         },
         summaryDetail: {
           dividendYield: results.yahoo?.dividendYield || results.investing?.dividendYield || results.av?.dividendYield || results.google?.dividendYield || 0,
@@ -159,9 +248,9 @@ class UnifiedDataService {
           forwardDividendYield: results.yahoo?.forwardDividendYield || results.av?.dividendYield || results.google?.dividendYield || 0,
           payoutRatio: results.yahoo?.payoutRatio || results.av?.payoutRatio || results.investing?.payoutRatio || 0,
           marketCap: results.yahoo?.marketCap || results.av?.marketCap || results.google?.marketCap || results.investing?.marketCap || 0,
-          trailingPE: results.yahoo?.pe || results.av?.pe || results.investing?.pe || 0,
-          fiftyTwoWeekHigh: results.yahoo?.high52 || results.av?.high52 || results.investing?.high52 || 0,
-          fiftyTwoWeekLow: results.yahoo?.low52 || results.av?.low52 || results.investing?.low52 || 0,
+          trailingPE: results.yahoo?.pe || results.av?.pe || results.investing?.pe || results.google?.pe || 0,
+          fiftyTwoWeekHigh: results.yahoo?.high52 || results.google?.high52 || results.av?.high52 || results.investing?.high52 || 0,
+          fiftyTwoWeekLow: results.yahoo?.low52 || results.google?.low52 || results.av?.low52 || results.investing?.low52 || 0,
           industry: results.yahoo?.industry || results.google?.industry || results.av?.industry || results.investing?.industry || null,
           sector: results.yahoo?.sector || results.google?.sector || results.av?.sector || results.investing?.sector || null
         },
@@ -201,10 +290,9 @@ class UnifiedDataService {
     if (sd.dividendRate === 0 && aggregated.history && aggregated.history.length > 0) {
       const oneYearAgo = (Date.now() / 1000) - (365 * 24 * 60 * 60);
       const recentDividends = aggregated.history
-        .filter(h => h.date >= oneYearAgo)
-        .reduce((sum, h) => sum + (h.amount || h.adjClose || 0), 0); 
+        .filter((h: any) => h.date >= oneYearAgo)
+        .reduce((sum: number, h: any) => sum + (h.amount || 0), 0); 
       
-      // If we found dividends in history but not in summary
       if (recentDividends > 0) {
         sd.dividendRate = recentDividends;
         console.log(`[UnifiedDS] Extracted ${recentDividends} from history for ${cleanSymbol}`);
@@ -235,13 +323,12 @@ class UnifiedDataService {
       sd.dividendYield = sd.dividendRate / prc;
     }
 
-    // 6. Payout Ratio Fallback: Often missing for BIST stocks
+    // 6. Payout Ratio Fallback
     if ((sd.payoutRatio === 0 || !sd.payoutRatio) && (sd.dividendRate > 0 || sd.forwardDividendRate > 0)) {
-       const eps = results.yahoo?.eps || results.av?.eps || 0;
+       const eps = results.yahoo?.eps || results.av?.eps || results.google?.eps || 0;
        const rate = sd.forwardDividendRate || sd.dividendRate;
        if (eps > 0 && rate > 0) {
          sd.payoutRatio = rate / eps;
-         console.log(`[UnifiedDS] Calculated Payout Ratio ${sd.payoutRatio} (Rate: ${rate} / EPS: ${eps}) for ${cleanSymbol}`);
        }
     }
     // ------------------------------------
@@ -260,48 +347,53 @@ class UnifiedDataService {
         const quote = await yf.quote(t);
         if (!quote || !quote.regularMarketPrice) continue;
 
+        // Fetch detailed data with fallbacks
+        const [summary, chart] = await Promise.all([
+          yf.quoteSummary(t, { 
+            modules: ['summaryDetail', 'assetProfile', 'defaultKeyStatistics', 'financialData'] 
+          }).catch(() => null),
+          yf.chart(t, { 
+            period1: new Date(Date.now() - 5 * 365 * 24 * 60 * 60 * 1000), 
+            period2: new Date(), 
+            events: 'dividends' 
+          }).catch(() => null)
+        ]);
+
         let history = [];
-        try {
-          const now = new Date();
-          const p1 = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
-          const chart = await yf.chart(t, { period1: p1, period2: now, events: 'dividends' });
-          if (chart?.events?.dividends) {
-            history = Object.values(JSON.parse(JSON.stringify(chart.events.dividends)));
-          }
-        } catch (e) {}
-
-        const summary = await yf.quoteSummary(t, { modules: ['summaryDetail', 'assetProfile', 'defaultKeyStatistics', 'financialData'] }).catch(() => null);
-
-        // Debug log for data discovery
-        if (summary) {
-           console.log(`[Discovery] ${t} - Yield: ${summary.summaryDetail?.dividendYield?.value}, Rate: ${summary.summaryDetail?.dividendRate?.value}, Payout: ${summary.summaryDetail?.payoutRatio?.value}`);
+        if (chart?.events?.dividends) {
+          history = Object.values(JSON.parse(JSON.stringify(chart.events.dividends)));
         }
+
+        const sd = summary?.summaryDetail;
+        const dks = summary?.defaultKeyStatistics;
+        const fd = summary?.financialData;
+        const ap = summary?.assetProfile;
 
         return {
           price: quote.regularMarketPrice,
-          name: quote.longName || quote.shortName,
-          currency: quote.currency,
-          changePercent: quote.regularMarketChangePercent,
-          dividendYield: quote.trailingAnnualDividendYield || quote.dividendYield || summary?.summaryDetail?.dividendYield?.value || summary?.defaultKeyStatistics?.yield?.value || summary?.defaultKeyStatistics?.lastDividendYield?.value || 0,
-          dividendRate: quote.trailingAnnualDividendRate || quote.dividendRate || summary?.summaryDetail?.dividendRate?.value || summary?.defaultKeyStatistics?.lastDividendValue?.value || 0,
-          forwardDividendRate: summary?.summaryDetail?.forwardDividendRate?.value || quote.dividendRate || summary?.defaultKeyStatistics?.lastDividendValue?.value || 0,
-          forwardDividendYield: summary?.summaryDetail?.forwardDividendYield?.value || quote.dividendYield || 0,
-          payoutRatio: summary?.summaryDetail?.payoutRatio?.value || summary?.defaultKeyStatistics?.payoutRatio?.value || quote.payoutRatio || 0,
-          eps: summary?.defaultKeyStatistics?.trailingEps?.value || summary?.financialData?.earningsPerShare?.value || 0,
-          marketCap: quote.marketCap,
-          pe: quote.trailingPE || summary?.summaryDetail?.trailingPE?.value || 0,
-          high52: quote.fiftyTwoWeekHigh || summary?.summaryDetail?.fiftyTwoWeekHigh?.value || 0,
-          low52: quote.fiftyTwoWeekLow || summary?.summaryDetail?.fiftyTwoWeekLow?.value || 0,
+          name: quote.longName || quote.shortName || t,
+          currency: quote.currency || 'TRY',
+          changePercent: quote.regularMarketChangePercent || 0,
+          dividendYield: quote.trailingAnnualDividendYield || quote.dividendYield || sd?.dividendYield?.value || dks?.yield?.value || dks?.lastDividendYield?.value || 0,
+          dividendRate: quote.trailingAnnualDividendRate || quote.dividendRate || sd?.dividendRate?.value || dks?.lastDividendValue?.value || 0,
+          forwardDividendRate: sd?.forwardDividendRate?.value || quote.dividendRate || dks?.lastDividendValue?.value || 0,
+          forwardDividendYield: sd?.forwardDividendYield?.value || quote.dividendYield || 0,
+          payoutRatio: sd?.payoutRatio?.value || dks?.payoutRatio?.value || quote.payoutRatio || 0,
+          eps: dks?.trailingEps?.value || fd?.earningsPerShare?.value || quote.epsTrailingTwelveMonths || 0,
+          marketCap: quote.marketCap || sd?.marketCap?.value || 0,
+          pe: quote.trailingPE || sd?.trailingPE?.value || 0,
+          high52: quote.fiftyTwoWeekHigh || sd?.fiftyTwoWeekHigh?.value || 0,
+          low52: quote.fiftyTwoWeekLow || sd?.fiftyTwoWeekLow?.value || 0,
           dayHigh: quote.regularMarketDayHigh || 0,
           dayLow: quote.regularMarketDayLow || 0,
           volume: quote.regularMarketVolume || 0,
-          recommendationKey: summary?.financialData?.recommendationKey,
-          targetMeanPrice: summary?.financialData?.targetMeanPrice?.value || 0,
-          numberOfAnalystOpinions: summary?.financialData?.numberOfAnalystOpinions?.value || 0,
-          industry: summary?.assetProfile?.industry,
-          sector: summary?.assetProfile?.sector,
-          longBusinessSummary: summary?.assetProfile?.longBusinessSummary,
-          website: summary?.assetProfile?.website,
+          recommendationKey: fd?.recommendationKey,
+          targetMeanPrice: fd?.targetMeanPrice?.value || 0,
+          numberOfAnalystOpinions: fd?.numberOfAnalystOpinions?.value || 0,
+          industry: ap?.industry,
+          sector: ap?.sector,
+          longBusinessSummary: ap?.longBusinessSummary,
+          website: ap?.website,
           history
         };
       } catch (e) {}
@@ -311,82 +403,85 @@ class UnifiedDataService {
 
   private static async fetchGoogle(symbol: string) {
     const tickers = [symbol];
-    if (!symbol.includes('.')) tickers.unshift(`IST:${symbol}`);
-    else if (symbol.endsWith('.IS')) tickers.unshift(`IST:${symbol.split('.')[0]}`);
+    if (symbol.endsWith('.IS')) {
+      const base = symbol.split('.')[0];
+      tickers.unshift(`IST:${base}`);
+      tickers.unshift(base); // Just the base
+      tickers.push(`${base}:IST`);
+      tickers.push(`TR:${base}`); // TradingView/other style sometimes indexed
+      tickers.push(`EPA:${base}`); 
+    }
 
     for (const gt of tickers) {
       try {
-        const res = await fetch(`https://www.google.com/finance/quote/${gt}`, {
-          headers: { 'User-Agent': getRandomUserAgent() }
+        const url = `https://www.google.com/finance/quote/${gt}?hl=tr`; // Force Turkish for BIST consistency
+        const res = await fetch(url, {
+          headers: { 
+            'User-Agent': getRandomUserAgent(),
+            'Accept-Language': 'tr-TR,tr;q=0.9'
+          }
         });
         if (!res.ok) continue;
         const html = await res.text();
         
-        const priceMatch = html.match(/data-last-price="([^"]+)"/);
-        const currencyMatch = html.match(/data-currency-code="([^"]+)"/);
-        const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/);
+        const priceMatch = 
+          html.match(/data-last-price="([^"]+)"/) || 
+          html.match(/class="YMlS7e"[^>]*>([^<]+)</) || 
+          html.match(/"price":([\d.]+),/) ||
+          html.match(/class="AHmHk"[^>]*>([\d,.]+)</) ||
+          html.match(/class="I67m4c"[^>]*>([\d,.]+)</) ||
+          html.match(/class="fxKbKc"[^>]*>([\d,.]+)</) ||
+          html.match(/class="r61m6"[^>]*>([\d,.]+)</);
 
         if (priceMatch) {
-          // Attempt to extract extra metadata (Supports Turkish & English)
-          let dividendYield = 0;
-          let sector = null;
-          let industry = null;
-
-          // Google Finance labels in Turkish ("Kâr payı verimi") or English ("Dividend yield")
-          const yieldMatch = html.match(/>(?:Temettü verimi|Kâr payı verimi|Dividend yield)<[\s\S]*?<div[^>]*>([\d,.]+)%/i);
-          if (yieldMatch) {
-            dividendYield = parseFloat(yieldMatch[1].replace(',', '.')) / 100;
-          }
-
-          // Try to get hard Dividend Rate (Kâr payı) from Google Finance if available
-          let dividendRate = 0;
-          const rateMatch = html.match(/>(?:Kâr payı|Dividend|Hisse Başı Temettü)<[\s\S]*?<div[^>]*>([\d,.]+)</i);
-          if (rateMatch) {
-            dividendRate = parseFloat(rateMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
-          }
-
-          const sectorMatch = html.match(/>(?:Sektör|Sector)<[\s\S]*?<div[^>]*>([^<]+)</i);
-          if (sectorMatch) sector = sectorMatch[1].trim();
-
-          const industryMatch = html.match(/>(?:Endüstri|Industry)<[\s\S]*?<div[^>]*>([^<]+)</i);
-          if (industryMatch) industry = industryMatch[1].trim();
+          const rawPrice = priceMatch[1].trim();
+          let priceVal = 0;
           
-          const rangeMatch = html.match(/>(?:Günlük aralık|Day range)<[\s\S]*?<div[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
-          let dayLow = 0;
-          let dayHigh = 0;
-          if (rangeMatch) {
-             dayLow = parseFloat(rangeMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
-             dayHigh = parseFloat(rangeMatch[2].replace(/[^\d.,]/g, '').replace(',', '.'));
+          // Google TR often uses "." as thousands separator and "," as decimal separator
+          // Or just standard decimal. Let's be smart.
+          if (rawPrice.includes(',') && rawPrice.includes('.')) {
+            // 1.234,56 -> 1234.56
+            priceVal = parseFloat(rawPrice.replace(/\./g, '').replace(',', '.'));
+          } else if (rawPrice.includes(',')) {
+            // 213,40 -> 213.40
+            priceVal = parseFloat(rawPrice.replace(',', '.'));
+          } else {
+            priceVal = parseFloat(rawPrice.replace(/[^\d.]/g, ''));
           }
+          
+          if (isNaN(priceVal) || priceVal === 0) continue;
 
-          const volumeReg = html.match(/>(?:Hacim|Volume)<[\s\S]*?<div[^>]*>([\d,.\w]+)</i);
-          let volume = 0;
-          if (volumeReg) {
-             const cleanVol = volumeReg[1].trim().toUpperCase();
-             if (cleanVol.endsWith('M')) volume = parseFloat(cleanVol) * 1000000;
-             else if (cleanVol.endsWith('B')) volume = parseFloat(cleanVol) * 1000000000;
-             else if (cleanVol.endsWith('K')) volume = parseFloat(cleanVol) * 1000;
-             else volume = parseFloat(cleanVol.replace(/[^\d.,]/g, '').replace(',', '.'));
-          }
+          console.log(`[Google] Success for ${symbol} (${gt}) @ ${priceVal}`);
 
-          const targetMatch = html.match(/>(?:Fiyat Hedefi|Price Target)<[\s\S]*?<div[^>]*>([\d,.]+)</i);
-          let targetMeanPrice = 0;
-          if (targetMatch) {
-            targetMeanPrice = parseFloat(targetMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
-          }
+          let dividendYield = 0;
+          let dividendRate = 0;
+          let pe = 0;
+          let eps = 0;
+
+          // Yield Patterns
+          const yieldMatch = html.match(/>(?:Temettü verimi|Kâr payı verimi|Dividend yield)<[\s\S]*?<div[^>]*>([\d,.]+)%/i);
+          if (yieldMatch) dividendYield = parseFloat(yieldMatch[1].replace(',', '.')) / 100;
+
+          // Rate Patterns
+          const rateMatch = html.match(/>(?:Kâr payı|Dividend|Hisse Başı Temettü)<[\s\S]*?<div[^>]*>([\d,.]+)</i);
+          if (rateMatch) dividendRate = parseFloat(rateMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
+
+          // PE Ratio Patterns
+          const peMatch = html.match(/>(?:F\/K oranı|P\/E ratio)<[\s\S]*?<div[^>]*>([\d,.]+)</i);
+          if (peMatch) pe = parseFloat(peMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
+
+          if (pe > 0 && priceVal > 0) eps = priceVal / pe;
+
+          const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/) || html.match(/class="Dd939e"[^>]*>([^<]+)</) || html.match(/"name":"([^"]+)"/);
 
           return {
-            price: parseFloat(priceMatch[1].replace(/[^\d.,]/g, '').replace(',', '.')),
-            currency: currencyMatch ? currencyMatch[1] : 'TRY',
+            price: priceVal,
+            currency: 'TRY',
             name: nameMatch ? nameMatch[1] : symbol,
             dividendYield,
             dividendRate,
-            targetMeanPrice,
-            dayHigh,
-            dayLow,
-            volume,
-            sector,
-            industry,
+            pe,
+            eps,
             source: 'Google'
           };
         }
@@ -399,30 +494,51 @@ class UnifiedDataService {
     const key = process.env.ALPHA_VANTAGE_API_KEY;
     if (!key || key === 'YOUR_AV_KEY') return null;
     
-    let avt = symbol;
+    const variants = [symbol];
     if (symbol.endsWith('.IS')) {
-      avt = symbol.replace('.IS', '.IST');
+      variants.unshift(symbol.replace('.IS', '.IST'));
+      variants.push(symbol.split('.')[0]); // Just the base symbol
     }
-    try {
-      const res = await fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${avt}&apikey=${key}`);
-      const data = await res.json();
-      if (data && data.Symbol) {
+
+    for (const avt of variants) {
+      try {
+        console.log(`[AlphaVantage] Trying ${avt} for ${symbol}...`);
+        const ovRes = await fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${avt}&apikey=${key}`);
+        const ovData = await ovRes.json();
+        
+        if (ovData.Note || ovData.Information) {
+          console.warn(`[AlphaVantage] Limit reached while trying ${avt}`);
+          continue;
+        }
+
+        if (!ovData.Symbol) {
+          console.log(`[AlphaVantage] No data for ${avt}`);
+          continue;
+        }
+
+        const qRes = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${avt}&apikey=${key}`);
+        const qData = await qRes.json();
+        const quote = qData['Global Quote'] || {};
+
         return {
-          name: data.Name,
-          dividendYield: parseFloat(data.DividendYield) || 0,
-          dividendRate: parseFloat(data.DividendPerShare) || 0,
-          payoutRatio: parseFloat(data.PayoutRatio) || 0,
-          eps: parseFloat(data.EPS) || 0,
-          marketCap: parseFloat(data.MarketCapitalization) || 0,
-          targetMeanPrice: parseFloat(data.AnalystTargetPrice) || 0,
-          volume: parseFloat(data.Volume) || 0,
-          pe: parseFloat(data.PERatio) || 0,
-          industry: data.Industry,
-          sector: data.Sector,
-          currency: data.Currency || 'TRY'
+          price: parseFloat(quote['05. price']) || 0,
+          name: ovData.Name,
+          dividendYield: parseFloat(ovData.DividendYield) || 0,
+          dividendRate: parseFloat(ovData.DividendPerShare) || 0,
+          payoutRatio: parseFloat(ovData.PayoutRatio) || 0,
+          eps: parseFloat(ovData.EPS) || 0,
+          marketCap: parseFloat(ovData.MarketCapitalization) || 0,
+          targetMeanPrice: parseFloat(ovData.AnalystTargetPrice) || 0,
+          volume: parseFloat(quote['06. volume']) || parseFloat(ovData.Volume) || 0,
+          pe: parseFloat(ovData.PERatio) || 0,
+          industry: ovData.Industry,
+          sector: ovData.Sector,
+          currency: ovData.Currency || 'TRY',
+          dayHigh: parseFloat(quote['03. high']) || 0,
+          dayLow: parseFloat(quote['04. low']) || 0
         };
-      }
-    } catch (e) {}
+      } catch (e) {}
+    }
     return null;
   }
 }
@@ -432,11 +548,11 @@ async function startServer() {
   const PORT = 3000;
 
   // API Key Diagnostics
-  console.log('--- API Diagnostics ---');
-  console.log('FINNHUB_API_KEY:', process.env.FINNHUB_API_KEY ? 'Present' : 'MISSING');
-  console.log('ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? 'Present' : 'MISSING');
-  console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'Present' : 'MISSING');
-  console.log('-----------------------');
+  console.log('--- [KARLISIN ENGINE] API Diagnostics ---');
+  console.log('ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY ? 'Present (Using API)' : 'MISSING (Falling back to Web Scrapers)');
+  console.log('FINNHUB_API_KEY:', process.env.FINNHUB_API_KEY ? 'Present (Using API)' : 'MISSING');
+  console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'Present (Active)' : 'MISSING (Email services disabled)');
+  console.log('-----------------------------------------');
 
   // Resend yapılandırması
   const resend = new Resend(process.env.RESEND_API_KEY || 're_123');
@@ -472,7 +588,7 @@ async function startServer() {
     // Cache bypass for forced refresh
     if (forceRefresh) {
       console.log(`[UnifiedDS] Force refreshing: ${symbol}`);
-      cache.del(`unified_v2.2_${symbol}`);
+      cache.del(`unified_v2.7_${symbol}`);
     }
 
     try {

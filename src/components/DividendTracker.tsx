@@ -422,6 +422,7 @@ const DividendGrowthChart = ({ history }: { history: any[] }) => {
 };
 
 const DividendTracker: React.FC = () => {
+  // Primary States
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedSymbol, setSelectedSymbol] = useState(getHottestDividendSymbol());
@@ -438,6 +439,7 @@ const DividendTracker: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // UI States
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
   const [isInformationModalOpen, setIsInformationModalOpen] = useState(false);
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false);
@@ -605,6 +607,12 @@ const DividendTracker: React.FC = () => {
 
       const json = await res.json();
       if (!json || !json.summary) throw new Error('Sembol verisi bulunamadı.');
+
+      // Price alert if all fetchers fail (0 returned)
+      if (json.summary.price?.regularMarketPrice === 0) {
+        console.warn('[DividendTracker] Fiyat verisi 0 döndü. Tüm kaynaklar kilitlenmiş olabilir.');
+        setError('Piyasa verilerine şu an erişilemiyor. Lütfen Settings kısmından API keylerinizi kontrol edin veya biraz sonra tekrar deneyin.');
+      }
 
       // Background fetch for AV details
       fetchAlphaVantage(symbol);
@@ -846,7 +854,16 @@ const DividendTracker: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter italic leading-none">{data?.symbol}</h2>
                             <div className="h-6 w-px bg-white/10 mx-2" />
-                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-tight max-w-[250px]">{data?.summary?.price?.longName || data?.symbol}</div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-tight max-w-[250px] font-sans">
+                              {data?.summary?.price?.longName || data?.symbol}
+                            </div>
+                            <button 
+                              onClick={() => fetchData(selectedSymbol, true)}
+                              className="ml-2 p-2 rounded-full bg-white/5 hover:bg-white/10 transition-all group/refresh"
+                              title="Verileri Yenile"
+                            >
+                              <RefreshCw className={cn("w-3 h-3 text-slate-400 group-hover/refresh:text-indigo-400 font-bold", loading && "animate-spin")} />
+                            </button>
                           </div>
                           <div className="flex items-center flex-wrap gap-2 mt-2">
                             <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] font-black uppercase tracking-widest rounded border border-indigo-500/20">
@@ -859,7 +876,7 @@ const DividendTracker: React.FC = () => {
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded border border-white/5">
                               <Clock className="w-2 h-2 text-slate-500" />
                               <span className="text-slate-400 font-bold uppercase tracking-widest text-[7px]">
-                                SENK: {data?.verification?.last_sync || '---'}
+                                SENK: {data?.verification?.last_sync || (data as any)?.last_sync || '---'}
                               </span>
                             </div>
                           </div>
