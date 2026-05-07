@@ -163,58 +163,74 @@ class UnifiedDataService {
     }
   }
 
+  private static async fetchFinnhub(symbol: string) {
+    const key = process.env.FINNHUB_API_KEY;
+    if (!key || key === 'YOUR_FINNHUB_KEY') return null;
+
+    try {
+      // BIST symbols on Finnhub usually look like KCHOL.IS
+      const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${key}`);
+      const data = await res.json();
+      
+      if (data && data.c > 0) {
+        console.log(`[Finnhub] Success for ${symbol} @ ${data.c}`);
+        return {
+          price: data.c,
+          dayHigh: data.h,
+          dayLow: data.l,
+          changePercent: data.dp,
+          source: 'Finnhub'
+        };
+      }
+    } catch (e) {
+      console.warn(`[Finnhub] Error for ${symbol}:`, e);
+    }
+    return null;
+  }
+
   static async getFullStockData(symbol: string, forceRefresh = false) {
     const cleanSymbol = symbol.toUpperCase().trim();
-    const cacheKey = `unified_v2.7_${cleanSymbol}`;
+    const cacheKey = `unified_v2.8_${cleanSymbol}`;
     
     const cached = cache.get(cacheKey) as any;
     if (cached && !forceRefresh) {
-      // If cached price is 0, let's retry anyway to be resilient
       if (cached.summary?.price?.regularMarketPrice > 0) {
-        console.log(`[UnifiedDS v2.7] Cache hit: ${cleanSymbol}`);
         return cached;
       }
-      console.log(`[UnifiedDS v2.7] Cache hit but price is 0, retrying for ${cleanSymbol}`);
     }
 
-    console.log(`[UnifiedDS v2.7] Aggregating multi-source for: ${cleanSymbol}`);
+    console.log(`[UnifiedDS v2.8] Aggregating multi-source for: ${cleanSymbol}`);
     
     // Providers to run in parallel
-    const [yahoo, google, av, investing] = await Promise.allSettled([
+    const [yahoo, google, av, investing, finnhub] = await Promise.allSettled([
       this.fetchYahoo(cleanSymbol),
       this.fetchGoogle(cleanSymbol),
       this.fetchAlphaVantage(cleanSymbol),
-      this.fetchInvesting(cleanSymbol)
+      this.fetchInvesting(cleanSymbol),
+      this.fetchFinnhub(cleanSymbol)
     ]);
 
     const results: any = {
       yahoo: yahoo.status === 'fulfilled' ? yahoo.value : null,
       google: google.status === 'fulfilled' ? google.value : null,
       av: av.status === 'fulfilled' ? av.value : null,
-      investing: investing.status === 'fulfilled' ? investing.value : null
+      investing: investing.status === 'fulfilled' ? investing.value : null,
+      finnhub: finnhub.status === 'fulfilled' ? finnhub.value : null
     };
 
     // Detailed Debugging for sources
-    console.log(`[UnifiedDS v2.7] ${cleanSymbol} Status:`, {
-      yahoo: yahoo.status === 'fulfilled' ? 'OK' : `FAIL: ${yahoo.reason}`,
-      google: google.status === 'fulfilled' ? 'OK' : `FAIL: ${google.reason}`,
-      av: av.status === 'fulfilled' ? 'OK' : `FAIL: ${av.reason}`,
-      investing: investing.status === 'fulfilled' ? 'OK' : `FAIL: ${investing.reason}`
+    console.log(`[UnifiedDS v2.8] ${cleanSymbol} Status:`, {
+      yahoo: !!results.yahoo,
+      google: !!results.google,
+      av: !!results.av,
+      investing: !!results.investing,
+      finnhub: !!results.finnhub
     });
 
-    if (results.av) {
-       console.log(`[UnifiedDS] Alpha Vantage SUCCESS for ${cleanSymbol}`);
-    } else if (process.env.ALPHA_VANTAGE_API_KEY) {
-       console.warn(`[UnifiedDS] Alpha Vantage FAILED despite API key availability for ${cleanSymbol}`);
-    }
-
-    if (!results.yahoo) console.warn(`[UnifiedDS] Yahoo failed for ${cleanSymbol}`);
-    if (!results.google) console.warn(`[UnifiedDS] Google failed for ${cleanSymbol}`);
-    if (!results.investing) console.warn(`[UnifiedDS] Investing failed for ${cleanSymbol}`);
-    
     const getValidPrice = () => {
       if (results.google?.price && results.google.price > 0) return results.google.price;
       if (results.yahoo?.price && results.yahoo.price > 0) return results.yahoo.price;
+      if (results.finnhub?.price && results.finnhub.price > 0) return results.finnhub.price;
       if (results.investing?.price && results.investing.price > 0) return results.investing.price;
       if (results.av?.price && results.av.price > 0) return results.av.price;
       return 0;
@@ -222,23 +238,23 @@ class UnifiedDataService {
 
     const price = getValidPrice();
     if (price === 0) {
-      console.error(`[UnifiedDS] CRITICAL: All price fetchers returned 0 or failed for ${cleanSymbol}.`);
+      console.error(`[UnifiedDS] CRITICAL: All 5 fetchers failed for ${cleanSymbol}.`);
     }
 
     // CROSS-VERIFICATION & AUGMENTATION LOGIC
     const aggregated = {
       symbol: cleanSymbol,
-      version: '2.7.1',
-      source: 'Unified Engine v2.7.1 (Resilient Priority)',
+      version: '2.8.0',
+      source: 'Unified Engine v2.8 (Multi-API + Hybrid Scrapers)',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
           regularMarketPrice: price,
           longName: results.google?.name || results.yahoo?.name || results.investing?.name || results.av?.name || cleanSymbol,
           currency: results.google?.currency || results.yahoo?.currency || results.investing?.currency || results.av?.currency || 'TRY',
-          regularMarketChangePercent: results.google?.changePercent !== undefined ? results.google?.changePercent : (results.yahoo?.changePercent || 0),
-          dayHigh: results.google?.dayHigh || results.yahoo?.dayHigh || results.investing?.dayHigh || 0,
-          dayLow: results.google?.dayLow || results.yahoo?.dayLow || results.investing?.dayLow || 0,
+          regularMarketChangePercent: results.google?.changePercent !== undefined ? results.google?.changePercent : (results.finnhub?.changePercent || results.yahoo?.changePercent || 0),
+          dayHigh: results.google?.dayHigh || results.yahoo?.dayHigh || results.finnhub?.dayHigh || results.investing?.dayHigh || 0,
+          dayLow: results.google?.dayLow || results.yahoo?.dayLow || results.finnhub?.dayLow || results.investing?.dayLow || 0,
           volume: results.google?.volume || results.yahoo?.volume || results.investing?.volume || results.av?.volume || 0
         },
         summaryDetail: {
@@ -272,6 +288,7 @@ class UnifiedDataService {
         yahoo_verified: !!results.yahoo,
         alpha_vantage_verified: !!results.av,
         investing_verified: !!results.investing,
+        finnhub_verified: !!results.finnhub,
         last_sync: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       }
     };
@@ -575,10 +592,10 @@ async function startServer() {
 
   // Debug Version API
   app.get('/api/version', (req, res) => {
-    res.json({ version: '2.2.0', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
+    res.json({ version: '2.8.0', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
   });
 
-  // DIVIDEND API (Unified Engine: Yahoo + Google + Alpha Vantage)
+  // DIVIDEND API (Unified Engine: Yahoo + Google + Alpha Vantage + Finnhub)
   app.get('/api/dividends', async (req, res) => {
     const symbol = (req.query.symbol as string || '').toUpperCase().trim();
     const forceRefresh = req.query.refresh === 'true';
@@ -588,7 +605,7 @@ async function startServer() {
     // Cache bypass for forced refresh
     if (forceRefresh) {
       console.log(`[UnifiedDS] Force refreshing: ${symbol}`);
-      cache.del(`unified_v2.7_${symbol}`);
+      cache.del(`unified_v2.8_${symbol}`);
     }
 
     try {
