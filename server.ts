@@ -399,7 +399,10 @@ class UnifiedDataService {
     const key = process.env.ALPHA_VANTAGE_API_KEY;
     if (!key || key === 'YOUR_AV_KEY') return null;
     
-    const avt = symbol.includes('.') ? symbol.replace('.IS', '.IST') : `${symbol}.IST`;
+    let avt = symbol;
+    if (symbol.endsWith('.IS')) {
+      avt = symbol.replace('.IS', '.IST');
+    }
     try {
       const res = await fetch(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${avt}&apikey=${key}`);
       const data = await res.json();

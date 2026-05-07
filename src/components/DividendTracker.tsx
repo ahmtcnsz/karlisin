@@ -850,7 +850,7 @@ const DividendTracker: React.FC = () => {
                           </div>
                           <div className="flex items-center flex-wrap gap-2 mt-2">
                             <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] font-black uppercase tracking-widest rounded border border-indigo-500/20">
-                              {data?.summary?.summaryDetail?.sector || 'Sektör Verisi Yok'}
+                              {data?.summary?.summaryDetail?.sector || avData?.Sector || 'Sektör Verisi Yok'}
                             </span>
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded">
                               <div className="w-1 h-1 rounded-full bg-emerald-500" />
@@ -968,7 +968,7 @@ const DividendTracker: React.FC = () => {
                             <DollarSign className="w-10 h-10 text-white" />
                           </div>
                           <div className="flex items-center justify-between mb-2">
-                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">HİSSE BAŞI ÖDEME</div>
+                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">BEKLENEN ÖDEME</div>
                             <InfoTooltip title="Temettü Tahmini" text="Analistlerin ve şirketin gelecek 12 ay için öngördüğü toplam hisse başı temettü miktarıdır." />
                           </div>
                           <div className="text-2xl md:text-3xl font-black text-emerald-400 tracking-tighter italic mb-1 truncate">
@@ -992,7 +992,7 @@ const DividendTracker: React.FC = () => {
                             <TrendingUp className="w-10 h-10 text-white" />
                           </div>
                           <div className="flex items-center justify-between mb-2">
-                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Temettü Verimi</div>
+                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">TEMETTÜ VERİMİ</div>
                             <InfoTooltip title="Temettü Verimi" text="Beklenen temettü ödemesinin hisse fiyatına oranıdır." />
                           </div>
                           <div className="text-2xl md:text-3xl font-black text-indigo-400 tracking-tighter italic mb-1 truncate">
@@ -1013,7 +1013,7 @@ const DividendTracker: React.FC = () => {
                             <HistoryIcon className="w-10 h-10 text-white" />
                           </div>
                           <div className="flex items-center justify-between mb-2">
-                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Payout Ratio</div>
+                            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">PAYOUT RATIO</div>
                             <InfoTooltip title="Payout Ratio" text="Şirketin kârının yüzde kaçını hissedarlarına dağıttığını gösterir." />
                           </div>
                           <div className="text-2xl md:text-3xl font-black text-amber-500 tracking-tighter italic mb-1 truncate">
@@ -1202,14 +1202,17 @@ const DividendTracker: React.FC = () => {
                            <div className="bg-slate-950/50 border border-white/5 rounded-[32px] p-6 md:p-8 flex flex-col group/industry relative min-h-[160px] md:min-h-0 overflow-hidden">
                               <Layers className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 rotate-12 group-hover:scale-110 group-hover:rotate-0 transition-all duration-700" />
                               
-                              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 relative z-10">Endüstri</span>
+                              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 relative z-10">Endüstri / Sınıf</span>
                               <div className="text-xl font-black text-white italic tracking-tight uppercase leading-snug mb-2 line-clamp-2 relative z-10">
-                                 {data?.summary?.summaryDetail?.industry || 'VERİ BEKLENİYOR'}
+                                 {data?.summary?.summaryDetail?.industry || avData?.Industry || 'VERİ BEKLENİYOR'}
                               </div>
                               <div className="mt-auto flex items-center gap-2 relative z-10">
                                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/40" />
                                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                                    {data?.summary?.summaryDetail?.sector || 'TANIMSIZ SEKTÖR'}
+                                    VARLIK SEKTÖRÜ:{' '}
+                                    <span className="text-indigo-400">
+                                       {data?.summary?.summaryDetail?.sector || avData?.Sector || 'TANIMSIZ SEKTÖR'}
+                                    </span>
                                  </span>
                                </div>
                            </div>
@@ -1643,14 +1646,29 @@ const DividendTracker: React.FC = () => {
                         exit={{ opacity: 0, y: -20 }}
                         className="max-w-4xl mx-auto"
                       >
-                         <div className="bg-slate-900/50 border border-white/5 rounded-[40px] p-12 shadow-xl overflow-hidden relative font-sans">
-                           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 blur-[100px] rounded-full -mr-20 -mt-20" />
-                           <div className="relative z-10">
-                             <p className="text-slate-300 leading-relaxed font-medium text-xl whitespace-pre-wrap">
-                               {avData?.Description || data?.summary?.assetProfile?.longBusinessSummary || 'Bu şirket için detaylı profil özeti şu an mevcut değil.'}
-                             </p>
-                           </div>
-                         </div>
+                          <div className="bg-slate-900/50 border border-white/5 rounded-[40px] p-12 shadow-xl overflow-hidden relative font-sans">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 blur-[100px] rounded-full -mr-20 -mt-20" />
+                            <div className="relative z-10 space-y-8">
+                              <p className="text-slate-300 leading-relaxed font-medium text-xl whitespace-pre-wrap">
+                                {avData?.Description || data?.summary?.assetProfile?.longBusinessSummary || 'Bu şirket için detaylı profil özeti şu an mevcut değil.'}
+                              </p>
+
+                              <div className="pt-8 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="p-6 bg-slate-950/30 rounded-3xl border border-white/5">
+                                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-2">Varlık Sektörü</span>
+                                  <span className="text-lg font-black text-white italic uppercase tracking-tight">
+                                    {data?.summary?.summaryDetail?.sector || avData?.Sector || 'Belirlenmedi'}
+                                  </span>
+                                </div>
+                                <div className="p-6 bg-slate-950/30 rounded-3xl border border-white/5">
+                                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-2">Endüstri / Sınıf</span>
+                                  <span className="text-lg font-black text-white italic uppercase tracking-tight">
+                                    {data?.summary?.summaryDetail?.industry || avData?.Industry || 'Belirlenmedi'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                       </motion.div>
                     )}
 
