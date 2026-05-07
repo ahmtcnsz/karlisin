@@ -836,7 +836,7 @@ const DividendTracker: React.FC = () => {
                 <div className="p-8 md:p-10 flex flex-col relative">
                   {/* Decorative Symbol Background */}
                   <div className="absolute top-0 right-0 p-8 md:p-10 font-black text-white uppercase tracking-tighter leading-none italic text-[60px] md:text-[120px] opacity-[0.02] select-none pointer-events-none overflow-hidden">
-                    {data.symbol}
+                    {data?.symbol}
                   </div>
 
                   <div className="relative z-10">
@@ -844,7 +844,7 @@ const DividendTracker: React.FC = () => {
                       <div className="flex flex-col md:flex-row md:items-center gap-4">
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
-                            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter italic leading-none">{data.symbol}</h2>
+                            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter italic leading-none">{data?.symbol}</h2>
                             <div className="h-6 w-px bg-white/10 mx-2" />
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-tight max-w-[250px]">{data?.summary?.price?.longName || data?.symbol}</div>
                           </div>
@@ -887,8 +887,8 @@ const DividendTracker: React.FC = () => {
                               <div className="flex flex-col">
                                 <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Günlük Aralık</span>
                                 <div className="text-[9px] font-bold text-slate-300">
-                                  {data.summary.price?.dayLow && data.summary.price?.dayHigh ? (
-                                    `${formatCurrency(data.summary.price?.dayLow, data.symbol)} - ${formatCurrency(data.summary.price?.dayHigh, data.symbol)}`
+                                  {data?.summary?.price?.dayLow && data?.summary?.price?.dayHigh ? (
+                                    `${formatCurrency(data?.summary?.price?.dayLow, data?.symbol)} - ${formatCurrency(data?.summary?.price?.dayHigh, data?.symbol)}`
                                   ) : (
                                     '---'
                                   )}
@@ -897,7 +897,7 @@ const DividendTracker: React.FC = () => {
                               <div className="flex flex-col">
                                 <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Hacim</span>
                                 <div className="text-[9px] font-bold text-slate-300">
-                                  {formatLargeNumber(data.summary.price?.volume)}
+                                  {formatLargeNumber(data?.summary?.price?.volume)}
                                 </div>
                               </div>
                             </div>
@@ -907,24 +907,24 @@ const DividendTracker: React.FC = () => {
                           <div className="flex items-center gap-3">
                             <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">DOĞRULANAN KAYNAKLAR:</span>
                             <div className="flex items-center gap-2">
-                              <div className={cn("flex items-center gap-1 transition-opacity", data.verification?.yahoo_verified ? "opacity-100" : "opacity-30")}>
+                              <div className={cn("flex items-center gap-1 transition-opacity", data?.verification?.yahoo_verified ? "opacity-100" : "opacity-30")}>
                                 <div className="w-2.5 h-2.5 rounded-full bg-purple-500 flex items-center justify-center text-[5px] font-bold text-white">Y</div>
-                                <span className={cn("text-[7px] font-bold", data.verification?.yahoo_verified ? "text-purple-400" : "text-slate-500")}>YAHOO</span>
+                                <span className={cn("text-[7px] font-bold", data?.verification?.yahoo_verified ? "text-purple-400" : "text-slate-500")}>YAHOO</span>
                               </div>
-                              <div className={cn("flex items-center gap-1 transition-opacity", data.verification?.google_verified ? "opacity-100" : "opacity-30")}>
+                              <div className={cn("flex items-center gap-1 transition-opacity", data?.verification?.google_verified ? "opacity-100" : "opacity-30")}>
                                 <div className="w-2.5 h-2.5 rounded-full bg-blue-500 flex items-center justify-center text-[5px] font-bold text-white">G</div>
-                                <span className={cn("text-[7px] font-bold", data.verification?.google_verified ? "text-blue-400" : "text-slate-500")}>GOOGLE</span>
+                                <span className={cn("text-[7px] font-bold", data?.verification?.google_verified ? "text-blue-400" : "text-slate-500")}>GOOGLE</span>
                               </div>
-                              <div className={cn("flex items-center gap-1 transition-opacity", data.verification?.investing_verified ? "opacity-100" : "opacity-30")}>
+                              <div className={cn("flex items-center gap-1 transition-opacity", data?.verification?.investing_verified ? "opacity-100" : "opacity-30")}>
                                 <div className="w-2.5 h-2.5 rounded-full bg-orange-500 flex items-center justify-center text-[5px] font-bold text-white">I</div>
-                                <span className={cn("text-[7px] font-bold", data.verification?.investing_verified ? "text-orange-400" : "text-slate-500")}>INVESTING</span>
+                                <span className={cn("text-[7px] font-bold", data?.verification?.investing_verified ? "text-orange-400" : "text-slate-500")}>INVESTING</span>
                               </div>
                             </div>
                             <div className="h-2 w-px bg-white/10" />
                             <div className="flex items-center gap-1">
-                              <ShieldCheck className={cn("w-2 h-2", (data.verification?.sources_count || 0) >= 2 ? "text-emerald-500 animate-pulse" : "text-slate-500")} />
-                              <span className={cn("text-[7px] font-black uppercase tracking-widest", (data.verification?.sources_count || 0) >= 2 ? "text-emerald-400" : "text-slate-600")}>
-                                {(data.verification?.sources_count || 0) >= 2 ? 'ÇAPRAZ DOĞRULAMA AKTİF' : 'TEK KAYNAKDAN ÇEKİLİYOR'}
+                              <ShieldCheck className={cn("w-2 h-2", (data?.verification?.sources_count || 0) >= 2 ? "text-emerald-500 animate-pulse" : "text-slate-500")} />
+                              <span className={cn("text-[7px] font-black uppercase tracking-widest", (data?.verification?.sources_count || 0) >= 2 ? "text-emerald-400" : "text-slate-600")}>
+                                {(data?.verification?.sources_count || 0) >= 2 ? 'ÇAPRAZ DOĞRULAMA AKTİF' : 'TEK KAYNAKDAN ÇEKİLİYOR'}
                               </span>
                             </div>
                           </div>
@@ -973,15 +973,15 @@ const DividendTracker: React.FC = () => {
                           </div>
                           <div className="text-2xl md:text-3xl font-black text-emerald-400 tracking-tighter italic mb-1 truncate">
                              {formatCurrency(
-                               (data.summary.summaryDetail as any)?.forwardDividendRate || 
-                               data.summary.summaryDetail?.dividendRate || 
+                               (data?.summary?.summaryDetail as any)?.forwardDividendRate || 
+                               data?.summary?.summaryDetail?.dividendRate || 
                                (avData?.DividendPerShare ? parseFloat(avData.DividendPerShare) : 0), 
-                               data.symbol
+                               data?.symbol
                              )}
                            </div>
                            <div className="flex items-center gap-2">
                               <div className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">
-                                {((data.summary.summaryDetail as any)?.forwardDividendRate || data.summary.summaryDetail?.dividendRate) > 0 ? 'TEMETTÜ TAHMİNİ' : (avData?.DividendPerShare ? 'ALPHA VANTAGE VERİSİ' : 'VERİ YOK')}
+                                {((data?.summary?.summaryDetail as any)?.forwardDividendRate || data?.summary?.summaryDetail?.dividendRate) > 0 ? 'TEMETTÜ TAHMİNİ' : (avData?.DividendPerShare ? 'ALPHA VANTAGE VERİSİ' : 'VERİ YOK')}
                               </div>
                            </div>
                        </div>
@@ -997,13 +997,13 @@ const DividendTracker: React.FC = () => {
                           </div>
                           <div className="text-2xl md:text-3xl font-black text-indigo-400 tracking-tighter italic mb-1 truncate">
                             {formatPercent(
-                              (data.summary.summaryDetail as any)?.forwardDividendYield || 
-                              data.summary.summaryDetail?.dividendYield || 
+                              (data?.summary?.summaryDetail as any)?.forwardDividendYield || 
+                              data?.summary?.summaryDetail?.dividendYield || 
                               (avData?.DividendYield ? parseFloat(avData.DividendYield) : 0)
                             )}
                           </div>
                           <div className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">
-                            {(data.summary.summaryDetail as any)?.forwardDividendYield > 0 ? 'Beklenen Verim' : (avData?.DividendYield ? 'Yıllık Ortalama' : 'VERİ YOK')}
+                            {(data?.summary?.summaryDetail as any)?.forwardDividendYield > 0 ? 'Beklenen Verim' : (avData?.DividendYield ? 'Yıllık Ortalama' : 'VERİ YOK')}
                           </div>
                        </div>
 
@@ -1018,7 +1018,7 @@ const DividendTracker: React.FC = () => {
                           </div>
                           <div className="text-2xl md:text-3xl font-black text-amber-500 tracking-tighter italic mb-1 truncate">
                             {formatPercent(
-                              data.summary.summaryDetail?.payoutRatio || 
+                              data?.summary?.summaryDetail?.payoutRatio || 
                               (avData?.PayoutRatio ? parseFloat(avData.PayoutRatio) : 0)
                             )}
                           </div>
@@ -1027,7 +1027,7 @@ const DividendTracker: React.FC = () => {
                     </div>
 
                     {/* Veri Bilgilendirme Notu */}
-                    {data.summary.summaryDetail?.dividendRate === 0 && (
+                    {data?.summary?.summaryDetail?.dividendRate === 0 && (
                       <div className="mt-4 px-6 py-3 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center gap-3">
                          <Info className="w-4 h-4 text-slate-500" />
                          <p className="text-[11px] text-slate-500 font-medium">
@@ -1084,30 +1084,30 @@ const DividendTracker: React.FC = () => {
                       </div>
                     )}
 
-                    {(data.summary.calendarEvents?.dividendDate || data.summary.calendarEvents?.exDividendDate) && (
+                    {(data?.summary?.calendarEvents?.dividendDate || data?.summary?.calendarEvents?.exDividendDate) && (
                       <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-4 mb-12 bg-slate-950/40 p-5 md:p-4 rounded-3xl border border-white/5">
                         <div className="flex items-center gap-4 w-full sm:w-auto">
-                          {data.summary.calendarEvents?.dividendDate && (
+                          {data?.summary?.calendarEvents?.dividendDate && (
                             <div className="flex flex-col flex-1 sm:flex-none sm:pr-6 sm:border-r border-white/5">
                               <div className="flex items-center gap-1 mb-1">
                                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Ödeme Tarihi</span>
                                 <InfoTooltip title="Ödeme Tarihi" text="Şirketin temettü ödemesini hissedarların hesaplarına yatıracağı resmi tarihtir." />
                               </div>
-                              <span className="text-sm sm:text-[12px] font-black text-white italic">{formatDate(data.summary.calendarEvents?.dividendDate)}</span>
+                              <span className="text-sm sm:text-[12px] font-black text-white italic">{formatDate(data?.summary?.calendarEvents?.dividendDate)}</span>
                             </div>
                           )}
-                          {data.summary.calendarEvents?.exDividendDate && (
+                          {data?.summary?.calendarEvents?.exDividendDate && (
                             <div className="flex flex-col flex-1 sm:flex-none sm:pr-6 sm:border-r border-white/5 sm:pl-2">
                               <div className="flex items-center gap-1 mb-1">
                                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Hakediş (EX)</span>
                                 <InfoTooltip title="Hakediş Tarihi" text="Temettü hakkı kazanmak için hissenin en geç bu tarihten önceki son işlem günü elinizde olması gerekir." />
                               </div>
-                              <span className="text-sm sm:text-[12px] font-black text-white italic">{formatDate(data.summary.calendarEvents?.exDividendDate)}</span>
+                              <span className="text-sm sm:text-[12px] font-black text-white italic">{formatDate(data?.summary?.calendarEvents?.exDividendDate)}</span>
                             </div>
                           )}
                         </div>
                         <div className="w-full sm:w-auto sm:ml-auto flex items-center justify-center sm:justify-end border-t border-white/5 sm:border-0 pt-4 sm:pt-0">
-                          {getStatusBadge(data.summary.calendarEvents?.dividendDate)}
+                          {getStatusBadge(data?.summary?.calendarEvents?.dividendDate)}
                         </div>
                       </div>
                     )}
@@ -1155,13 +1155,13 @@ const DividendTracker: React.FC = () => {
                               
                               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Konsensüs</span>
                               <div className="text-4xl font-black text-white italic tracking-[0.1em] uppercase mb-2">
-                                 {getRecommendationLabel(data.summary.financialData?.recommendationKey)}
+                                 {getRecommendationLabel(data?.summary?.financialData?.recommendationKey)}
                               </div>
                               <div className="mt-auto space-y-2">
                                  <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
                                     <div className="w-1 h-1 rounded-full bg-indigo-500" />
-                                    {data.summary.financialData?.numberOfAnalystOpinions 
-                                      ? `${data.summary.financialData?.numberOfAnalystOpinions} Kurumsal Analist Görüşü` 
+                                    {data?.summary?.financialData?.numberOfAnalystOpinions 
+                                      ? `${data?.summary?.financialData?.numberOfAnalystOpinions} Kurumsal Analist Görüşü` 
                                       : 'Sektör Ortalaması'}
                                  </div>
                                  <div className="text-[8px] text-slate-600 font-black uppercase tracking-[0.2em] italic">Kaynak: Global Institutional Aggregator</div>
@@ -1188,7 +1188,7 @@ const DividendTracker: React.FC = () => {
                               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 px-1">Ort. Hedef Fiyat</span>
                               <div className="flex items-end gap-3 mb-2">
                                 <div className="text-4xl font-black text-white italic tracking-tighter leading-none">
-                                   {formatCurrency(data.summary.financialData?.targetMeanPrice || avData?.AnalystTargetPrice, data.symbol)}
+                                   {formatCurrency(data?.summary?.financialData?.targetMeanPrice || avData?.AnalystTargetPrice, data?.symbol)}
                                 </div>
                                 <ArrowUpRight className="w-6 h-6 text-indigo-400 mb-1 group-hover/target:translate-x-1 group-hover/target:-translate-y-1 transition-transform" />
                               </div>
@@ -1204,12 +1204,12 @@ const DividendTracker: React.FC = () => {
                               
                               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 relative z-10">Endüstri</span>
                               <div className="text-xl font-black text-white italic tracking-tight uppercase leading-snug mb-2 line-clamp-2 relative z-10">
-                                 {data.summary.summaryDetail?.industry || 'VERİ BEKLENİYOR'}
+                                 {data?.summary?.summaryDetail?.industry || 'VERİ BEKLENİYOR'}
                               </div>
                               <div className="mt-auto flex items-center gap-2 relative z-10">
                                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/40" />
                                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                                    {data.summary.summaryDetail?.sector || 'TANIMSIZ SEKTÖR'}
+                                    {data?.summary?.summaryDetail?.sector || 'TANIMSIZ SEKTÖR'}
                                  </span>
                                </div>
                            </div>
@@ -1220,10 +1220,10 @@ const DividendTracker: React.FC = () => {
                               
                               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 relative z-10">İşlem Platformu</span>
                               <div className="text-lg font-black text-white uppercase tracking-tight mb-2 relative z-10">
-                                 {data.symbol.includes('.IS') ? 'BİST (Midas / Bankalar)' : 'Global (Midas / Interactive)'}
+                                 {data?.symbol?.includes('.IS') ? 'BİST (Midas / Bankalar)' : 'Global (Midas / Interactive)'}
                               </div>
                               <p className="text-[9px] text-slate-400 font-medium leading-relaxed relative z-10 max-w-[200px]">
-                                 {data.symbol.includes('.IS') 
+                                 {data?.symbol?.includes('.IS') 
                                    ? 'Hisse senedini Borsa İstanbul yetkili tüm aracı kurumlar üzerinden alabilirsiniz.' 
                                    : 'Yurt dışı piyasalarına erişimi olan lisanslı kurumlar üzerinden işlem görebilir.'}
                               </p>
@@ -1427,7 +1427,7 @@ const DividendTracker: React.FC = () => {
                         </div>
                      </div>
                   </div>
-                  {data && data.history && data.history.length > 0 ? (
+                  {data?.history && data.history.length > 0 ? (
                     <DividendGrowthChart history={data.history} />
                   ) : (
                     <div className="h-64 flex items-center justify-center border border-dashed border-white/10 rounded-[32px]">
@@ -1663,8 +1663,8 @@ const DividendTracker: React.FC = () => {
                       >
                         {data?.history && data.history.length > 0 ? (
                           Object.entries(
-                            data.history.sort((a,b) => b.date - a.date).reduce((acc, item) => {
-                              const year = new Date(item.date * 1000).getFullYear();
+                            data.history.sort((a,b) => (b.date || 0) - (a.date || 0)).reduce((acc, item) => {
+                              const year = item.date ? new Date(item.date * 1000).getFullYear() : 0;
                               if (!acc[year]) acc[year] = [];
                               acc[year].push(item);
                               return acc;
@@ -1760,7 +1760,7 @@ const DividendTracker: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-xl md:text-3xl font-black text-white italic truncate max-w-[150px] md:max-w-none uppercase tracking-tighter leading-none mb-1">
-                        {data.symbol} <span className="text-slate-600">Simülatörü</span>
+                        {data?.symbol} <span className="text-slate-600">Simülatörü</span>
                       </h3>
                       <p className="text-[8px] md:text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">Yatırım ve Temettü Projeksiyonu</p>
                     </div>
@@ -1776,7 +1776,7 @@ const DividendTracker: React.FC = () => {
                 {/* Modal Content - Scrollable area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-950">
                     <TahminMotoru 
-                      symbol={data.symbol}
+                      symbol={data?.symbol}
                       dividendYield={getVal(data?.summary?.summaryDetail?.dividendYield) || 0}
                       dividendRate={getVal(data?.summary?.summaryDetail?.dividendRate) || 0}
                       formatCurrency={formatCurrency}
