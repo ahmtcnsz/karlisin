@@ -349,17 +349,19 @@ const formatCompactNumber = (val?: any) => {
 };
 
 const DividendGrowthChart = ({ history }: { history: any[] }) => {
-  const chartData = [...history]
-    .sort((a, b) => a.date - b.date)
+  const chartData = [...(history || [])]
+    .sort((a, b) => (a?.date || 0) - (b?.date || 0))
     .map(item => ({
-      date: new Date(item.date).getFullYear(),
-      amount: item.amount
+      date: item?.date ? new Date(item.date * 1000).getFullYear() : 0,
+      amount: item?.amount || 0
     }));
 
   // Group by year to show annual dividends
   const annualData: { [key: number]: number } = {};
   chartData.forEach(item => {
-    annualData[item.date] = (annualData[item.date] || 0) + item.amount;
+    if (item.date > 0) {
+      annualData[item.date] = (annualData[item.date] || 0) + item.amount;
+    }
   });
 
   const processedData = Object.entries(annualData).map(([year, amount]) => ({
@@ -489,6 +491,8 @@ const DividendTracker: React.FC = () => {
       if (res.ok) {
         const json = await res.json();
         if (json && json.Symbol) setAvData(json);
+      } else {
+        console.warn(`[AV] Overview returned ${res.status}`);
       }
       await wait(1000); // Rate limit protection
 
@@ -842,11 +846,11 @@ const DividendTracker: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter italic leading-none">{data.symbol}</h2>
                             <div className="h-6 w-px bg-white/10 mx-2" />
-                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-tight max-w-[250px]">{data.summary.price?.longName || data.symbol}</div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-tight max-w-[250px]">{data?.summary?.price?.longName || data?.symbol}</div>
                           </div>
                           <div className="flex items-center flex-wrap gap-2 mt-2">
                             <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] font-black uppercase tracking-widest rounded border border-indigo-500/20">
-                              {data.summary.summaryDetail?.sector || 'Sektör Verisi Yok'}
+                              {data?.summary?.summaryDetail?.sector || 'Sektör Verisi Yok'}
                             </span>
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded">
                               <div className="w-1 h-1 rounded-full bg-emerald-500" />
@@ -855,7 +859,7 @@ const DividendTracker: React.FC = () => {
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded border border-white/5">
                               <Clock className="w-2 h-2 text-slate-500" />
                               <span className="text-slate-400 font-bold uppercase tracking-widest text-[7px]">
-                                SENK: {data.verification?.last_sync || '---'}
+                                SENK: {data?.verification?.last_sync || '---'}
                               </span>
                             </div>
                           </div>
@@ -867,15 +871,15 @@ const DividendTracker: React.FC = () => {
                           <div className="flex items-center gap-4">
                             <div className="flex flex-col border-r border-white/5 pr-4">
                               <div className="text-2xl font-black text-white italic tracking-tighter leading-none mb-0.5">
-                                {formatCurrency(data.summary.price?.regularMarketPrice, data.symbol)}
+                                {formatCurrency(data?.summary?.price?.regularMarketPrice, data?.symbol)}
                               </div>
                               <div className={cn(
                                 "text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1",
-                                (data.summary.price?.regularMarketChangePercent || 0) >= 0 ? "text-emerald-400" : "text-rose-400"
+                                (data?.summary?.price?.regularMarketChangePercent || 0) >= 0 ? "text-emerald-400" : "text-rose-400"
                               )}>
-                                {(data.summary.price?.regularMarketChangePercent || 0) >= 0 ? <TrendingUp className="w-2 h-2" /> : <TrendingUp className="w-2 h-2 rotate-180" />}
-                                {(data.summary.price?.regularMarketChangePercent || 0) >= 0 ? '+' : ''}
-                                {formatPercent(data.summary.price?.regularMarketChangePercent)}
+                                {(data?.summary?.price?.regularMarketChangePercent || 0) >= 0 ? <TrendingUp className="w-2 h-2" /> : <TrendingUp className="w-2 h-2 rotate-180" />}
+                                {(data?.summary?.price?.regularMarketChangePercent || 0) >= 0 ? '+' : ''}
+                                {formatPercent(data?.summary?.price?.regularMarketChangePercent)}
                               </div>
                             </div>
 
@@ -1642,8 +1646,8 @@ const DividendTracker: React.FC = () => {
                          <div className="bg-slate-900/50 border border-white/5 rounded-[40px] p-12 shadow-xl overflow-hidden relative font-sans">
                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 blur-[100px] rounded-full -mr-20 -mt-20" />
                            <div className="relative z-10">
-                             <p className="text-slate-300 leading-relaxed font-medium text-xl">
-                               {(avData && avData.Description) || data?.summary?.assetProfile?.longBusinessSummary || 'Bu şirket için detaylı profil özeti şu an mevcut değil.'}
+                             <p className="text-slate-300 leading-relaxed font-medium text-xl whitespace-pre-wrap">
+                               {avData?.Description || data?.summary?.assetProfile?.longBusinessSummary || 'Bu şirket için detaylı profil özeti şu an mevcut değil.'}
                              </p>
                            </div>
                          </div>
