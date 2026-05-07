@@ -153,7 +153,7 @@ export default function Footer() {
           </p>
           <div className="mt-2 inline-flex items-center gap-2 px-2 py-0.5 bg-white/5 rounded border border-white/10">
              <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Build v3.0.0-prod</span>
+             <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Build v3.1.0-prod</span>
           </div>
         </div>
       </div>

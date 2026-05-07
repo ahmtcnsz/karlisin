@@ -211,7 +211,7 @@ class UnifiedDataService {
 
   static async getFullStockData(symbol: string, forceRefresh = false) {
     const cleanSymbol = symbol.toUpperCase().trim();
-    const cacheKey = `unified_v3.0.0_${cleanSymbol}`;
+    const cacheKey = `unified_v3.1.0_${cleanSymbol}`;
     
     const cached = cache.get(cacheKey) as any;
     if (cached && !forceRefresh) {
@@ -220,7 +220,7 @@ class UnifiedDataService {
       }
     }
 
-    console.log(`[UnifiedDS v3.0.0] Aggregating multi-source for: ${cleanSymbol}`);
+    console.log(`[UnifiedDS v3.1.0] Aggregating multi-source for: ${cleanSymbol}`);
     
     // Providers to run in parallel
     const [yahoo, google, av, investing, finnhub] = await Promise.allSettled([
@@ -265,8 +265,8 @@ class UnifiedDataService {
     // CROSS-VERIFICATION & AUGMENTATION LOGIC
     const aggregated = {
       symbol: cleanSymbol,
-      version: '3.0.0',
-      source: 'Unified Engine v3.0 (ZIRHLI PROD)',
+      version: '3.1.0',
+      source: 'Unified Engine v3.1 (ZIRHLI PROD-MAX)',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
@@ -274,20 +274,20 @@ class UnifiedDataService {
           longName: results.google?.name || results.yahoo?.name || results.investing?.name || results.av?.name || cleanSymbol,
           currency: results.google?.currency || results.yahoo?.currency || results.investing?.currency || results.av?.currency || 'TRY',
           regularMarketChangePercent: results.google?.changePercent !== undefined ? results.google?.changePercent : (results.finnhub?.changePercent || results.yahoo?.changePercent || 0),
-          dayHigh: results.google?.dayHigh || results.yahoo?.dayHigh || results.finnhub?.dayHigh || results.investing?.dayHigh || 0,
-          dayLow: results.google?.dayLow || results.yahoo?.dayLow || results.finnhub?.dayLow || results.investing?.dayLow || 0,
-          volume: results.google?.volume || results.yahoo?.volume || results.investing?.volume || results.av?.volume || 0
+          dayHigh: [results.google?.dayHigh, results.yahoo?.dayHigh, results.finnhub?.dayHigh, results.investing?.dayHigh].find(v => v && v > 0) || 0,
+          dayLow: [results.google?.dayLow, results.yahoo?.dayLow, results.finnhub?.dayLow, results.investing?.dayLow].find(v => v && v > 0) || 0,
+          volume: [results.google?.volume, results.yahoo?.volume, results.investing?.volume, results.av?.volume].find(v => v && v > 0) || 0
         },
         summaryDetail: {
-          dividendYield: results.yahoo?.dividendYield || results.investing?.dividendYield || results.av?.dividendYield || results.google?.dividendYield || 0,
-          dividendRate: results.yahoo?.dividendRate || results.investing?.dividendRate || results.av?.dividendRate || results.google?.dividendRate || 0,
-          forwardDividendRate: results.yahoo?.forwardDividendRate || results.av?.dividendRate || results.google?.dividendRate || 0,
-          forwardDividendYield: results.yahoo?.forwardDividendYield || results.av?.dividendYield || results.google?.dividendYield || 0,
-          payoutRatio: results.yahoo?.payoutRatio || results.av?.payoutRatio || results.investing?.payoutRatio || 0,
-          marketCap: results.yahoo?.marketCap || results.av?.marketCap || results.google?.marketCap || results.investing?.marketCap || 0,
-          trailingPE: results.yahoo?.pe || results.av?.pe || results.investing?.pe || results.google?.pe || 0,
-          fiftyTwoWeekHigh: results.yahoo?.high52 || results.google?.high52 || results.av?.high52 || results.investing?.high52 || 0,
-          fiftyTwoWeekLow: results.yahoo?.low52 || results.google?.low52 || results.av?.low52 || results.investing?.low52 || 0,
+          dividendYield: [results.yahoo?.dividendYield, results.investing?.dividendYield, results.av?.dividendYield, results.google?.dividendYield].find(v => v && v > 0) || 0,
+          dividendRate: [results.yahoo?.dividendRate, results.investing?.dividendRate, results.av?.dividendRate, results.google?.dividendRate].find(v => v && v > 0) || 0,
+          forwardDividendRate: [results.yahoo?.forwardDividendRate, results.av?.dividendRate, results.google?.dividendRate].find(v => v && v > 0) || 0,
+          forwardDividendYield: [results.yahoo?.forwardDividendYield, results.av?.dividendYield, results.google?.dividendYield].find(v => v && v > 0) || 0,
+          payoutRatio: [results.yahoo?.payoutRatio, results.av?.payoutRatio, results.investing?.payoutRatio].find(v => v && (v > 0 || v < 0)) || 0,
+          marketCap: [results.yahoo?.marketCap, results.av?.marketCap, results.google?.marketCap, results.investing?.marketCap].find(v => v && v > 0) || 0,
+          trailingPE: [results.yahoo?.pe, results.av?.pe, results.investing?.pe, results.google?.pe].find(v => v && v > 0) || 0,
+          fiftyTwoWeekHigh: [results.yahoo?.high52, results.google?.high52, results.av?.high52, results.investing?.high52].find(v => v && v > 0) || 0,
+          fiftyTwoWeekLow: [results.yahoo?.low52, results.google?.low52, results.av?.low52, results.investing?.low52].find(v => v && v > 0) || 0,
           industry: results.yahoo?.industry || results.google?.industry || results.av?.industry || results.investing?.industry || null,
           sector: results.yahoo?.sector || results.google?.sector || results.av?.sector || results.investing?.sector || null
         },
@@ -310,7 +310,7 @@ class UnifiedDataService {
         alpha_vantage_verified: !!results.av,
         investing_verified: !!results.investing,
         finnhub_verified: !!results.finnhub,
-        last_sync: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        last_sync: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) || new Date().toISOString().split('T')[1].split('.')[0]
       }
     };
 
@@ -422,9 +422,9 @@ class UnifiedDataService {
           pe: quote.trailingPE || sd?.trailingPE?.value || 0,
           high52: quote.fiftyTwoWeekHigh || sd?.fiftyTwoWeekHigh?.value || 0,
           low52: quote.fiftyTwoWeekLow || sd?.fiftyTwoWeekLow?.value || 0,
-          dayHigh: quote.regularMarketDayHigh || 0,
-          dayLow: quote.regularMarketDayLow || 0,
-          volume: quote.regularMarketVolume || 0,
+          dayHigh: quote.regularMarketDayHigh || (quote as any).dayHigh || 0,
+          dayLow: quote.regularMarketDayLow || (quote as any).dayLow || 0,
+          volume: quote.regularMarketVolume || (quote as any).volume || 0,
           recommendationKey: fd?.recommendationKey,
           targetMeanPrice: fd?.targetMeanPrice?.value || 0,
           numberOfAnalystOpinions: fd?.numberOfAnalystOpinions?.value || 0,
@@ -515,25 +515,35 @@ class UnifiedDataService {
 
           if (pe > 0 && priceVal > 0) eps = priceVal / pe;
 
-          const rangeMatch = html.match(/>(?:Günlük aralık|Gün içi aralık|Gün içi aralığı|Day range)<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</i);
+          const parseGoogleVal = (v: string) => {
+            const c = v.trim().replace(/\s/g, '').toUpperCase();
+            let multi = 1;
+            if (c.includes('MN') || (c.endsWith('M') && !c.includes(','))) multi = 1000000;
+            else if (c.includes('ML') || (c.endsWith('B') && !c.includes(','))) multi = 1000000000;
+            else if (c.includes('B') && c.length < 5) multi = 1000; // Likely 'Bin' in TR
+
+            const rawNum = c.replace(/[MBNL]/g, '');
+            if (rawNum.includes(',') && rawNum.includes('.')) return parseFloat(rawNum.replace(/\./g, '').replace(',', '.')) * multi;
+            if (rawNum.includes(',')) return parseFloat(rawNum.replace(',', '.')) * multi;
+            return parseFloat(rawNum) * multi;
+          };
+
+          const rangeMatch = html.match(/>(?:Günlük aralık|Gün içi aralık|Gün içi aralığı|Day range)<[\s\S]*?>\s*([\d,.]+)\s*-\s*([\d,.]+)\s*</i) || 
+                             html.match(/class="P66m9b"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
           if (rangeMatch) {
-             dayLow = parseFloat(rangeMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
-             dayHigh = parseFloat(rangeMatch[2].replace(/[^\d.,]/g, '').replace(',', '.'));
+             dayLow = parseGoogleVal(rangeMatch[1]);
+             dayHigh = parseGoogleVal(rangeMatch[2]);
           }
 
-          const yearRangeMatch = html.match(/>(?:52 haftalık aralık|52-week range)<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</i);
+          const yearRangeMatch = html.match(/>(?:52 haftalık aralık|52-week range)<[\s\S]*?>\s*([\d,.]+)\s*-\s*([\d,.]+)\s*</i);
           if (yearRangeMatch) {
-            low52 = parseFloat(yearRangeMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
-            high52 = parseFloat(yearRangeMatch[2].replace(/[^\d.,]/g, '').replace(',', '.'));
+            low52 = parseGoogleVal(yearRangeMatch[1]);
+            high52 = parseGoogleVal(yearRangeMatch[2]);
           }
 
-          const volumeReg = html.match(/>(?:Hacim|Volume)<[\s\S]*?>([\d,.\w\s]+)</i);
+          const volumeReg = html.match(/>(?:Hacim|Volume)<[\s\S]*?>\s*([\d,.\w\s]+)\s*</i);
           if (volumeReg) {
-             const cleanVol = volumeReg[1].trim().toUpperCase().replace(/\s/g, '');
-             if (cleanVol.includes('M') || cleanVol.includes('MN')) volume = parseFloat(cleanVol.replace('MN', '').replace('M', '').replace(',', '.')) * 1000000;
-             else if (cleanVol.includes('B') || cleanVol.includes('ML')) volume = parseFloat(cleanVol.replace('ML', '').replace('B', '').replace(',', '.')) * 1000000000;
-             else if (cleanVol.includes('K') || cleanVol.includes('B')) volume = parseFloat(cleanVol.replace('B', '').replace('K', '').replace(',', '.')) * 1000;
-             else volume = parseFloat(cleanVol.replace(/[^\d.,]/g, '').replace(',', '.'));
+             volume = parseGoogleVal(volumeReg[1]);
           }
 
           const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/) || html.match(/class="Dd939e"[^>]*>([^<]+)</) || html.match(/"name":"([^"]+)"/);
@@ -644,10 +654,10 @@ async function startServer() {
 
   // Debug Version API
   app.get('/api/version', (req, res) => {
-    res.json({ version: '3.0.0', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
+    res.json({ version: '3.1.0', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
   });
 
-  // DIVIDEND API (Unified Engine: v3.0.0)
+  // DIVIDEND API (Unified Engine: v3.1.0)
   app.get('/api/dividends', async (req, res) => {
     const symbol = (req.query.symbol as string || '').toUpperCase().trim();
     const forceRefresh = req.query.refresh === 'true';
@@ -657,7 +667,7 @@ async function startServer() {
     // Cache bypass for forced refresh
     if (forceRefresh) {
       console.log(`[UnifiedDS] Force refreshing: ${symbol}`);
-      cache.del(`unified_v3.0.0_${symbol}`);
+      cache.del(`unified_v3.1.0_${symbol}`);
     }
 
     try {
