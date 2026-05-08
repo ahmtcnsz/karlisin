@@ -859,22 +859,12 @@ const DividendTracker: React.FC = () => {
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-tight max-w-[250px] font-sans">
                               {data?.summary?.price?.longName || data?.symbol}
                             </div>
-                            <button 
-                              onClick={() => fetchData(selectedSymbol, true)}
-                              className="ml-2 p-2 rounded-full bg-white/5 hover:bg-white/10 transition-all group/refresh"
-                              title="Verileri Yenile"
-                            >
-                              <RefreshCw className={cn("w-3 h-3 text-slate-400 group-hover/refresh:text-indigo-400 font-bold", loading && "animate-spin")} />
-                            </button>
                           </div>
                           <div className="flex items-center flex-wrap gap-2 mt-2">
                             <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] font-black uppercase tracking-widest rounded border border-indigo-500/20">
                               {data?.summary?.summaryDetail?.sector || avData?.Sector || 'Sektör Verisi Yok'}
                             </span>
-                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded">
-                              <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                              <span className="text-emerald-400 font-black uppercase tracking-widest text-[7px]">CANLI VERİ AKTİF</span>
-                            </div>
+
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded border border-white/5">
                               <Clock className="w-2 h-2 text-slate-500" />
                               <span className="text-slate-400 font-bold uppercase tracking-widest text-[7px]">

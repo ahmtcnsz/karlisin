@@ -123,7 +123,8 @@ class UnifiedDataService {
             html.match(/class="instrument-price_last[^>]*>([\d,.]+)</) ||
             html.match(/last_last">([\d,.]+)</) ||
             html.match(/data-realtime-value="([^"]+)"/) ||
-            html.match(/class="text-2xl[^>]*>([\d,.]+)</);
+            html.match(/class="text-2xl[^>]*>([\d,.]+)</) ||
+            html.match(/class="[^"]*price[^"]*"[^>]*>([\d,.]+)</i);
 
           const yieldMatch = 
             html.match(/>Div Yield<[\s\S]*?>([\d,.]+)%/) || 
@@ -132,6 +133,8 @@ class UnifiedDataService {
             html.match(/dividend_yield">([\d,.]+)%/) ||
             html.match(/id="pair-details-yield">([\d,.]+)%/) ||
             html.match(/data-test="dividend-yield-value">([\d,.]+)%/);
+
+          const nameMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/i) || html.match(/"name":"([^"]+)"/);
 
           if (priceMatch) {
              const rawPrice = priceMatch[1];
@@ -157,17 +160,20 @@ class UnifiedDataService {
                html.match(/>Day's Range<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) || 
                html.match(/>Günlük Aralık<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) ||
                html.match(/>Gün İçi Aralık<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) ||
-               html.match(/"range":"([\d,.]+)\s*-\s*([\d,.]+)"/);
+               html.match(/"range":"([\d,.]+)\s*-\s*([\d,.]+)"/) ||
+               html.match(/"low":([\d,.]+),"high":([\d,.]+)/);
 
              const volumeMatch = 
                html.match(/>Volume<[\s\S]*?>([\d,.]+)</) || 
                html.match(/>Hacim<[\s\S]*?>([\d,.]+)</) ||
                html.match(/"volume":([\d,.]+)/) ||
-               html.match(/data-test="volume-value">([\d,.]+)</);
+               html.match(/data-test="volume-value">([\d,.]+)</) ||
+               html.match(/"volume":\s*(\d+)/);
 
              console.log(`[Investing] Success for ${symbol} @ ${price} via ${url}`);
              return {
                price,
+               name: nameMatch ? nameMatch[1].trim() : symbol,
                dividendYield: divYield,
                targetMeanPrice: targetMatch ? parseFloat(targetMatch[1].toString().replace(/\./g, '').replace(',', '.')) : 0,
                dayHigh: rangeMatch ? parseFloat(rangeMatch[2].replace(/\./g, '').replace(',', '.')) : 0,
@@ -292,7 +298,7 @@ class UnifiedDataService {
           sector: results.yahoo?.sector || results.google?.sector || results.av?.sector || results.investing?.sector || null
         },
         assetProfile: {
-          longBusinessSummary: results.yahoo?.longBusinessSummary || results.av?.Description || null,
+          longBusinessSummary: results.yahoo?.longBusinessSummary || results.google?.summary || results.av?.Description || null,
           website: results.yahoo?.website || results.av?.Website || null
         },
         financialData: {
@@ -500,27 +506,27 @@ class UnifiedDataService {
           let dayLow = 0;
           let dayHigh = 0;
           let volume = 0;
+          let marketCap = 0;
+          let sector = null;
+          let industry = null;
 
-          // Yield Patterns
-          const yieldMatch = html.match(/>(?:Temettü verimi|Kâr payı verimi|Dividend yield)<[\s\S]*?<div[^>]*>([\d,.]+)%/i);
-          if (yieldMatch) dividendYield = parseFloat(yieldMatch[1].replace(',', '.')) / 100;
-
-          // Rate Patterns
-          const rateMatch = html.match(/>(?:Son temettü|Last dividend|Kâr payı|Dividend|Hisse Başı Temettü)<[\s\S]*?<div[^>]*>([\d,.]+)</i);
-          if (rateMatch) dividendRate = parseFloat(rateMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
-
-          // PE Ratio Patterns
-          const peMatch = html.match(/>(?:F\/K oranı|P\/E ratio)<[\s\S]*?<div[^>]*>([\d,.]+)</i);
-          if (peMatch) pe = parseFloat(peMatch[1].replace(/[^\d.,]/g, '').replace(',', '.'));
-
-          if (pe > 0 && priceVal > 0) eps = priceVal / pe;
+          // Robust Pattern Matcher
+          const findVal = (labels: string[]) => {
+            for (const label of labels) {
+              // Be more permissive with the wrapper tag (div/span/a/td)
+              const regex = new RegExp(`>(?:${label})<[\\s\\S]*?<(?:div|span|td|a)[^>]*>([\\d,.\\w\\s]+)<`, 'i');
+              const m = html.match(regex);
+              if (m) return m[1].trim();
+            }
+            return null;
+          };
 
           const parseGoogleVal = (v: string) => {
             const c = v.trim().replace(/\s/g, '').toUpperCase();
             let multi = 1;
-            if (c.includes('MN') || (c.endsWith('M') && !c.includes(','))) multi = 1000000;
-            else if (c.includes('ML') || (c.endsWith('B') && !c.includes(','))) multi = 1000000000;
-            else if (c.includes('B') && c.length < 5) multi = 1000; // Likely 'Bin' in TR
+            if (c.includes('MN') || (c.includes('M') && !c.includes(','))) multi = 1000000;
+            else if (c.includes('ML') || (c.includes('B') && !c.includes(','))) multi = 1000000000;
+            else if (c.includes('B') && (c.length < 5 || c.includes('BIN'))) multi = 1000;
 
             const rawNum = c.replace(/[MBNL]/g, '');
             if (rawNum.includes(',') && rawNum.includes('.')) return parseFloat(rawNum.replace(/\./g, '').replace(',', '.')) * multi;
@@ -528,23 +534,58 @@ class UnifiedDataService {
             return parseFloat(rawNum) * multi;
           };
 
-          const rangeMatch = html.match(/>(?:Günlük aralık|Gün içi aralık|Gün içi aralığı|Day range)<[\s\S]*?>\s*([\d,.]+)\s*-\s*([\d,.]+)\s*</i) || 
-                             html.match(/class="P66m9b"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
+          // Yield Patterns
+          const yieldVal = findVal(['Temettü verimi', 'Kâr payı verimi', 'Dividend yield']);
+          if (yieldVal) dividendYield = parseFloat(yieldVal.replace(',', '.')) / 100;
+
+          // Rate Patterns
+          const rateVal = findVal(['Son temettü', 'Last dividend', 'Kâr payı', 'Dividend', 'Hisse Başı Temettü']);
+          if (rateVal) dividendRate = parseFloat(rateVal.replace(/[^\d.,]/g, '').replace(',', '.'));
+
+          // PE Ratio Patterns
+          const peVal = findVal(['F/K oranı', 'P/E ratio', 'Fiyat/Kazanç']);
+          if (peVal) pe = parseFloat(peVal.replace(/[^\d.,]/g, '').replace(',', '.'));
+
+          if (pe > 0 && priceVal > 0) eps = priceVal / pe;
+
+          // Ranges
+          const rangeVal = findVal(['Günlük aralık', 'Gün içi aralık', 'Gün içi aralığı', 'Day range', 'Class="P66m9b"']);
+          const rangeMatch = rangeVal ? rangeVal.match(/([\d,.]+)\s*-\s*([\d,.]+)/) : null;
           if (rangeMatch) {
              dayLow = parseGoogleVal(rangeMatch[1]);
              dayHigh = parseGoogleVal(rangeMatch[2]);
+          } else {
+             // Backup range match via exact class if text search fails
+             const bcRange = html.match(/class="P66m9b"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
+             if (bcRange) {
+                dayLow = parseGoogleVal(bcRange[1]);
+                dayHigh = parseGoogleVal(bcRange[2]);
+             }
           }
 
-          const yearRangeMatch = html.match(/>(?:52 haftalık aralık|52-week range)<[\s\S]*?>\s*([\d,.]+)\s*-\s*([\d,.]+)\s*</i);
-          if (yearRangeMatch) {
-            low52 = parseGoogleVal(yearRangeMatch[1]);
-            high52 = parseGoogleVal(yearRangeMatch[2]);
+          const yearRangeVal = findVal(['52 haftalık aralık', '52-week range']);
+          const yrMatch = yearRangeVal ? yearRangeVal.match(/([\d,.]+)\s*-\s*([\d,.]+)/) : null;
+          if (yrMatch) {
+            low52 = parseGoogleVal(yrMatch[1]);
+            high52 = parseGoogleVal(yrMatch[2]);
           }
 
-          const volumeReg = html.match(/>(?:Hacim|Volume)<[\s\S]*?>\s*([\d,.\w\s]+)\s*</i);
-          if (volumeReg) {
-             volume = parseGoogleVal(volumeReg[1]);
-          }
+          const volVal = findVal(['Hacim', 'Volume', 'Avg Volume']);
+          if (volVal) volume = parseGoogleVal(volVal);
+
+          const mCapVal = findVal(['Piyasa değeri', 'Market cap']);
+          if (mCapVal) marketCap = parseGoogleVal(mCapVal);
+
+          // Sector/Industry
+          // Google Finance often puts these in a specific list or div
+          const sectorMatch = html.match(/>(?:Sektör|Sector)<[\s\S]*?<div[^>]*><a[^>]*>([^<]+)</i);
+          if (sectorMatch) sector = sectorMatch[1].trim();
+
+          const industryMatch = html.match(/>(?:Endüstri|Industry)<[\s\S]*?<div[^>]*><a[^>]*>([^<]+)</i);
+          if (industryMatch) industry = industryMatch[1].trim();
+
+          const summaryMatch = html.match(/class="bNoS7c"[^>]*>([^<]+)</i) || html.match(/class="Q891ec"[^>]*>([^<]+)</i);
+          const summary = summaryMatch ? summaryMatch[1].trim() : null;
 
           const nameMatch = html.match(/<div class="zzDe9c">([^<]+)<\/div>/) || html.match(/class="Dd939e"[^>]*>([^<]+)</) || html.match(/"name":"([^"]+)"/);
 
@@ -561,6 +602,10 @@ class UnifiedDataService {
             dayLow,
             dayHigh,
             volume,
+            marketCap,
+            sector,
+            industry,
+            summary,
             source: 'Google'
           };
         }
