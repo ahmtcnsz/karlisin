@@ -7,13 +7,9 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getApiUrl(path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    // Eğer projeyi custom domaın'e deploy ettiysek (Firebase Hosting), API çağrıları için Cloud Run sunucu adresine git
-    if (host !== 'localhost' && host !== '127.0.0.1' && !host.includes('run.app')) {
-      return `https://karl-s-n-1001236491636.europe-west2.run.app${cleanPath}`;
-    }
-  }
+  // We can just rely on the current origin. If it's on Firebase Hosting, 
+  // firebase.json rewrites handle /api/* to the correct Cloud Run service.
+  // We don't need to hardcode a stale cloud run URL.
   return cleanPath;
 }
 
