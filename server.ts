@@ -157,6 +157,8 @@ class UnifiedDataService {
              const targetMatch = html.match(/>1y Target Est<[\s\S]*?>([\d,.]+)</) || html.match(/"target":([\d,.]+)/) || html.match(/>1 Yıllık Hedef Fiyat<[\s\S]*?>([\d,.]+)</);
              
              const rangeMatch = 
+               html.match(/>Day's Range<[\s\S]*?class="[^"]*inline-block[^"]*"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</) ||
+               html.match(/>Günlük Aralık<[\s\S]*?class="[^"]*inline-block[^"]*"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</) ||
                html.match(/>Day's Range<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) || 
                html.match(/>Günlük Aralık<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) ||
                html.match(/>Gün İçi Aralık<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) ||
@@ -166,9 +168,13 @@ class UnifiedDataService {
              const volumeMatch = 
                html.match(/>Volume<[\s\S]*?>([\d,.]+)</) || 
                html.match(/>Hacim<[\s\S]*?>([\d,.]+)</) ||
+               html.match(/id="pair-details-volume">([\d,.]+)</) ||
                html.match(/"volume":([\d,.]+)/) ||
                html.match(/data-test="volume-value">([\d,.]+)</) ||
                html.match(/"volume":\s*(\d+)/);
+
+             const sectorMatch = html.match(/"industry":"([^"]+)"/) || html.match(/>Industry<[\s\S]*?>([^<]+)</i) || html.match(/>Endüstri<[\s\S]*?>([^<]+)</i);
+             const marketCapMatch = html.match(/>Market Cap<[\s\S]*?>([^<]+)</i) || html.match(/>Piyasa Değeri<[\s\S]*?>([^<]+)</i);
 
              console.log(`[Investing] Success for ${symbol} @ ${price} via ${url}`);
              return {
@@ -179,6 +185,8 @@ class UnifiedDataService {
                dayHigh: rangeMatch ? parseFloat(rangeMatch[2].replace(/\./g, '').replace(',', '.')) : 0,
                dayLow: rangeMatch ? parseFloat(rangeMatch[1].replace(/\./g, '').replace(',', '.')) : 0,
                volume: volumeMatch ? parseFloat(volumeMatch[1].replace(/[^\d.]/g, '')) : 0,
+               sector: sectorMatch ? sectorMatch[1].trim() : null,
+               marketCap: marketCapMatch ? this.parsePrice(marketCapMatch[1]) : 0,
                source: 'Investing'
              };
           }
@@ -188,6 +196,18 @@ class UnifiedDataService {
     } catch (e) {
       return null;
     }
+  }
+
+  private static parsePrice(raw: string): number {
+    if (!raw) return 0;
+    // Handle Turkish locale price formatting (thousands dot, decimal comma)
+    let clean = raw.trim().replace(/\s/g, '');
+    if (clean.includes('.') && clean.includes(',')) {
+       clean = clean.replace(/\./g, '').replace(',', '.');
+    } else if (clean.includes(',')) {
+       clean = clean.replace(',', '.');
+    }
+    return parseFloat(clean) || 0;
   }
 
   private static async fetchFinnhub(symbol: string) {
@@ -510,32 +530,49 @@ class UnifiedDataService {
           let sector = null;
           let industry = null;
 
-          // Robust Pattern Matcher
+          // Robust Pattern Matcher - Improved for flexibility
           const findVal = (labels: string[]) => {
             for (const label of labels) {
-              // Be more permissive with the wrapper tag (div/span/a/td)
-              const regex = new RegExp(`>(?:${label})<[\\s\\S]*?<(?:div|span|td|a)[^>]*>([\\d,.\\w\\s]+)<`, 'i');
-              const m = html.match(regex);
-              if (m) return m[1].trim();
+              // Try variations: Label inside tag or plain text, value in next tag
+              const regexes = [
+                // Pattern 1: Label then value in same or next tag
+                new RegExp(`(?:${label})<[\\s\\S]*?<(?:div|span|td|a)[^>]*>([\\d,.\\w\\s/\\-]+)<`, 'i'),
+                // Pattern 2: Label in one tag, value in sister tag
+                new RegExp(`>${label}<[\\s\\S]*?class="[^"]*P66m9b[^"]*"[^>]*>([\\d,.\\w\\s/\\-]+)<`, 'i'),
+                // Pattern 3: Direct label mapping
+                new RegExp(`>${label}<[\\s\\S]*?>([\\d,.\\w\\s/\\-]+)<`, 'i')
+              ];
+
+              for (const reg of regexes) {
+                const m = html.match(reg);
+                if (m && m[1]) {
+                  const val = m[1].trim();
+                  if (val && val !== '-' && val !== '---') return val;
+                }
+              }
             }
             return null;
           };
 
           const parseGoogleVal = (v: string) => {
+            if (!v) return 0;
             const c = v.trim().replace(/\s/g, '').toUpperCase();
             let multi = 1;
+            
+            // TR Locale specific multipliers
             if (c.includes('MN') || (c.includes('M') && !c.includes(','))) multi = 1000000;
             else if (c.includes('ML') || (c.includes('B') && !c.includes(','))) multi = 1000000000;
             else if (c.includes('B') && (c.length < 5 || c.includes('BIN'))) multi = 1000;
+            else if (c.includes('T') && !c.includes(',')) multi = 1000000000000;
 
-            const rawNum = c.replace(/[MBNL]/g, '');
+            const rawNum = c.replace(/[MBNLT]/g, '').replace(/[^\d.,-]/g, '');
             if (rawNum.includes(',') && rawNum.includes('.')) return parseFloat(rawNum.replace(/\./g, '').replace(',', '.')) * multi;
             if (rawNum.includes(',')) return parseFloat(rawNum.replace(',', '.')) * multi;
             return parseFloat(rawNum) * multi;
           };
 
           // Yield Patterns
-          const yieldVal = findVal(['Temettü verimi', 'Kâr payı verimi', 'Dividend yield']);
+          const yieldVal = findVal(['Temettü verimi', 'Kâr payı verimi', 'Dividend yield', 'Verim']);
           if (yieldVal) dividendYield = parseFloat(yieldVal.replace(',', '.')) / 100;
 
           // Rate Patterns
@@ -543,45 +580,47 @@ class UnifiedDataService {
           if (rateVal) dividendRate = parseFloat(rateVal.replace(/[^\d.,]/g, '').replace(',', '.'));
 
           // PE Ratio Patterns
-          const peVal = findVal(['F/K oranı', 'P/E ratio', 'Fiyat/Kazanç']);
+          const peVal = findVal(['F/K oranı', 'P/E ratio', 'Fiyat/Kazanç', 'F/K']);
           if (peVal) pe = parseFloat(peVal.replace(/[^\d.,]/g, '').replace(',', '.'));
 
           if (pe > 0 && priceVal > 0) eps = priceVal / pe;
 
-          // Ranges
-          const rangeVal = findVal(['Günlük aralık', 'Gün içi aralık', 'Gün içi aralığı', 'Day range', 'Class="P66m9b"']);
+          // Ranges - More aggressive extraction
+          const rangeVal = findVal(['Günlük aralık', 'Gün içi aralık', 'Gün içi aralığı', 'Day range', 'Aralık']);
           const rangeMatch = rangeVal ? rangeVal.match(/([\d,.]+)\s*-\s*([\d,.]+)/) : null;
           if (rangeMatch) {
              dayLow = parseGoogleVal(rangeMatch[1]);
              dayHigh = parseGoogleVal(rangeMatch[2]);
           } else {
-             // Backup range match via exact class if text search fails
-             const bcRange = html.match(/class="P66m9b"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
+             // Backup range match via exact class if text search fails (Common for Google Finance)
+             const bcRange = html.match(/class="P66m9b"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i) || 
+                             html.match(/class="mfs7be"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
              if (bcRange) {
                 dayLow = parseGoogleVal(bcRange[1]);
                 dayHigh = parseGoogleVal(bcRange[2]);
              }
           }
 
-          const yearRangeVal = findVal(['52 haftalık aralık', '52-week range']);
+          const yearRangeVal = findVal(['52 haftalık aralık', '52-week range', '52 hafta']);
           const yrMatch = yearRangeVal ? yearRangeVal.match(/([\d,.]+)\s*-\s*([\d,.]+)/) : null;
           if (yrMatch) {
             low52 = parseGoogleVal(yrMatch[1]);
             high52 = parseGoogleVal(yrMatch[2]);
           }
 
-          const volVal = findVal(['Hacim', 'Volume', 'Avg Volume']);
+          const volVal = findVal(['Hacim', 'Volume', 'Avg Volume', 'Ort. Hacim']);
           if (volVal) volume = parseGoogleVal(volVal);
 
-          const mCapVal = findVal(['Piyasa değeri', 'Market cap']);
+          const mCapVal = findVal(['Piyasa değeri', 'Market cap', 'Piyasa Değ.']);
           if (mCapVal) marketCap = parseGoogleVal(mCapVal);
 
-          // Sector/Industry
-          // Google Finance often puts these in a specific list or div
-          const sectorMatch = html.match(/>(?:Sektör|Sector)<[\s\S]*?<div[^>]*><a[^>]*>([^<]+)</i);
+          // Sector/Industry - Improved extraction for production HTML
+          const sectorMatch = html.match(/>(?:Sektör|Sector)<[\s\S]*?<div[^>]*>(?:<a[^>]*>)?([^<]+)(?:<\/a>)?/i) ||
+                             html.match(/alt="Sektör"[^>]*>[\s\S]*?>([^<]+)</i);
           if (sectorMatch) sector = sectorMatch[1].trim();
 
-          const industryMatch = html.match(/>(?:Endüstri|Industry)<[\s\S]*?<div[^>]*><a[^>]*>([^<]+)</i);
+          const industryMatch = html.match(/>(?:Endüstri|Industry)<[\s\S]*?<div[^>]*>(?:<a[^>]*>)?([^<]+)(?:<\/a>)?/i) ||
+                               html.match(/alt="Endüstri"[^>]*>[\s\S]*?>([^<]+)</i);
           if (industryMatch) industry = industryMatch[1].trim();
 
           const summaryMatch = html.match(/class="bNoS7c"[^>]*>([^<]+)</i) || html.match(/class="Q891ec"[^>]*>([^<]+)</i);
