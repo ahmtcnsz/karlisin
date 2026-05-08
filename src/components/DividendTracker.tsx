@@ -861,7 +861,16 @@ const DividendTracker: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex items-center flex-wrap gap-2 mt-2">
-                            <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] font-black uppercase tracking-widest rounded border border-indigo-500/20">
+                             <button
+                               onClick={() => fetchData(selectedSymbol, true)}
+                               className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] font-black uppercase tracking-widest rounded border border-indigo-500/20 flex items-center gap-1.5 hover:bg-indigo-500/20 transition-all"
+                               title="Verileri Kaynaktan Zorla Yenile"
+                             >
+                               {loading ? <Loader2 className="w-2 h-2 animate-spin" /> : <RefreshCw className="w-2 h-2" />}
+                               VERİ YENİLE
+                             </button>
+
+                            <span className="px-2 py-0.5 bg-white/5 text-slate-400 text-[8px] font-black uppercase tracking-widest rounded border border-white/5">
                               {data?.summary?.summaryDetail?.sector || avData?.Sector || 'Sektör Verisi Yok'}
                             </span>
 

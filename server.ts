@@ -162,6 +162,7 @@ class UnifiedDataService {
                html.match(/>Day's Range<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) || 
                html.match(/>Günlük Aralık<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) ||
                html.match(/>Gün İçi Aralık<[\s\S]*?>([\d,.]+)\s*-\s*([\d,.]+)</) ||
+               html.match(/data-test="day-range-value"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</) ||
                html.match(/"range":"([\d,.]+)\s*-\s*([\d,.]+)"/) ||
                html.match(/"low":([\d,.]+),"high":([\d,.]+)/);
 
@@ -169,6 +170,7 @@ class UnifiedDataService {
                html.match(/>Volume<[\s\S]*?>([\d,.]+)</) || 
                html.match(/>Hacim<[\s\S]*?>([\d,.]+)</) ||
                html.match(/id="pair-details-volume">([\d,.]+)</) ||
+               html.match(/data-test="volume-value"[^>]*>([\d,.]+)</) ||
                html.match(/"volume":([\d,.]+)/) ||
                html.match(/data-test="volume-value">([\d,.]+)</) ||
                html.match(/"volume":\s*(\d+)/);
@@ -176,7 +178,7 @@ class UnifiedDataService {
              const sectorMatch = html.match(/"industry":"([^"]+)"/) || html.match(/>Industry<[\s\S]*?>([^<]+)</i) || html.match(/>Endüstri<[\s\S]*?>([^<]+)</i);
              const marketCapMatch = html.match(/>Market Cap<[\s\S]*?>([^<]+)</i) || html.match(/>Piyasa Değeri<[\s\S]*?>([^<]+)</i);
 
-             console.log(`[Investing] Success for ${symbol} @ ${price} via ${url}`);
+              console.log(`[Investing] Success for ${symbol}. Price: ${price}, Range: ${rangeMatch ? rangeMatch[1] + '-' + rangeMatch[2] : 'MISSING'}, Vol: ${volumeMatch ? volumeMatch[1] : 'MISSING'}`);
              return {
                price,
                name: nameMatch ? nameMatch[1].trim() : symbol,
@@ -201,13 +203,21 @@ class UnifiedDataService {
   private static parsePrice(raw: string): number {
     if (!raw) return 0;
     // Handle Turkish locale price formatting (thousands dot, decimal comma)
-    let clean = raw.trim().replace(/\s/g, '');
+    let clean = raw.trim().replace(/\s/g, '').toUpperCase();
+    
+    let multiplier = 1;
+    if (clean.includes('MN') || (clean.endsWith('M') && !clean.includes(','))) multiplier = 1000000;
+    else if (clean.includes('MR') || clean.includes('ML') || clean.includes('B')) multiplier = 1000000000;
+    else if (clean.includes('K')) multiplier = 1000;
+
+    clean = clean.replace(/[MBNLRTK]/g, '');
+
     if (clean.includes('.') && clean.includes(',')) {
        clean = clean.replace(/\./g, '').replace(',', '.');
     } else if (clean.includes(',')) {
        clean = clean.replace(',', '.');
     }
-    return parseFloat(clean) || 0;
+    return (parseFloat(clean) || 0) * multiplier;
   }
 
   private static async fetchFinnhub(symbol: string) {
@@ -515,7 +525,7 @@ class UnifiedDataService {
           
           if (isNaN(priceVal) || priceVal === 0) continue;
 
-          console.log(`[Google] Success for ${symbol} (${gt}) @ ${priceVal}`);
+          console.log(`[Google] Found price for ${symbol} (${gt}): ${priceVal}`);
 
           let dividendYield = 0;
           let dividendRate = 0;
@@ -528,26 +538,28 @@ class UnifiedDataService {
           let volume = 0;
           let marketCap = 0;
           let sector = null;
-          let industry = null;
-
-          // Robust Pattern Matcher - Improved for flexibility
+              // Robust Pattern Matcher - Improved for flexibility
           const findVal = (labels: string[]) => {
             for (const label of labels) {
               // Try variations: Label inside tag or plain text, value in next tag
               const regexes = [
+                // Pattern 0: Specific Google Finance data-test or similar
+                new RegExp(`data-test="[^"]*${label}[^"]*"[^>]*>([\\d,.\\w\\s/\\-]+)<`, 'i'),
                 // Pattern 1: Label then value in same or next tag
                 new RegExp(`(?:${label})<[\\s\\S]*?<(?:div|span|td|a)[^>]*>([\\d,.\\w\\s/\\-]+)<`, 'i'),
                 // Pattern 2: Label in one tag, value in sister tag
-                new RegExp(`>${label}<[\\s\\S]*?class="[^"]*P66m9b[^"]*"[^>]*>([\\d,.\\w\\s/\\-]+)<`, 'i'),
+                new RegExp(`>${label}<[\\s\\S]*?class="[^"]*(?:P66m9b|mfs7be|Q891ec)[^"]*"[^>]*>([\\d,.\\w\\s/\\-]+)<`, 'i'),
                 // Pattern 3: Direct label mapping
-                new RegExp(`>${label}<[\\s\\S]*?>([\\d,.\\w\\s/\\-]+)<`, 'i')
+                new RegExp(`>${label}<[\\s\\S]*?>([\\d,.\\w\\s/\\-]+)<`, 'i'),
+                // Pattern 4: More aggressive sibling search
+                new RegExp(`>${label}<[\\s\\S]*?class="[^"]*"[^>]*>([\\d,.\\w\\s/\\-]+)<`, 'i')
               ];
 
               for (const reg of regexes) {
                 const m = html.match(reg);
                 if (m && m[1]) {
                   const val = m[1].trim();
-                  if (val && val !== '-' && val !== '---') return val;
+                  if (val && val !== '-' && val !== '---' && val.length < 50) return val;
                 }
               }
             }
@@ -560,12 +572,13 @@ class UnifiedDataService {
             let multi = 1;
             
             // TR Locale specific multipliers
-            if (c.includes('MN') || (c.includes('M') && !c.includes(','))) multi = 1000000;
-            else if (c.includes('ML') || (c.includes('B') && !c.includes(','))) multi = 1000000000;
-            else if (c.includes('B') && (c.length < 5 || c.includes('BIN'))) multi = 1000;
+            // Mn = Milyon, Mr = Milyar, B = Bin
+            if (c.includes('MN') || (c.endsWith('M') && !c.includes(','))) multi = 1000000;
+            else if (c.includes('MR') || c.includes('ML') || (c.endsWith('B') && c.length > 5)) multi = 1000000000;
+            else if (c.includes('BIN') || (c.endsWith('B') && c.length <= 4)) multi = 1000;
             else if (c.includes('T') && !c.includes(',')) multi = 1000000000000;
 
-            const rawNum = c.replace(/[MBNLT]/g, '').replace(/[^\d.,-]/g, '');
+            const rawNum = c.replace(/[MBNLRT]/g, '').replace(/[^\d.,-]/g, '');
             if (rawNum.includes(',') && rawNum.includes('.')) return parseFloat(rawNum.replace(/\./g, '').replace(',', '.')) * multi;
             if (rawNum.includes(',')) return parseFloat(rawNum.replace(',', '.')) * multi;
             return parseFloat(rawNum) * multi;
@@ -594,7 +607,8 @@ class UnifiedDataService {
           } else {
              // Backup range match via exact class if text search fails (Common for Google Finance)
              const bcRange = html.match(/class="P66m9b"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i) || 
-                             html.match(/class="mfs7be"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
+                             html.match(/class="mfs7be"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i) ||
+                             html.match(/class="Q891ec"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
              if (bcRange) {
                 dayLow = parseGoogleVal(bcRange[1]);
                 dayHigh = parseGoogleVal(bcRange[2]);
@@ -613,6 +627,8 @@ class UnifiedDataService {
 
           const mCapVal = findVal(['Piyasa değeri', 'Market cap', 'Piyasa Değ.']);
           if (mCapVal) marketCap = parseGoogleVal(mCapVal);
+
+          console.log(`[Google] Metrics for ${symbol}. Range: ${rangeVal || 'MISSING'}, Vol: ${volVal || 'MISSING'}, Yield: ${dividendYield}`);
 
           // Sector/Industry - Improved extraction for production HTML
           const sectorMatch = html.match(/>(?:Sektör|Sector)<[\s\S]*?<div[^>]*>(?:<a[^>]*>)?([^<]+)(?:<\/a>)?/i) ||
