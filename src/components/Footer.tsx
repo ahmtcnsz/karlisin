@@ -22,6 +22,41 @@ export default function Footer() {
         tags: ['Trendyol Komisyon', 'Amazon Kar Hesaplama', 'E-Ticaret Karlılık', 'Hepsiburada Komisyon', 'Satış Stratejisi']
       };
     }
+    if (path.includes('temettu-takibi')) {
+      return {
+        title: "BIST Temettü Takibi ve Verim Analizi",
+        desc: "Karlısın Temettü Takipçisi, Borsa İstanbul ve küresel piyasalardaki temettü dağıtan şirketlerin verilerini anlık olarak analiz eder. Temettü verimi, ödeme tarihleri ve 12 aylık hedef fiyat tahminleri ile portföyünüzün pasif gelir potansiyelini maksimize edin. Unified Data Engine ile doğrulanmış, gecikmesiz veriye erişin.",
+        tags: ['Temettü Takvimi', 'Temettü Verimi', 'Hisse Analizi', 'Pasif Gelir', 'Borsa İstanbul']
+      };
+    }
+    if (path.includes('borsa/nabiz')) {
+      return {
+        title: "Canlı Borsa ve Piyasanın Nabzı",
+        desc: "Borsa İstanbul piyasa trendlerini, en çok yükselenleri ve düşenleri gerçek zamanlı takip edin. Karlısın Piyasa Nabzı aracı, teknik göstergeler ve piyasa derinliği verilerini modern bir arayüzle sunarak hızlı karar vermenizi sağlar. Sektörel değişimleri ve volatiliteyi anlık izleyerek fırsatları kaçırmayın.",
+        tags: ['Canlı Borsa', 'Piyasa Analizi', 'Hisse Takip', 'Teknik Analiz', 'Anlık Veri']
+      };
+    }
+    if (path.includes('blog')) {
+      return {
+        title: "Finansal Bilgi ve Yatırım Rehberi",
+        desc: "Karlısın Blog sayfasında temettü yatırımcılığı, e-ticaret yönetimi, güncel vergi mevzuatları ve finansal özgürlük yolculuğuna dair kapsamlı rehberler bulabilirsiniz. Uzman görüşleri ve pratik hesaplama ipuçları ile finansal okur-yazarlığınızı geliştirin, stratejik kararlarınızı bilinçli şekilde alın.",
+        tags: ['Yatırım Rehberi', 'Finansal Özgürlük', 'Hisse Yorumları', 'E-Ticaret İpuçları', 'Vergi Mevzuatı']
+      };
+    }
+    if (path.includes('hakkimizda')) {
+      return {
+        title: "Yeni Nesil Finansal SaaS: Karlısın",
+        desc: "Karlısın, veriyi karara dönüştüren akıllı hesaplama sistemleri üretir. Mühendislik odaklı yaklaşımımız ve Unified Data Engine altyapımızla, kullanıcılarımıza en karmaşık maliyetleri ve getiri tahminlerini saniyeler içinde sunuyoruz. Amacımız, finansal şeffaflığı ve erişilebilirliği her seviyedeki kullanıcı için demokratikleştirmektir.",
+        tags: ['Karlısın Kimdir?', 'Finansal Teknoloji', 'SaaS Çözümleri', 'Veri Bilimi', 'Kurumsal Vizyon']
+      };
+    }
+    if (path.includes('gizlilik-politikasi') || path.includes('kullanim-kosullari')) {
+      return {
+        title: "Güven ve Şeffaflık Politikalarımız",
+        desc: "Karlısın, kullanıcı gizliliğini temel prensip olarak benimser. Gizlilik politikamız ve kullanım şartlarımız, sitemizin herhangi bir kişisel veri toplamadığını ve sunduğumuz araçların kullanım çerçevesini şeffaf bir şekilde açıklar. Hesaplamalarınız tarayıcınızda kalır, bizimle paylaşılmaz.",
+        tags: ['Gizlilik Politikası', 'Kullanım Şartları', 'Şeffaflık Politikası', 'Veri Güvenliği', 'Yasal Uyarı']
+      };
+    }
     if (path === '/' || path === '/anasayfa') {
       return {
         title: "Profesyonel Finansal Hesaplama Araçları",
@@ -29,7 +64,7 @@ export default function Footer() {
         tags: ['Finansal Araçlar', 'Kar Hesaplama', 'Veri Analizi', 'Stratejik Planlama', 'Yatırım Rehberi']
       };
     }
-    // Default for Dividend or others
+    // Default fallback
     return {
       title: "Finansal Teknoloji Çözümleri",
       desc: "Karlısın, yatırımcıların en çok ihtiyaç duyduğu temettü dağıtımı, temettü dağıtan hisseler ve 2026 maaş hesaplama gibi kritik finansal metrikleri tek bir platformda toplar. Unified Data Engine teknolojimiz ile BIST ve global borsalardaki temettü veren şirketler için 12 aylık hedef fiyat tahminleri, pazar kâr analizi ve borsa takibini en hassas verilerle sunuyoruz.",
@@ -51,6 +86,31 @@ export default function Footer() {
       className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 pointer-events-none"
     />
   );
+
+  const tagLinks: Record<string, string> = {
+    'Maaş Hesaplama': '/maas-vergi-hesaplama',
+    'Maaş Hesapla': '/maas-vergi-hesaplama',
+    'Gelir Vergisi': '/maas-vergi-hesaplama',
+    'Brütten Nete': '/maas-vergi-hesaplama',
+    'Pazaryeri Kâr': '/pazar-kar-hesaplama',
+    'Pazar Kar Analizi': '/pazar-kar-hesaplama',
+    'Kar Hesaplama': '/pazar-kar-hesaplama',
+    'E-Ticaret Karlılık': '/pazar-kar-hesaplama',
+    'Temettü Takvimi': '/temettu-takibi',
+    'Temettü Verimi': '/temettu-takibi',
+    'Temettü Takibi': '/temettu-takibi',
+    'Temettü Veren Şirketler': '/temettu-takibi',
+    'Canlı Borsa': '/borsa/nabiz',
+    'Borsa Analizi': '/borsa/nabiz',
+    'Piyasa Analizi': '/borsa/nabiz',
+    'Hisse Takip': '/borsa/nabiz',
+    'Anlık Veri': '/borsa/nabiz',
+    'Blog': '/blog',
+    'Yatırım Rehberi': '/blog',
+    'Hakkımızda': '/hakkimizda',
+    'Gizlilik Politikası': '/gizlilik-politikasi',
+    'Kullanım Şartları': '/kullanim-kosullari'
+  };
 
   return (
     <footer className="w-full py-12 bg-slate-950/50 backdrop-blur-xl border-t border-white/5 mt-auto font-sans relative z-10">
@@ -135,14 +195,28 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center text-left">
             <div>
               <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">{seoContent.title}</h5>
-              <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-2xl" dangerouslySetInnerHTML={{ __html: seoContent.desc }} />
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed max-w-2xl" dangerouslySetInnerHTML={{ __html: seoContent.desc }} />
             </div>
             <div className="flex flex-wrap gap-2 md:justify-end">
-              {seoContent.tags.map(tag => (
-                <span key={tag} className="px-2 py-0.5 bg-white/5 text-[8px] font-black text-slate-400 uppercase tracking-widest rounded border border-white/10">
-                  {tag}
-                </span>
-              ))}
+              {seoContent.tags.map(tag => {
+                const link = tagLinks[tag];
+                if (link) {
+                  return (
+                    <Link 
+                      key={tag} 
+                      to={link}
+                      className="px-3 py-1.5 bg-white/5 text-[9px] font-black text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 uppercase tracking-widest rounded-lg border border-white/10 transition-all"
+                    >
+                      {tag}
+                    </Link>
+                  );
+                }
+                return (
+                  <span key={tag} className="px-3 py-1.5 bg-white/5 text-[9px] font-black text-slate-500 uppercase tracking-widest rounded-lg border border-white/10 opacity-60">
+                    {tag}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>

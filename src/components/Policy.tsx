@@ -11,23 +11,23 @@ export default function Policy({ type }: PolicyProps) {
     title: 'Gizlilik Politikası',
     icon: <Shield size={48} className="text-indigo-400" />,
     items: [
-      "Fiyat Hesaplayıcı, yalnızca hesaplama ve bilgilendirme amacıyla sunulan bir araçtır. Sunulan sonuçlar finansal, hukuki veya ticari tavsiye niteliği taşımaz",
-      "Kullanıcı, elde ettiği sonuçları kendi sorumluluğunda değerlendirir. Uygulamanın kullanımından doğabilecek doğrudan veya dolaylı zararlardan sorumluluk kabul edilmez.",
-      "Hesaplama algoritmaları genel senaryolara göre tasarlanmıştır. Pazaryeri komisyonları, hizmet bedelleri ve diğer ücretler zamanla değişebilir. Kullanıcı, bu değişiklikleri kontrol etmekle yükümlüdür.",
-      "Kullanıcı, uygulamayı kötüye kullanmayacağını, sistemin işleyişine zarar verecek herhangi bir girişimde bulunmayacağını kabul eder.",
-      "Fiyat Hesaplayıcı, önceden bildirimde bulunmaksızın güncellenebilir, geliştirilebilir veya geçici/süresiz olarak durdurulabilir.",
-      "Bu kullanım şartları zaman zaman güncellenebilir. Güncellenmiş versiyonlar yayınlandığı andan itibaren geçerli sayılır."
+      "1- Kişisel Veri Toplanmaz: Karlısın, kullanıcılarını kayıt etmez, takip etmez ve hiçbir kişisel veriyi (isim, e-posta, iletişim bilgisi) sisteminde tutmaz. Araçlarımız anonim kullanım ilkesine dayanır.",
+      "2- Şeffaf Bilgi Kaynağı: Piyasa verileri ve hesaplamalar, üçüncü taraf sağlayıcılardan (Yahoo, Google, Investing) anlık olarak çekilir. Bu veriler sistemlerimizde kalıcı olarak depolanmaz.",
+      "3- Teknik Çerezler: Site performansı ve kullanıcı tercihlerini (örneğin karanlık mod seçimi) hatırlamak için yalnızca tarayıcı tabanlı teknik çerezler kullanılabilir.",
+      "4- Analiz Araçları: Site trafiğini anlamak için kullanılan standart analiz servisleri, kullanıcıların kimliğini belirleyecek hiçbir veriyi Karlısın ile paylaşmaz.",
+      "5- Güvenli Bağlantı: Tüm hesaplama süreçleri ve veri iletimi modern SSL sertifikaları ile korunarak tarayıcınız ve sunucumuz arasında güvenli bir tünel üzerinden gerçekleşir.",
+      "6- Dış Bağlantılar: Sitemiz üzerinden yönlendirilen dış bağlantıların kendi gizlilik politikaları geçerlidir. Karlısın, dış platformların veri politikalarından sorumlu değildir."
     ]
   } : {
     title: 'Kullanım Şartları',
     icon: <FileText size={48} className="text-purple-400" />,
     items: [
-      "Fiyat Hesaplayıcı, yalnızca hesaplama ve bilgilendirme amacıyla sunulan bir araçtır. Sunulan sonuçlar finansal, hukuki veya ticari tavsiye niteliği taşımaz",
-      "Kullanıcı, elde ettiği sonuçları kendi sorumluluğunda değerlendirir. Uygulamanın kullanımından doğabilecek doğrudan veya dolaylı zararlardan sorumluluk kabul edilmez.",
-      "Hesaplama algoritmaları genel senaryolara göre tasarlanmıştır. Pazaryeri komisyonları, hizmet bedelleri ve diğer ücretler zamanla değişebilir. Kullanıcı, bu değişiklikleri kontrol etmekle yükümlüdür.",
-      "Kullanıcı, uygulamayı kötüye kullanmayacağını, sistemin işleyişine zarar verecek herhangi bir girişimde bulunmayacağını kabul eder.",
-      "Fiyat Hesaplayıcı, önceden bildirimde bulunmaksızın güncellenebilir, geliştirilebilir veya geçici/süresiz olarak durdurulabilir.",
-      "Bu kullanım şartları zaman zaman güncellenebilir. Güncellenmiş versiyonlar yayınlandığı andan itibaren geçerli sayılır."
+      "1- Bilgilendirme Amaçlıdır: Karlısın araçları sadece matematiksel modellemeler sunar. Hiçbir sonuç resmi belge, yatırım tavsiyesi veya finansal danışmanlık yerine geçmez.",
+      "2- Veri Doğruluğu: Veriler Unified Data Engine ile çapraz sorgulanarak sunulsa da, piyasa koşullarına bağlı gecikme veya hatalar yaşanabilir. Yatırım kararlarınızı bu verilere dayanarak almayınız.",
+      "3- Ücretsiz Hizmet: Platformdaki tüm hesaplama araçları ücretsizdir ve 'olduğu gibi' sunulur. Hizmet kalitesi veya kesintisiz erişim konusunda garanti verilmez.",
+      "4- Fikri Mülkiyet: Karlısın görsel tasarımı, logoları ve hesaplama algoritmaları özel mülkiyetimizdir. İzinsiz kopyalanması veya ticari amaçla kullanılması yasaktır.",
+      "5- Sorumluluk Reddi: Kullanıcıların bu araçları kullanarak yaptığı finansal tercihlerden doğabilecek maddi veya manevi zararlardan Karlısın sorumlu tutulamaz.",
+      "6- Koşul Güncellemeleri: Hizmetlerimizi geliştikçe bu şartlar güncellenebilir. Platformu kullanarak mevcut şartları kabul etmiş sayılırsınız."
     ]
   };
 
@@ -82,7 +82,7 @@ export default function Policy({ type }: PolicyProps) {
       >
         <Info className="text-indigo-400 shrink-0 mt-1" size={20} />
         <p className="text-sm text-slate-400 font-medium leading-relaxed text-center sm:text-left">
-          Bu döküman son olarak 22 Nisan 2026 tarihinde güncellenmiştir. Sorularınız için bizimle iletişime geçebilirsiniz.
+          Bu döküman son olarak 8 Mayıs 2026 tarihinde güncellenmiştir. Sorularınız için bizimle iletişime geçebilirsiniz.
         </p>
       </motion.div>
     </div>

@@ -370,7 +370,7 @@ const DividendGrowthChart = ({ history }: { history: any[] }) => {
 
   return (
     <div className="h-64 w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <AreaChart data={processedData}>
           <defs>
             <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
@@ -678,12 +678,14 @@ const DividendTracker: React.FC = () => {
   // Status badge helper
   const getStatusBadge = (dividendDate?: Date | number | null) => {
     if (!dividendDate) return null;
-    // Current date for simulation as per project context (May 6, 2026)
-    const today = new Date('2026-05-06');
+    
+    // Current date for comparison
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const target = new Date(dividendDate);
     
     // Normalize dates for day-only comparison
-    const d1 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const d1 = today;
     const d2 = new Date(target.getFullYear(), target.getMonth(), target.getDate());
     
     const diffTime = d2.getTime() - d1.getTime();
@@ -695,21 +697,21 @@ const DividendTracker: React.FC = () => {
       return (
         <span className={cn(badgeBase, "bg-blue-500/20 text-blue-400 border-blue-500/40 animate-pulse shadow-blue-500/5")}>
           <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-          BUGÜN ÖDENİYOR
+          PAY EDİLİYOR / HESAPLARDA
         </span>
       );
     } else if (diffDays === 1) {
       return (
         <span className={cn(badgeBase, "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 animate-bounce shadow-emerald-500/5")}>
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-          YARIN ÖDENİYOR
+          YARIN ÖDEME VAR
         </span>
       );
     } else if (diffDays > 1 && diffDays <= 5) {
       return (
         <span className={cn(badgeBase, "bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-amber-500/5")}>
           <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-          ÇOK YAKIN ({diffDays} GÜN)
+          HAKEDİŞ YAKIN ({diffDays} GÜN)
         </span>
       );
     } else if (diffDays > 5 && diffDays <= 15) {
@@ -1056,7 +1058,7 @@ const DividendTracker: React.FC = () => {
 
 
                     {/* Upcoming Highlights Bar Integration */}
-                    {popularUpcoming.filter(u => new Date(u.date) >= new Date('2026-05-06')).length > 0 && (
+                    {popularUpcoming.filter(u => new Date(u.date) >= new Date(new Date().setHours(0,0,0,0))).length > 0 && (
                       <div className="mt-12 mb-12">
                         <div className="flex items-center gap-3 mb-6">
                           <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
@@ -1069,11 +1071,21 @@ const DividendTracker: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           {[...popularUpcoming]
-                            .filter(u => new Date(u.date) >= new Date('2026-05-06'))
+                            .filter(u => {
+                              const uDate = new Date(u.date);
+                              uDate.setHours(0,0,0,0);
+                              const today = new Date();
+                              today.setHours(0,0,0,0);
+                              return uDate >= today;
+                            })
                             .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                             .slice(0, 4)
                             .map((u, i) => {
-                              const diffDays = Math.ceil((new Date(u.date).getTime() - new Date('2026-05-06').getTime()) / (1000 * 60 * 60 * 24));
+                              const uDate = new Date(u.date);
+                              uDate.setHours(0,0,0,0);
+                              const today = new Date();
+                              today.setHours(0,0,0,0);
+                              const diffDays = Math.round((uDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                               return (
                                 <button 
                                   key={u.symbol + i}
@@ -1086,7 +1098,7 @@ const DividendTracker: React.FC = () => {
                                       "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
                                       diffDays <= 3 ? "bg-emerald-500/20 text-emerald-400 animate-pulse" : "bg-white/5 text-slate-400"
                                     )}>
-                                      {diffDays === 0 ? 'BUGÜN' : `${diffDays} GÜN`}
+                                      {diffDays === 0 ? 'PAY EDİLİYOR' : `${diffDays} GÜN`}
                                     </span>
                                   </div>
                                   <div>
@@ -1322,7 +1334,8 @@ const DividendTracker: React.FC = () => {
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                     {sortedDividends
                       .filter(d => {
-                         const today = new Date('2026-05-06');
+                         const today = new Date();
+                         today.setHours(0,0,0,0);
                          const itemDate = new Date(d.date);
                          const isRecentOrFuture = itemDate >= new Date(today.getTime() - (15 * 24 * 60 * 60 * 1000)); 
                          const matchesSearch = calendarSearch === '' || 
@@ -1332,12 +1345,16 @@ const DividendTracker: React.FC = () => {
                       })
                       .slice(0, 17)
                       .map((item) => {
-                        const today = new Date('2026-05-06');
-                        const target = new Date(item.date);
+                        const now = new Date();
+                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        const targetDate = new Date(item.date);
+                        const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+                        
                         const diffTime = target.getTime() - today.getTime();
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
                         const isVerySoon = diffDays >= 0 && diffDays <= 7;
                         const isPast = diffDays < 0;
+                        const isToday = diffDays === 0;
 
                         return (
                           <button 
@@ -1376,13 +1393,13 @@ const DividendTracker: React.FC = () => {
                                 {isVerySoon && (
                                   <div className="text-[9px] font-black text-emerald-400 uppercase tracking-tighter flex items-center gap-1">
                                     <Clock className="w-2.5 h-2.5" />
-                                    {diffDays === 0 ? 'BUGÜN' : `${diffDays} GÜN KALDI`}
+                                    {diffDays === 0 ? 'PAY EDİLİYOR' : `${diffDays} GÜN KALDI`}
                                   </div>
                                 )}
                                 {isPast && (
                                   <div className="text-[9px] font-black text-slate-500 uppercase tracking-tighter flex items-center gap-1">
                                     <ShieldCheck className="w-2.5 h-2.5" />
-                                    TAMAMLANDI
+                                    HESAPLARDA
                                   </div>
                                 )}
                               </div>
