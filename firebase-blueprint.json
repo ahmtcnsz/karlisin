@@ -43,6 +43,39 @@
         }
       },
       "required": ["email", "source", "subscribedAt"]
+    },
+    "PortfolioAnalysis": {
+      "title": "Portfolio Analysis",
+      "description": "Represents an AI-generated analysis of a user's portfolio.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "portfolio": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "symbol": { "type": "string" },
+              "amount": { "type": "number" },
+              "cost": { "type": "number" }
+            }
+          }
+        },
+        "score": { "type": "number" },
+        "distribution": { "type": "string" },
+        "technicalNote": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "portfolio", "score", "distribution", "technicalNote", "createdAt"]
+    },
+    "UserStat": {
+      "title": "User Statistics",
+      "description": "Tracks usage limits and metadata for a user.",
+      "type": "object",
+      "properties": {
+        "lastAnalysisAt": { "type": "string", "format": "date-time" },
+        "analysesCount": { "type": "number" }
+      }
     }
   },
   "firestore": {
@@ -53,6 +86,14 @@
     "/newsletter_subscribers/{entryId}": {
       "schema": "NewsletterSubscriber",
       "description": "Collection of newsletter subscribers."
+    },
+    "/portfolio_analyses/{analysisId}": {
+      "schema": "PortfolioAnalysis",
+      "description": "Historical portfolio analyses."
+    },
+    "/user_stats/{userId}": {
+      "schema": "UserStat",
+      "description": "User limits and stats."
     }
   }
 }

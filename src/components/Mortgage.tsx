@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { TrendingUp, PieChart, Bell, Wallet, LineChart, CheckCircle, Loader2 } from 'lucide-react';
+import { getApiUrl } from '../lib/utils';
 import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -33,13 +34,7 @@ export default function Mortgage() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        // ÖNEMLİ: Eğer karlisin.com gibi bir domaindeysek ve relative path çalışmıyorsa 
-        // doğrudan çalışan Cloud Run URL'sine git.
-        const workingCloudRunUrl = 'https://karl-s-n-1001236491636.europe-west2.run.app/api/mail';
-        const isCustomDomain = window.location.hostname.includes('karlisin.com');
-        
-        // Eğer custom domaindeysek doğrudan çalışan URL'yi dene, değilse relative yolu kullan
-        const apiUrl = isCustomDomain ? workingCloudRunUrl : '/api/mail';
+        const apiUrl = getApiUrl('/api/mail');
         
         console.log('[Karlısın-Front] İstek atılıyor:', apiUrl, 'Domain:', window.location.hostname);
         

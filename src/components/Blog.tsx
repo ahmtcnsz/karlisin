@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle, ArrowLeft, Share2 } from 'lucide-react';
+import { getApiUrl } from '../lib/utils';
 import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 
@@ -454,7 +455,7 @@ export default function Blog() {
         const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e);
 
         if (subscribers.length > 0) {
-          const apiUrl = '/api/broadcast';
+          const apiUrl = getApiUrl('/api/broadcast');
 
           const res = await fetch(apiUrl, {
             method: 'POST',
@@ -500,7 +501,7 @@ export default function Blog() {
       });
 
       try {
-        const apiUrl = '/api/mail';
+        const apiUrl = getApiUrl('/api/mail');
 
         await fetch(apiUrl, {
           method: 'POST',

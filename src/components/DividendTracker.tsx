@@ -45,7 +45,7 @@ import {
   Lightbulb,
   Layers
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, getApiUrl } from '../lib/utils';
 import { Link } from 'react-router-dom';
 
 // 2026 Comprehensive Expected Dividend Calendar (Updated for Full 2026 Season)
@@ -145,6 +145,14 @@ const popularUpcoming = [
   { symbol: 'XOM', name: 'Exxon Mobil', yield: '3.40%', date: '2026-12-10', month: 'Aralık 2026', confirmed: true },
   { symbol: 'GUBRF.IS', name: 'Gübre Fabrikaları', yield: '0.00%', date: '2026-12-25', month: 'Aralık 2026', confirmed: false },
 ];
+
+import { 
+  extractPortfolioFromImage, 
+  checkDailyLimit, 
+  getTodayAnalysis,
+  getAnalysisHistory
+} from '../services/portfolioService';
+import { PortfolioAnalysisModal } from './PortfolioAnalysisModal';
 
 /**
  * Helper to find the closest upcoming dividend symbol from popularUpcoming list.
@@ -370,7 +378,7 @@ const DividendGrowthChart = ({ history }: { history: any[] }) => {
 
   return (
     <div className="h-64 w-full">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <AreaChart data={processedData}>
           <defs>
             <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
@@ -445,6 +453,16 @@ const DividendTracker: React.FC = () => {
   const [showAllDividends, setShowAllDividends] = useState(false);
   const [calendarSearch, setCalendarSearch] = useState('');
   const [istanbulTime, setIstanbulTime] = useState('');
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+  const [canAnalyze, setCanAnalyze] = useState(true);
+
+  useEffect(() => {
+    const checkLimitStatus = async () => {
+      const { canAnalyze: allowed } = await checkDailyLimit();
+      setCanAnalyze(allowed);
+    };
+    checkLimitStatus();
+  }, [isAnalysisModalOpen]);
 
   useEffect(() => {
     const updateTime = () => {
@@ -488,7 +506,7 @@ const DividendTracker: React.FC = () => {
       const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
       // 1. Overview
-      const res = await fetch(`/api/alphavantage/overview?symbol=${encodeURIComponent(symbol)}`);
+      const res = await fetch(getApiUrl(`/api/alphavantage/overview?symbol=${encodeURIComponent(symbol)}`));
       if (res.ok) {
         const json = await res.json();
         if (json && json.Symbol) setAvData(json);
@@ -498,7 +516,7 @@ const DividendTracker: React.FC = () => {
       await wait(1000); // Rate limit protection
 
       // 2. News & Sentiment
-      const resNews = await fetch(`/api/alphavantage/news?symbol=${encodeURIComponent(symbol)}`);
+      const resNews = await fetch(getApiUrl(`/api/alphavantage/news?symbol=${encodeURIComponent(symbol)}`));
       if (resNews.ok) {
         const jsonNews = await resNews.json();
         setAvNews(jsonNews);
@@ -506,7 +524,7 @@ const DividendTracker: React.FC = () => {
       await wait(1000);
 
       // 3. RSI (Technical)
-      const resRsi = await fetch(`/api/alphavantage/rsi?symbol=${encodeURIComponent(symbol)}`);
+      const resRsi = await fetch(getApiUrl(`/api/alphavantage/rsi?symbol=${encodeURIComponent(symbol)}`));
       if (resRsi.ok) {
         const jsonRsi = await resRsi.json();
         setAvRsi(jsonRsi);
@@ -514,7 +532,7 @@ const DividendTracker: React.FC = () => {
       await wait(1000);
 
       // 4. Financials (Income Statement)
-      const resFin = await fetch(`/api/alphavantage/financials?symbol=${encodeURIComponent(symbol)}`);
+      const resFin = await fetch(getApiUrl(`/api/alphavantage/financials?symbol=${encodeURIComponent(symbol)}`));
       if (resFin.ok) {
         const jsonFin = await resFin.json();
         setAvFin(jsonFin);
@@ -522,7 +540,7 @@ const DividendTracker: React.FC = () => {
       await wait(1000);
 
       // 5. Earnings
-      const resEarn = await fetch(`/api/alphavantage/earnings?symbol=${encodeURIComponent(symbol)}`);
+      const resEarn = await fetch(getApiUrl(`/api/alphavantage/earnings?symbol=${encodeURIComponent(symbol)}`));
       if (resEarn.ok) {
         const jsonEarn = await resEarn.json();
         setAvEarnings(jsonEarn);
@@ -530,7 +548,7 @@ const DividendTracker: React.FC = () => {
       await wait(1000);
 
       // 6. Cash Flow
-      const resCF = await fetch(`/api/alphavantage/cashflow?symbol=${encodeURIComponent(symbol)}`);
+      const resCF = await fetch(getApiUrl(`/api/alphavantage/cashflow?symbol=${encodeURIComponent(symbol)}`));
       if (resCF.ok) {
         const jsonCF = await resCF.json();
         setAvCashFlow(jsonCF);
@@ -542,7 +560,7 @@ const DividendTracker: React.FC = () => {
 
   const fetchAVCalendar = async () => {
     try {
-      const res = await fetch('/api/alphavantage/calendar?horizon=3month');
+      const res = await fetch(getApiUrl('/api/alphavantage/calendar?horizon=3month'));
       if (!res.ok) return;
       const json = await res.json();
       if (Array.isArray(json)) {
@@ -556,14 +574,14 @@ const DividendTracker: React.FC = () => {
   const fetchEconomics = async () => {
     try {
       // Fetch Federal Funds Rate as a global proxy
-      const res = await fetch('/api/alphavantage/economics/FEDERAL_FUNDS_RATE');
+      const res = await fetch(getApiUrl('/api/alphavantage/economics/FEDERAL_FUNDS_RATE'));
       if (res.ok) {
         const json = await res.json();
         setAvEcon(json);
       }
 
       // Fetch Brent Oil Price as a global commodity index
-      const resOil = await fetch('/api/alphavantage/commodity/BRENT');
+      const resOil = await fetch(getApiUrl('/api/alphavantage/commodity/BRENT'));
       if (resOil.ok) {
         const jsonOil = await resOil.json();
         setAvOil(jsonOil);
@@ -584,7 +602,7 @@ const DividendTracker: React.FC = () => {
     setAvCashFlow(null);
     try {
       const url = `/api/dividends?symbol=${encodeURIComponent(symbol)}${forceRefresh ? '&refresh=true' : ''}`;
-      const res = await fetch(url);
+      const res = await fetch(getApiUrl(url));
       const contentType = res.headers.get('content-type');
       
       if (!res.ok) {
@@ -649,7 +667,7 @@ const DividendTracker: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch(`/api/stock/search?q=${val}`);
+      const res = await fetch(getApiUrl(`/api/stock/search?q=${val}`));
       if (!res.ok) return;
       const text = await res.text();
       try {
@@ -861,16 +879,7 @@ const DividendTracker: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex items-center flex-wrap gap-2 mt-2">
-                             <button
-                               onClick={() => fetchData(selectedSymbol, true)}
-                               className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] font-black uppercase tracking-widest rounded border border-indigo-500/20 flex items-center gap-1.5 hover:bg-indigo-500/20 transition-all"
-                               title="Verileri Kaynaktan Zorla Yenile"
-                             >
-                               {loading ? <Loader2 className="w-2 h-2 animate-spin" /> : <RefreshCw className="w-2 h-2" />}
-                               VERİ YENİLE
-                             </button>
-
-                            <span className="px-2 py-0.5 bg-white/5 text-slate-400 text-[8px] font-black uppercase tracking-widest rounded border border-white/5">
+                             <span className="px-2 py-0.5 bg-white/5 text-slate-400 text-[8px] font-black uppercase tracking-widest rounded border border-white/5">
                               {data?.summary?.summaryDetail?.sector || avData?.Sector || 'Sektör Verisi Yok'}
                             </span>
 
@@ -939,11 +948,21 @@ const DividendTracker: React.FC = () => {
                               </div>
                             </div>
                             <div className="h-2 w-px bg-white/10" />
-                            <div className="flex items-center gap-1">
-                              <ShieldCheck className={cn("w-2 h-2", (data?.verification?.sources_count || 0) >= 2 ? "text-emerald-500 animate-pulse" : "text-slate-500")} />
-                              <span className={cn("text-[7px] font-black uppercase tracking-widest", (data?.verification?.sources_count || 0) >= 2 ? "text-emerald-400" : "text-rose-500")}>
-                                {(data?.verification?.sources_count || 0) >= 2 ? 'ÇAPRAZ DOĞRULAMA AKTİF' : 'TEK KAYNAKDAN ÇEKİLİYOR'}
-                              </span>
+                            <div className="flex flex-1 items-center justify-between">
+                              <div className="flex items-center gap-1">
+                                <ShieldCheck className={cn("w-2 h-2", (data?.verification?.sources_count || 0) >= 2 ? "text-emerald-500 animate-pulse" : "text-slate-500")} />
+                                <span className={cn("text-[7px] font-black uppercase tracking-widest", (data?.verification?.sources_count || 0) >= 2 ? "text-emerald-400" : "text-rose-500")}>
+                                  {(data?.verification?.sources_count || 0) >= 2 ? 'ÇAPRAZ DOĞRULAMA AKTİF' : 'TEK KAYNAKDAN ÇEKİLİYOR'}
+                                </span>
+                              </div>
+                              <button 
+                                onClick={() => fetchData(selectedSymbol, true)}
+                                disabled={loading}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-lg transition-colors ml-4 disabled:opacity-50"
+                              >
+                                <RefreshCw className={cn("w-3 h-3 text-indigo-400", loading && "animate-spin")} />
+                                <span className="text-[9px] font-black tracking-widest text-indigo-300 uppercase">Yenile</span>
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -976,7 +995,43 @@ const DividendTracker: React.FC = () => {
                       </div>
                     </div>
 
-
+                    {/* Portföy Gönder Görseli Alanı (CSS Recreation) */}
+                    <div 
+                      onClick={() => setIsAnalysisModalOpen(true)}
+                      className="w-full h-[64px] bg-gradient-to-r from-[#1a3a3a] via-[#1e1e4a] to-[#3a1a4a] border border-white/5 rounded-xl mb-6 overflow-hidden flex items-center justify-between px-6 group cursor-pointer hover:shadow-lg hover:shadow-indigo-500/10 transition-all"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="relative hidden sm:block">
+                          <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                            {/* Robot Head Icon Style */}
+                            <div className="w-6 h-5 bg-[#1a1a3a] rounded-lg relative overflow-hidden flex flex-col items-center justify-center">
+                              <div className="flex gap-1 mb-0.5">
+                                <div className="w-1 h-1 bg-cyan-400 rounded-full"></div>
+                                <div className="w-1 h-1 bg-cyan-400 rounded-full"></div>
+                              </div>
+                              <div className="w-2.5 h-0.5 bg-cyan-400 rounded-full"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <h3 className="text-white font-black text-sm md:text-base tracking-tight leading-none uppercase">
+                            {canAnalyze ? (
+                              <>PORTFÖYÜNÜ <span className="text-cyan-400">YOLLA</span>, SENİN İÇİN <span className="text-purple-400">ANALİZ EDELİM</span></>
+                            ) : (
+                              <>BUGÜNKÜ <span className="text-amber-400">ANALİZ HAKKIN DOLDU</span>, YARIN YİNE <span className="text-purple-400">BEKLERİZ</span></>
+                            )}
+                          </h3>
+                          <p className="text-[9px] text-slate-400 font-medium italic mt-1 uppercase tracking-wider">
+                            yapay zeka destekli portföy analizi
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center shrink-0">
+                        <button className="px-4 py-1.5 bg-slate-900/80 text-white rounded-full border border-white/10 text-xs font-black hover:bg-white hover:text-slate-900 transition-all uppercase tracking-widest shadow-xl">
+                          {canAnalyze ? 'Gönder!' : 'Arşivi Gör'}
+                        </button>
+                      </div>
+                    </div>
 
                     {/* Pro Metrics Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1044,15 +1099,7 @@ const DividendTracker: React.FC = () => {
                        </div>
                     </div>
 
-                    {/* Veri Bilgilendirme Notu */}
-                    {data?.summary?.summaryDetail?.dividendRate === 0 && (
-                      <div className="mt-4 px-6 py-3 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center gap-3">
-                         <Info className="w-4 h-4 text-slate-500" />
-                         <p className="text-[11px] text-slate-500 font-medium">
-                            Tahminler 0 gelirse şirket son 1 yıldır hiç temettü ödememiş olması veya tüm global kaynakların aynı anda erişime kapalı olmasıdır.
-                         </p>
-                      </div>
-                    )}
+                     {/* Notification box removed */}
 
 
 
@@ -1957,6 +2004,11 @@ const DividendTracker: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <PortfolioAnalysisModal 
+        isOpen={isAnalysisModalOpen} 
+        onClose={() => setIsAnalysisModalOpen(false)} 
+      />
     </div>
   );
 };

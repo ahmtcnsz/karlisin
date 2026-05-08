@@ -7,42 +7,81 @@ import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
 import yahooFinanceModule from 'yahoo-finance2';
 import NodeCache from 'node-cache';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// .env dosyasını hemen yükle
+dotenv.config();
+
+// Initialize Gemini
+let genAI: GoogleGenerativeAI | null = null;
+
+const rateLimitCache = new NodeCache({ stdTTL: 86400 });
+
+// Rate limit helper
+const checkIpLimit = (ip: string): { allowed: boolean; remaining: number } => {
+  const today = new Date().toISOString().split('T')[0];
+  const key = `limit:${ip}:${today}`;
+  const count = rateLimitCache.get<number>(key) || 0;
+  
+  if (count >= 1) return { allowed: false, remaining: 0 };
+  
+  rateLimitCache.set(key, count + 1);
+  return { allowed: true, remaining: 1 - (count + 1) };
+};
+
+const getGenAI = () => {
+  if (genAI) return genAI;
+  
+  const rawApiKey = (process.env.USER_GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || "").trim();
+
+  // Bilinen sahte/geçersiz anahtarları engelle
+  if (rawApiKey.includes("MY_GEMINI") || rawApiKey.includes("YOUR_KEY")) {
+    console.error(`[Karlısın-AI] HATA: Ortam değişkenlerinde geçersiz/sahte bir anahtar (placeholder) tespit edildi: ${rawApiKey.substring(0,8)}...`);
+    return null;
+  }
+
+  const apiKey = rawApiKey;
+
+  if (apiKey) {
+    console.log(`[Karlısın-AI] Anahtar Aktif. Uzunluk: ${apiKey.length}`);
+    genAI = new GoogleGenerativeAI(apiKey);
+    return genAI;
+  }
+  
+  console.error(`[Karlısın-AI] KRİTİK: Geçerli bir GEMINI_API_KEY bulunamadı!`);
+  return null;
+};
+
+// İlk başta dene
+getGenAI();
 
 // yahoo-finance2 v3+ robust instantiation logic
 // This fixes the "Call new YahooFinance() first" error
 let yf: any = null;
 
 function getYahoo() {
-  if (yf && typeof yf.quote === 'function') return yf;
+  if (yf && typeof yf.quote === 'function' && !yf.isModule) return yf;
   
   try {
     const raw: any = yahooFinanceModule;
     if (typeof raw === 'function') {
-      yf = new raw();
+      yf = new raw({ suppressNotices: ['yahooSurvey'] });
       console.log('[Karlısın-INIT] Yahoo Finance: Initialized via default constructor.');
-    } else if (raw.YahooFinance && typeof raw.YahooFinance === 'function') {
-      yf = new raw.YahooFinance();
-      console.log('[Karlısın-INIT] Yahoo Finance: Initialized via named class.');
     } else if (raw.default && typeof raw.default === 'function') {
-      yf = new raw.default();
+      yf = new raw.default({ suppressNotices: ['yahooSurvey'] });
       console.log('[Karlısın-INIT] Yahoo Finance: Initialized via raw.default.');
     } else {
-      yf = raw.default || raw;
-      console.log('[Karlısın-INIT] Yahoo Finance: Falling back to singleton.');
-    }
-
-    if (yf && typeof yf.setGlobalConfig === 'function') {
-      yf.setGlobalConfig({ validation: { logErrors: false } });
+      console.log('[Karlısın-INIT] Yahoo Finance: Cannot find constructor, looking for instance.');
+      yf = raw;
+      yf.isModule = true; // Mark to avoid caching broken module if it throws
     }
   } catch (e) {
     console.warn('[Karlısın-INIT] Yahoo Finance instantiation error:', e);
     yf = yahooFinanceModule;
+    yf.isModule = true;
   }
   return yf;
 }
-
-// .env dosyasını yükle
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -178,7 +217,7 @@ class UnifiedDataService {
              const sectorMatch = html.match(/"industry":"([^"]+)"/) || html.match(/>Industry<[\s\S]*?>([^<]+)</i) || html.match(/>Endüstri<[\s\S]*?>([^<]+)</i);
              const marketCapMatch = html.match(/>Market Cap<[\s\S]*?>([^<]+)</i) || html.match(/>Piyasa Değeri<[\s\S]*?>([^<]+)</i);
 
-              console.log(`[Investing] Success for ${symbol}. Price: ${price}, Range: ${rangeMatch ? rangeMatch[1] + '-' + rangeMatch[2] : 'MISSING'}, Vol: ${volumeMatch ? volumeMatch[1] : 'MISSING'}`);
+             console.log(`[Investing] Success for ${symbol}. Price: ${price}, Range: ${rangeMatch ? rangeMatch[1] + '-' + rangeMatch[2] : 'MISSING'}, Vol: ${volumeMatch ? volumeMatch[1] : 'MISSING'}`);
              return {
                price,
                name: nameMatch ? nameMatch[1].trim() : symbol,
@@ -310,8 +349,8 @@ class UnifiedDataService {
           longName: results.google?.name || results.yahoo?.name || results.investing?.name || results.av?.name || cleanSymbol,
           currency: results.google?.currency || results.yahoo?.currency || results.investing?.currency || results.av?.currency || 'TRY',
           regularMarketChangePercent: results.google?.changePercent !== undefined ? results.google?.changePercent : (results.finnhub?.changePercent || results.yahoo?.changePercent || 0),
-          dayHigh: [results.google?.dayHigh, results.yahoo?.dayHigh, results.finnhub?.dayHigh, results.investing?.dayHigh].find(v => v && v > 0) || 0,
-          dayLow: [results.google?.dayLow, results.yahoo?.dayLow, results.finnhub?.dayLow, results.investing?.dayLow].find(v => v && v > 0) || 0,
+          dayHigh: [results.google?.dayHigh, results.yahoo?.dayHigh, results.finnhub?.dayHigh, results.investing?.dayHigh, results.av?.dayHigh].find(v => v && v > 0) || 0,
+          dayLow: [results.google?.dayLow, results.yahoo?.dayLow, results.finnhub?.dayLow, results.investing?.dayLow, results.av?.dayLow].find(v => v && v > 0) || 0,
           volume: [results.google?.volume, results.yahoo?.volume, results.investing?.volume, results.av?.volume].find(v => v && v > 0) || 0
         },
         summaryDetail: {
@@ -458,9 +497,9 @@ class UnifiedDataService {
           pe: quote.trailingPE || sd?.trailingPE?.value || 0,
           high52: quote.fiftyTwoWeekHigh || sd?.fiftyTwoWeekHigh?.value || 0,
           low52: quote.fiftyTwoWeekLow || sd?.fiftyTwoWeekLow?.value || 0,
-          dayHigh: quote.regularMarketDayHigh || (quote as any).dayHigh || 0,
-          dayLow: quote.regularMarketDayLow || (quote as any).dayLow || 0,
-          volume: quote.regularMarketVolume || (quote as any).volume || 0,
+          dayHigh: quote.regularMarketDayHigh || quote.regularMarketDayRange?.high || quote.dayHigh || sd?.dayHigh?.value || (quote as any).dayHigh || 0,
+          dayLow: quote.regularMarketDayLow || quote.regularMarketDayRange?.low || quote.dayLow || sd?.dayLow?.value || (quote as any).dayLow || 0,
+          volume: quote.regularMarketVolume || quote.volume || sd?.volume?.value || (quote as any).volume || 0,
           recommendationKey: fd?.recommendationKey,
           targetMeanPrice: fd?.targetMeanPrice?.value || 0,
           numberOfAnalystOpinions: fd?.numberOfAnalystOpinions?.value || 0,
@@ -538,6 +577,7 @@ class UnifiedDataService {
           let volume = 0;
           let marketCap = 0;
           let sector = null;
+          let industry = null;
               // Robust Pattern Matcher - Improved for flexibility
           const findVal = (labels: string[]) => {
             for (const label of labels) {
@@ -738,7 +778,7 @@ async function startServer() {
 
   // CORS ve JSON (En üstte olmalı)
   app.use(cors());
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
 
   // Request logger
   app.use((req, res, next) => {
@@ -792,6 +832,274 @@ async function startServer() {
   // ---------------------------------------------------------
   // ALPHA VANTAGE INTEGRATION
   // ---------------------------------------------------------
+  // API Status Check
+  app.get('/api/portfolio/ai-status', (req, res) => {
+    const aiClient = getGenAI();
+    const guestIp = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown');
+    const today = new Date().toISOString().split('T')[0];
+    const key = `limit:${guestIp}:${today}`;
+    const usedCount = rateLimitCache.get<number>(key) || 0;
+
+    const raw = (process.env.USER_GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || "").trim();
+    let displayRaw = raw;
+    if (raw.includes("MY_GEMINI") || raw.includes("YOUR_KEY")) {
+      displayRaw = ""; // Fake key, behave like empty
+    }
+
+    res.json({ 
+      status: aiClient ? 'authenticated' : 'missing', 
+      message: aiClient ? 'AI Servisi Hazır' : 'Geçersiz veya Eksik Anahtar',
+      remaining: Math.max(0, 1 - usedCount),
+      ip: guestIp
+    });
+  });
+
+  // Portfolio Analysis & Extraction Endpoints
+  app.post('/api/portfolio/extract', async (req, res) => {
+    const { image } = req.body;
+    if (!image) return res.status(400).json({ error: 'Görsel eksik' });
+    const aiClient = getGenAI();
+    if (!aiClient) return res.status(503).json({ error: 'AI servisi yapılandırılmamış' });
+
+    try {
+      const mimeType = image.split(';')[0].split(':')[1] || "image/jpeg";
+      const model = aiClient.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const prompt = `
+        Sen bir finansal veri okuma uzmanısın. Ekli görsel bir borsa/portföy uygulaması ekran görüntüsüdür.
+        Görseldeki hisse senedi veya fon bilgilerini (Sembol, Adet, Ortalama Maliyet, Toplam Tutar) ayıkla.
+        
+        ÖNEMLİ KURALLAR:
+        1. Sadece hisse adı/sembolü ve sayısal verileri al.
+        2. Çıktıyı MUTLAKA şu JSON formatında ver: [{"symbol": "THYAO", "amount": 10, "cost": 250.50, "totalValue": 2505}]
+        3. Sayıları verirken sadece rakam ve ondalık nokta kullan, binlik ayracı veya virgül kullanma (örn: 1250.50).
+        4. Matematiksel olarak tahminde bulunma. Görselde Adet veya Lot ibaresini açıkça görüyorsan "amount" değerini doldur, yoksa 0 bırak.
+        5. Görselde hissenin "TL Karşılığı" (Toplam Değeri/Tutarı) açıkça görünüyorsa "totalValue" değerini doldur, yoksa 0 bırak.
+        6. Fiyat/Maliyet (cost) bölümünü görebiliyorsan yaz, yoksa 0 bırak.
+        7. Sembolü tam okuyamazsan mantıklı bir tahmin yap (örn: Türk Hava Yolları -> THYAO) veya aynen yaz.
+        8. Sadece JSON döndür, kod blokları (markdown) kullanma, açıklama yapma.
+        9. Hiçbir veriyi bulamazsan boş bir liste döndür: []
+      `;
+
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: image.split(',')[1],
+            mimeType: mimeType
+          }
+        }
+      ]);
+
+      let text = result.response.text();
+      // Markdown temizliği (eğer model ```json ... ``` bloğu içinde verdiyse)
+      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        // Temizlik: Sayısal alanları doğrula
+        const sanitized = parsed.map((item: any) => ({
+          symbol: String(item.symbol || '').toUpperCase(),
+          amount: parseFloat(item.amount) || 0,
+          cost: parseFloat(item.cost) || 0,
+          totalValue: item.totalValue ? parseFloat(String(item.totalValue).replace(/,/g, '')) || undefined : undefined
+        }));
+
+        const yf = getYahoo();
+        const enrichedSanitized = await Promise.all(sanitized.map(async (item: any) => {
+          let livePrice = 0;
+          if (yf && typeof yf.quote === 'function' && item.symbol) {
+            try {
+              const sym = item.symbol.toUpperCase();
+              const tickers = sym.includes('.') ? [sym] : [`${sym}.IS`, sym];
+              for (const t of tickers) {
+                const quote = await yf.quote(t).catch(() => null);
+                if (quote && quote.regularMarketPrice) {
+                  livePrice = quote.regularMarketPrice;
+                  break;
+                }
+              }
+            } catch(e) {}
+          }
+          
+          let amount = item.amount || 0;
+          let cost = item.cost || 0;
+          let totalValue = item.totalValue || 0;
+          
+          if (livePrice > 0 && totalValue > 0) {
+             if (amount === 0 && cost === 0) {
+                cost = livePrice;
+                amount = totalValue / livePrice;
+             } else if (amount === 0 && cost > 0) {
+                amount = totalValue / cost;
+             } else if (cost === 0 && amount > 0) {
+                cost = totalValue / amount;
+             }
+          } else if (totalValue > 0) {
+             if (amount === 0 && cost > 0) {
+               amount = totalValue / cost;
+             } else if (cost === 0 && amount > 0) {
+               cost = totalValue / amount;
+             }
+          }
+
+          if (totalValue === 0 && amount > 0 && cost > 0) {
+            totalValue = amount * cost;
+          }
+
+          return {
+            ...item,
+            amount: Number.isFinite(amount) ? Number(amount.toFixed(4)) : 0,
+            cost: Number.isFinite(cost) ? Number(cost.toFixed(2)) : 0,
+            totalValue: Number.isFinite(totalValue) ? Number(totalValue.toFixed(2)) : 0
+          };
+        }));
+
+        return res.json(enrichedSanitized);
+      }
+      res.status(422).json({ error: 'Görselden veri ayıklanamadı' });
+    } catch (err: any) {
+      console.error('[AI Extract Error]:', err);
+      const errMsg = err.message || '';
+      if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key not valid') || errMsg.includes('400')) {
+        return res.status(401).json({ 
+          error: 'Sunucu bağlantı hatası oluştu', 
+          message: 'AI Servis anahtarı (GEMINI_API_KEY) geçersiz veya yapılandırılmamış.' 
+        });
+      }
+      res.status(500).json({ error: 'AI servisi hatası', message: err.message });
+    }
+  });
+
+  // Dev only route to reset IP limit
+  app.post('/api/portfolio/reset-limit', (req, res) => {
+    const guestIp = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown');
+    const today = new Date().toISOString().split('T')[0];
+    rateLimitCache.del(`limit:${guestIp}:${today}`);
+    res.json({ success: true, message: 'Limit sıfırlandı' });
+  });
+
+  app.post('/api/portfolio/analyze', async (req, res) => {
+    const { portfolio } = req.body;
+    if (!portfolio || !Array.isArray(portfolio)) return res.status(400).json({ error: 'Portföy verisi eksik' });
+    
+    const aiClient = getGenAI();
+    if (!aiClient) return res.status(503).json({ error: 'AI servisi yapılandırılmamış' });
+
+    // IP Based Limit Check
+    const guestIp = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown');
+    const { allowed } = checkIpLimit(guestIp);
+    
+    if (!allowed && process.env.NODE_ENV === 'production') {
+       return res.status(429).json({ 
+         error: 'Günlük limit doldu', 
+         message: 'Günde sadece 1 ücretsiz analiz hakkınız bulunmaktadır. Lütfen yarın tekrar deneyin.' 
+       });
+    }
+
+    try {
+      const model = aiClient.getGenerativeModel({ model: "gemini-2.5-flash" });
+      
+      const yf = getYahoo();
+      let totalCost = 0;
+      let totalLiveValue = 0;
+
+      const cleanPortfolio = await Promise.all(portfolio.map(async (item: any) => {
+        let livePrice = 0;
+        let amount = item.amount || 0;
+        let cost = item.cost || 0;
+        const totalValue = item.totalValue || 0;
+        
+        if (amount === 0 && cost > 0 && totalValue > 0) amount = totalValue / cost;
+        if (cost === 0 && amount > 0 && totalValue > 0) cost = totalValue / amount;
+        
+        if (yf && typeof yf.quote === 'function' && item.symbol) {
+          try {
+            const sym = item.symbol.toUpperCase();
+            const tickers = sym.includes('.') ? [sym] : [`${sym}.IS`, sym];
+            for (const t of tickers) {
+              const quote = await yf.quote(t).catch(() => null);
+              if (quote && quote.regularMarketPrice) {
+                livePrice = quote.regularMarketPrice;
+                break;
+              }
+            }
+          } catch(e) {}
+        }
+
+        const finalTotal = totalValue || (amount * cost);
+        totalCost += finalTotal;
+        
+        const currentTotalValue = livePrice > 0 && amount > 0 ? livePrice * amount : finalTotal;
+        totalLiveValue += currentTotalValue;
+
+        const profit = currentTotalValue - finalTotal;
+        const profitPercentage = finalTotal > 0 ? (profit / finalTotal) * 100 : 0;
+
+        return {
+          symbol: item.symbol,
+          amount,
+          cost,
+          totalValue: finalTotal,
+          livePrice: livePrice > 0 ? livePrice : undefined,
+          liveTotalValue: livePrice > 0 ? currentTotalValue : undefined,
+          profit: (livePrice > 0 || currentTotalValue > 0) ? profit : undefined,
+          profitPercentage: (livePrice > 0 || currentTotalValue > 0) ? profitPercentage : undefined
+        };
+      }));
+
+      const totalProfit = totalLiveValue - totalCost;
+      const totalProfitPercentage = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+
+      const prompt = `
+        Aşağıdaki portföyü analiz et ve bir yatırım danışmanı gibi motive edici, şevk verici ve samimi bir dille yorumla.
+
+        PORTFÖY ÖZETİ:
+        - Toplam Tutar (Maliyet/Giriş): ${totalCost} TL
+        - Güncel Canlı Değer: ${totalLiveValue} TL
+        - Toplam Kâr/Zarar: ${totalProfit} TL (%${totalProfitPercentage.toFixed(2)})
+        
+        Hisse Detayları (Maliyet ve Canlı Fiyatlar): 
+        ${JSON.stringify(cleanPortfolio)}
+
+        Analiz şunları içermeli:
+        1. Portföy Sağlık Skoru (1-100 arası).
+        2. Varlık Dağılım Özeti (örn: '%40 Teknoloji, %30 Döviz...').
+        3. Teknik Not (Kullanıcıya profesyonel bir yatırım danışmanı gibi saygılı ve anlaşılır bir dille hitap et. Kullanıcının girdiği maliyet veya tutar üzerinden her hisseyi tek tek kısa kısa yorumla. Ayrıca analizine mutlaka şu minvalde bir ekleme yap: "Maliyet hesaplamalarınızı mevcut genel piyasa koşulları ve anlık fiyatlamalar üzerinden genel bir tahminle yaptım. Daha kesin sonuçlar için maliyetinizi manuel olarak sisteme girebilirsiniz, böylece toplam kar/zarar hesaplamalarınızı bu kesin maliyet üzerinden gerçekleştirebilirim." Ardından portföyün genel durumu hakkında toparlayıcı bir kapanış yap).
+        4. Mutlaka "Bu bir yatırım tavsiyesi değildir, sadece eğitim amaçlı bir AI analizidir." ifadesini yorumun içine ekle.
+
+        Yanıtı MUTLAKA şu JSON formatında ver, markdown kod bloğu kullanma:
+        {"score": 85, "distribution": "...", "technicalNote": "..."}
+      `;
+
+      const result = await model.generateContent(prompt);
+      let text = result.response.text();
+      text = text.replace(/\`\`\`json/g, "").replace(/\`\`\`/g, "").trim();
+
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      
+      if (jsonMatch) {
+        const analysis = JSON.parse(jsonMatch[0]);
+        return res.json({
+          ...analysis,
+          portfolio: cleanPortfolio,
+          createdAt: new Date()
+        });
+      }
+      res.status(422).json({ error: 'Analiz oluşturulamadı' });
+    } catch (err: any) {
+      console.error('[AI Analyze Error]:', err);
+      const errMsg = err.message || '';
+      if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key not valid') || errMsg.includes('400')) {
+        return res.status(401).json({ 
+          error: 'Sunucu bağlantı hatası oluştu', 
+          message: 'AI Servis anahtarı (GEMINI_API_KEY) geçersiz veya yapılandırılmamış.' 
+        });
+      }
+      res.status(500).json({ error: 'AI servisi hatası', message: err.message });
+    }
+  });
+
   app.get('/api/alphavantage/overview', async (req, res) => {
     const symbol = (req.query.symbol as string || '').toUpperCase();
     if (!symbol) return res.status(400).json({ error: 'Sembol eksik' });

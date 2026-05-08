@@ -827,7 +827,7 @@ export default function SalaryCalculator() {
                     Aylık Net Maaş Seyri
                   </h4>
                   <div className="w-full h-56 mt-auto">
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                       <BarChart data={barChartData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
                         <XAxis 
@@ -909,7 +909,7 @@ export default function SalaryCalculator() {
                     DAĞILIM
                   </h4>
                   <div className="w-full h-56 relative flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                       <PieChart>
                         <Pie
                           data={chartData}

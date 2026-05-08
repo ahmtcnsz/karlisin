@@ -32,6 +32,15 @@ service cloud.firestore {
 
     function isAdmin() { return isSignedIn() && request.auth.token.email == "admin@karlisin.com" && request.auth.token.email_verified == true; }
 
+    function isValidAnalysis(data) {
+      return data.userId == request.auth.uid &&
+             data.portfolio is list &&
+             data.score is number &&
+             data.distribution is string &&
+             data.technicalNote is string &&
+             data.createdAt == request.time;
+    }
+
     match /waitlist/{entryId} {
       allow create: if isValidWaitlistEntry(incoming());
       allow read, update, delete: if isAdmin();
@@ -40,6 +49,21 @@ service cloud.firestore {
     match /newsletter_subscribers/{entryId} {
       allow create: if isValidNewsletterEntry(incoming());
       allow list, get, update, delete: if isAdmin();
+    }
+
+    match /portfolio_analyses/{analysisId} {
+      allow create: if isSignedIn() && isValidAnalysis(incoming());
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /user_stats/{userId} {
+      allow get: if isSignedIn() && userId == request.auth.uid;
+      allow create: if isSignedIn() && userId == request.auth.uid && 
+                      incoming().analysesCount == 1 &&
+                      incoming().lastAnalysisAt == request.time;
+      allow update: if isSignedIn() && userId == request.auth.uid && 
+                      incoming().analysesCount == resource.data.analysesCount + 1 &&
+                      incoming().lastAnalysisAt == request.time;
     }
   }
 }

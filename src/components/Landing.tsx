@@ -40,8 +40,8 @@ export default function Landing() {
     {
       id: 'dividend',
       path: '/temettu-takibi',
-      title: 'Temettü Takibi',
-      description: 'Borsa pasif gelirinizi takip edin, vergi süreçlerini ve gelecek ödemeleri planlayın.',
+      title: 'AI Temettü Takibi',
+      description: 'Yapay zeka destekli Tahmin Motoru ile pasif gelirinizi takip edin, çapraz doğrulanmış verilerle geleceği planlayın.',
       icon: <PieChart className="text-indigo-400" size={28} />,
       badge: 'AKTİF',
       color: 'from-indigo-500/20 to-purple-600/5',
@@ -71,8 +71,8 @@ export default function Landing() {
       icon: <Zap size={20} />
     },
     {
-      title: 'Borsa Analiz',
-      desc: 'Şirketlerin finansal sağlığını ve temettü gücünü profesyonelce analiz edin.',
+      title: 'Yapay Zeka Destekli',
+      desc: 'Portföy ekran resminizi Google Gemini ile saniyeler içinde analiz edin ve geleceğinizi tahminleyin.',
       icon: <Globe size={20} />
     }
   ];
@@ -89,6 +89,10 @@ export default function Landing() {
     {
       q: 'Pazaryeri komisyonları nasıl belirleniyor?',
       a: 'Trendyol, Amazon ve Hepsiburada gibi platformların en güncel kategori bazlı komisyon oranlarını takip ediyoruz.'
+    },
+    {
+      q: 'Yapay Zeka (AI) yetenekleri neler sunuyor?',
+      a: 'Google Gemini destekli Tahmin Motoru sayesinde, portföyünüzün ekran resmini yükleyebilir (görselden tablo okuma) veya direkt girilen rakamlardan yola çıkarak size özel 12 aylık temettü analizleri alabilirsiniz.'
     }
   ];
 
@@ -279,11 +283,11 @@ export default function Landing() {
             </div>
             <h2 className="text-4xl md:text-6xl font-black text-white italic tracking-tighter leading-none">
               Pasif Gelirini <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-indigo-400">Canlı Takip Et.</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-indigo-400">Yapay Zeka ile Yönet.</span>
             </h2>
             <p className="text-xl text-slate-400 font-medium leading-relaxed">
-              Borsa İstanbul (BİST) ve Amerikan Borsası (Nasdaq/NYSE) hisselerini Alpha Vantage API entegrasyonu ile tek merkezden yönet. 
-              2026 yılı tüm temettü hakediş tarihlerini ve tahmini ödemelerini anında gör.
+              Borsa İstanbul (BİST) ve küresel borsaları çapraz doğrulanan (Yahoo, Finnhub, Investing) verilerle tek merkezden takip et. 
+              Gemini AI destekli Tahmin Motoru ile portföyünün geleceğini güvenle planla.
             </p>
             <div className="flex gap-4 pt-4">
               <Link 
@@ -322,6 +326,92 @@ export default function Landing() {
                   ))}
                </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Portfolio Evaluation Section */}
+      <section className="bg-gradient-to-tr from-indigo-900/20 to-purple-900/20 border border-indigo-500/10 rounded-[64px] p-12 md:p-24 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 blur-[150px] rounded-full -mr-40 -mt-40 transition-colors" />
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div className="order-2 lg:order-1 relative">
+            <div className="bg-slate-900/80 backdrop-blur-2xl border border-indigo-500/20 rounded-[48px] p-8 shadow-2xl relative w-full overflow-hidden">
+               <div className="flex items-center justify-between mb-8 pb-4 border-b border-indigo-500/10">
+                 <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                     <PieChart size={20} />
+                   </div>
+                   <div>
+                     <div className="text-xs font-black text-indigo-400 uppercase tracking-widest">Tahmin Motoru</div>
+                     <div className="text-sm font-bold text-white">Portföy Analizi</div>
+                   </div>
+                 </div>
+                 <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20 animate-pulse">
+                   Yapay Zeka Devrede
+                 </div>
+               </div>
+               
+               <div className="space-y-6">
+                 <div className="p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10">
+                   <div className="flex items-center gap-3 mb-2">
+                     <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                     <span className="text-xs font-bold text-slate-300">Ekran görüntüsü işleniyor...</span>
+                   </div>
+                   <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                     <motion.div 
+                       initial={{ width: 0 }}
+                       whileInView={{ width: '80%' }}
+                       transition={{ duration: 1.5, ease: "easeInOut" }}
+                       className="h-full bg-indigo-500 rounded-full" 
+                     />
+                   </div>
+                 </div>
+                 
+                 <div className="space-y-3">
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-slate-400">Tahmini Yıllık Getiri</span>
+                     <span className="text-white font-black">₺145,250</span>
+                   </div>
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-slate-400">Temettü Verimi</span>
+                     <span className="text-emerald-400 font-black">%4.20</span>
+                   </div>
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-slate-400">12 Aylık Hedef</span>
+                     <span className="text-indigo-400 font-black">+%35.5</span>
+                   </div>
+                 </div>
+               </div>
+            </div>
+          </div>
+          
+          <div className="space-y-8 order-1 lg:order-2">
+            <div className="inline-flex items-center gap-2 px-4 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full">
+              <Globe className="w-4 h-4 text-purple-400" />
+              <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest italic">Google Gemini Katkılarıyla</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-white italic tracking-tighter leading-none">
+              AI Portföy <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Değerlendirme.</span>
+            </h2>
+            <p className="text-xl text-slate-400 font-medium leading-relaxed">
+              Tek tek hisse girmeye son. Portföyünüzün ekran görüntüsünü yükleyin, Google Gemini saniyeler içinde okusun, hisselerinizi analiz etsin ve 12 aylık temettü projeksiyonunuzu çıkarsın.
+            </p>
+            
+            <ul className="space-y-4">
+              {[
+                'Saniyeler içinde görselden tablo okuma',
+                'Hisse bazlı AI destekli hedef fiyat beklentileri',
+                'Sektörel dağılım ve risk oranı hesaplaması'
+              ].map((item, idx) => (
+                <li key={idx} className="flex items-center gap-3 text-slate-300 font-medium">
+                  <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-indigo-400" />
+                  </div>
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
