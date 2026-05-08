@@ -17,6 +17,10 @@ jobs:
           node-version: 20
           cache: 'npm'
       - name: Install and Build
+        # API anahtarını doğrudan build sürecine enjekte ediyoruz
+        env:
+          GEMINI_API_KEY: AIzaSyDz8gx7-6PKbfhjJKGBTXQbH09TJbD01OI
+          VITE_GEMINI_API_KEY: AIzaSyDz8gx7-6PKbfhjJKGBTXQbH09TJbD01OI
         run: |
           npm ci --legacy-peer-deps
           npm run build
