@@ -764,6 +764,7 @@ class UnifiedDataService {
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', true);
   const PORT = 3000;
 
   // API Key Diagnostics
@@ -835,7 +836,12 @@ async function startServer() {
   // API Status Check
   app.get('/api/portfolio/ai-status', (req, res) => {
     const aiClient = getGenAI();
-    const guestIp = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown');
+    
+    // Güvenilir IP tespiti
+    const guestIp = req.ip || 'unknown';
+    
+    console.log(`[Karlısın-AI] Status Check IP: ${guestIp} (XFF: ${req.headers['x-forwarded-for']}, Real-IP: ${req.headers['x-real-ip']})`);
+    
     const today = new Date().toISOString().split('T')[0];
     const key = `limit:${guestIp}:${today}`;
     const usedCount = rateLimitCache.get<number>(key) || 0;
@@ -987,7 +993,7 @@ async function startServer() {
     if (!aiClient) return res.status(503).json({ error: 'AI servisi yapılandırılmamış' });
 
     // IP Based Limit Check
-    const guestIp = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown');
+    const guestIp = req.ip || 'unknown';
     const { allowed } = checkIpLimit(guestIp);
     
     if (!allowed && process.env.NODE_ENV === 'production') {
