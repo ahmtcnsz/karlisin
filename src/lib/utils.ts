@@ -5,6 +5,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function getDeviceId(): string {
+  let deviceId = localStorage.getItem('karlisin_device_id');
+  if (!deviceId) {
+    deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('karlisin_device_id', deviceId);
+  }
+  return deviceId;
+}
+
 export function getApiUrl(path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   // We can just rely on the current origin. If it's on Firebase Hosting, 

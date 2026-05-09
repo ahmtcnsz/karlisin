@@ -19,6 +19,9 @@ const rateLimitCache = new NodeCache({ stdTTL: 86400 });
 
 // Robust IP extraction
 const getClientIp = (req: any): string => {
+  const deviceId = req.headers['x-device-id'];
+  if (deviceId) return Array.isArray(deviceId) ? deviceId[0] : (deviceId as string).trim();
+
   const fastlyIp = req.headers['fastly-client-ip'];
   if (fastlyIp) return Array.isArray(fastlyIp) ? fastlyIp[0] : (fastlyIp as string).split(',')[0].trim();
   
@@ -603,7 +606,7 @@ class UnifiedDataService {
                 // Pattern 1: Label then value in same or next tag
                 new RegExp(`(?:${label})<[\\s\\S]*?<(?:div|span|td|a)[^>]*>([\\d,.\\w\\s/\\-]+)<`, 'i'),
                 // Pattern 2: Label in one tag, value in sister tag
-                new RegExp(`>${label}<[\\s\\S]*?class="[^"]*(?:P66m9b|mfs7be|Q891ec)[^"]*"[^>]*>([\\d,.\\w\\s/\\-]+)<`, 'i'),
+                new RegExp(`>${label}<[\\s\\S]*?class="[^"]*(?:P66m9b|mfs7be|Q891ec|P6K39c)[^"]*"[^>]*>([\\d,.\\w\\s/\\-]+)<`, 'i'),
                 // Pattern 3: Direct label mapping
                 new RegExp(`>${label}<[\\s\\S]*?>([\\d,.\\w\\s/\\-]+)<`, 'i'),
                 // Pattern 4: More aggressive sibling search
@@ -663,8 +666,11 @@ class UnifiedDataService {
              // Backup range match via exact class if text search fails (Common for Google Finance)
              const bcRange = html.match(/class="P66m9b"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i) || 
                              html.match(/class="mfs7be"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i) ||
-                             html.match(/class="Q891ec"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i);
-             if (bcRange) {
+                             html.match(/class="Q891ec"[^>]*>([\d,.]+)\s*-\s*([\d,.]+)</i) ||
+                             html.match(/class="[^"]*P6K39c[^"]*"[^>]*>[^\d]*([\d,.]+)\s*-\s*[^\d]*([\d,.]+)[^<]*</i) ||
+                             html.match(/class="[^"]*P6K39c[^"]*"[^>]*>.*?([\d,.]+)\s*-\s*.*?([\d,.]+)[^<]*</i);
+             // Note: if it has currency symbol inside P6K39c, we extract it carefully.
+             if (bcRange && bcRange[1] && bcRange[2]) {
                 dayLow = parseGoogleVal(bcRange[1]);
                 dayHigh = parseGoogleVal(bcRange[2]);
              }

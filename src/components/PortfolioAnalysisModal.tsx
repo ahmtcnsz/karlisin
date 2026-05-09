@@ -18,7 +18,7 @@ import {
   Info
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { cn, getApiUrl, isDevOrPreview } from '../lib/utils';
+import { cn, getApiUrl, isDevOrPreview, getDeviceId } from '../lib/utils';
 import { 
   extractPortfolioFromImage, 
   analyzePortfolio, 
@@ -94,7 +94,9 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
   const checkAiStatus = async () => {
     try {
       try {
-        const res = await fetch(getApiUrl(`/api/portfolio/ai-status?t=${Date.now()}`));
+        const res = await fetch(getApiUrl(`/api/portfolio/ai-status?t=${Date.now()}`), {
+          headers: { 'x-device-id': getDeviceId() }
+        });
         const contentType = res.headers.get("content-type");
         if (res.ok && contentType && contentType.includes("application/json")) {
           const data = await res.json();

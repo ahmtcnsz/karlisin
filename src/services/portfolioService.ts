@@ -1,4 +1,4 @@
-import { getApiUrl } from '../lib/utils';
+import { getApiUrl, getDeviceId } from '../lib/utils';
 
 export interface PortfolioItem {
   symbol: string;
@@ -23,7 +23,10 @@ export const extractPortfolioFromImage = async (base64Image: string): Promise<Po
   try {
     const response = await fetch(getApiUrl('/api/portfolio/extract'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-device-id': getDeviceId()
+      },
       body: JSON.stringify({ image: base64Image })
     });
     const contentType = response.headers.get("content-type");
@@ -50,7 +53,10 @@ export const analyzePortfolio = async (portfolio: PortfolioItem[]): Promise<Anal
   try {
     const response = await fetch(getApiUrl('/api/portfolio/analyze'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-device-id': getDeviceId()
+      },
       body: JSON.stringify({ portfolio })
     });
     const contentType = response.headers.get("content-type");
@@ -88,7 +94,9 @@ export const checkDailyLimit = async (): Promise<{ canAnalyze: boolean; lastAnal
        return { canAnalyze: false, lastAnalysis: new Date(todaysAnalyses[0].createdAt) };
     }
 
-    const res = await fetch(getApiUrl(`/api/portfolio/ai-status?t=${Date.now()}`));
+    const res = await fetch(getApiUrl(`/api/portfolio/ai-status?t=${Date.now()}`), {
+      headers: { 'x-device-id': getDeviceId() }
+    });
     const data = await res.json();
     return { canAnalyze: data.remaining > 0 };
   } catch (error) {
