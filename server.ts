@@ -850,6 +850,11 @@ async function startServer() {
   // ---------------------------------------------------------
   // API Status Check
   app.get('/api/portfolio/ai-status', (req, res) => {
+    // Add explicitly no-cache to avoid CDN caching
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     const aiClient = getGenAI();
     
     // Güvenilir IP tespiti
@@ -1698,6 +1703,11 @@ async function startServer() {
           path: req.path 
         });
       }
+
+      // Tarayıcının eski index.html sürümünü önbellekte tutmasını engelle!
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
 
       const indexPath = path.join(distPath, 'index.html');
       res.sendFile(indexPath, (err) => {

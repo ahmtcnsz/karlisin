@@ -94,7 +94,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
   const checkAiStatus = async () => {
     try {
       try {
-        const res = await fetch(getApiUrl('/api/portfolio/ai-status'));
+        const res = await fetch(getApiUrl(`/api/portfolio/ai-status?t=${Date.now()}`));
         const contentType = res.headers.get("content-type");
         if (res.ok && contentType && contentType.includes("application/json")) {
           const data = await res.json();

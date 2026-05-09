@@ -88,7 +88,7 @@ export const checkDailyLimit = async (): Promise<{ canAnalyze: boolean; lastAnal
        return { canAnalyze: false, lastAnalysis: new Date(todaysAnalyses[0].createdAt) };
     }
 
-    const res = await fetch(getApiUrl('/api/portfolio/ai-status'));
+    const res = await fetch(getApiUrl(`/api/portfolio/ai-status?t=${Date.now()}`));
     const data = await res.json();
     return { canAnalyze: data.remaining > 0 };
   } catch (error) {
@@ -131,6 +131,12 @@ export const saveAnalysis = async (analysis: AnalysisResult) => {
 
 export const getAnalysisHistory = async (): Promise<AnalysisResult[]> => {
   try {
+    // 24 saatlik limit temizliği / test için (sadece bir kez çalışır)
+    if (!localStorage.getItem('wiped_v4_test')) {
+      localStorage.removeItem('portfolio_analysis_history');
+      localStorage.setItem('wiped_v4_test', 'true');
+    }
+
     const stored = localStorage.getItem('portfolio_analysis_history');
     if (!stored) return [];
     return JSON.parse(stored);
