@@ -17,16 +17,31 @@ let genAI: GoogleGenerativeAI | null = null;
 
 const rateLimitCache = new NodeCache({ stdTTL: 86400 });
 
+// Robust IP extraction
+const getClientIp = (req: any): string => {
+  const fastlyIp = req.headers['fastly-client-ip'];
+  if (fastlyIp) return Array.isArray(fastlyIp) ? fastlyIp[0] : (fastlyIp as string).split(',')[0].trim();
+  
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) return Array.isArray(xff) ? xff[0] : (xff as string).split(',')[0].trim();
+  
+  const trueClient = req.headers['true-client-ip'];
+  if (trueClient) return Array.isArray(trueClient) ? trueClient[0] : (trueClient as string).trim();
+
+  return req.ip || 'unknown';
+};
+
 // Rate limit helper
 const checkIpLimit = (ip: string): { allowed: boolean; remaining: number } => {
+  const LIMIT = 3; // 3 hakkı olsun
   const today = new Date().toISOString().split('T')[0];
   const key = `limit:${ip}:${today}`;
   const count = rateLimitCache.get<number>(key) || 0;
   
-  if (count >= 1) return { allowed: false, remaining: 0 };
+  if (count >= LIMIT) return { allowed: false, remaining: 0 };
   
   rateLimitCache.set(key, count + 1);
-  return { allowed: true, remaining: 1 - (count + 1) };
+  return { allowed: true, remaining: LIMIT - (count + 1) };
 };
 
 const getGenAI = () => {
@@ -838,7 +853,7 @@ async function startServer() {
     const aiClient = getGenAI();
     
     // Güvenilir IP tespiti
-    const guestIp = req.ip || 'unknown';
+    const guestIp = getClientIp(req);
     
     console.log(`[Karlısın-AI] Status Check IP: ${guestIp} (XFF: ${req.headers['x-forwarded-for']}, Real-IP: ${req.headers['x-real-ip']})`);
     
@@ -852,10 +867,11 @@ async function startServer() {
       displayRaw = ""; // Fake key, behave like empty
     }
 
+    const LIMIT = 3;
     res.json({ 
       status: aiClient ? 'authenticated' : 'missing', 
       message: aiClient ? 'AI Servisi Hazır' : 'Geçersiz veya Eksik Anahtar',
-      remaining: Math.max(0, 1 - usedCount),
+      remaining: Math.max(0, LIMIT - usedCount),
       ip: guestIp
     });
   });
@@ -866,6 +882,20 @@ async function startServer() {
     if (!image) return res.status(400).json({ error: 'Görsel eksik' });
     const aiClient = getGenAI();
     if (!aiClient) return res.status(503).json({ error: 'AI servisi yapılandırılmamış' });
+
+    // IP Based Limit Check for extract (1 per day)
+    const guestIp = getClientIp(req);
+    const today = new Date().toISOString().split('T')[0];
+    const key = `extract_limit:${guestIp}:${today}`;
+    const count = rateLimitCache.get<number>(key) || 0;
+    
+    if (count >= 1 && process.env.NODE_ENV === 'production') {
+       return res.status(429).json({ 
+         error: 'Günlük görsel okuma limiti doldu', 
+         message: 'Günde sadece 1 kez portföy görseli okutabilirsiniz. Lütfen manuel girişi kullanın veya yarın tekrar deneyin.' 
+       });
+    }
+    rateLimitCache.set(key, count + 1);
 
     try {
       const mimeType = image.split(';')[0].split(':')[1] || "image/jpeg";
@@ -979,7 +1009,7 @@ async function startServer() {
 
   // Dev only route to reset IP limit
   app.post('/api/portfolio/reset-limit', (req, res) => {
-    const guestIp = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown');
+    const guestIp = getClientIp(req);
     const today = new Date().toISOString().split('T')[0];
     rateLimitCache.del(`limit:${guestIp}:${today}`);
     res.json({ success: true, message: 'Limit sıfırlandı' });
@@ -993,13 +1023,13 @@ async function startServer() {
     if (!aiClient) return res.status(503).json({ error: 'AI servisi yapılandırılmamış' });
 
     // IP Based Limit Check
-    const guestIp = req.ip || 'unknown';
+    const guestIp = getClientIp(req);
     const { allowed } = checkIpLimit(guestIp);
     
     if (!allowed && process.env.NODE_ENV === 'production') {
        return res.status(429).json({ 
          error: 'Günlük limit doldu', 
-         message: 'Günde sadece 1 ücretsiz analiz hakkınız bulunmaktadır. Lütfen yarın tekrar deneyin.' 
+         message: 'Günde sadece 3 ücretsiz analiz hakkınız bulunmaktadır. Lütfen yarın tekrar deneyin.' 
        });
     }
 

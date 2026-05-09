@@ -75,19 +75,17 @@ export const analyzePortfolio = async (portfolio: PortfolioItem[]): Promise<Anal
 export const checkDailyLimit = async (): Promise<{ canAnalyze: boolean; lastAnalysis?: Date }> => {
   try {
     const history = await getAnalysisHistory();
-    if (history.length > 0) {
-      const latest = history[0];
-      const lastDate = new Date(latest.createdAt);
-      const today = new Date();
-      
-      const isSameDay = 
-        lastDate.getDate() === today.getDate() &&
-        lastDate.getMonth() === today.getMonth() &&
-        lastDate.getFullYear() === today.getFullYear();
-        
-      if (isSameDay) {
-         return { canAnalyze: false, lastAnalysis: lastDate };
-      }
+    const today = new Date();
+    const todaysAnalyses = history.filter(h => {
+      if (!h.createdAt) return false;
+      const d = new Date(h.createdAt);
+      return d.getDate() === today.getDate() &&
+             d.getMonth() === today.getMonth() &&
+             d.getFullYear() === today.getFullYear();
+    });
+    
+    if (todaysAnalyses.length >= 3) {
+       return { canAnalyze: false, lastAnalysis: new Date(todaysAnalyses[0].createdAt) };
     }
 
     const res = await fetch(getApiUrl('/api/portfolio/ai-status'));

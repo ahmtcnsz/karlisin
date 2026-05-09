@@ -71,7 +71,8 @@ const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onCh
 };
 
 export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ isOpen, onClose }) => {
-  const [step, setStep] = useState<'upload' | 'edit' | 'analyzing' | 'result' | 'history' | 'limit'>('upload');
+  const [step, setStep] = useState<'upload' | 'preview' | 'edit' | 'analyzing' | 'result' | 'history' | 'limit'>('upload');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [history, setHistory] = useState<AnalysisResult[]>([]);
@@ -151,32 +152,38 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setLoading(true);
     setError(null);
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64 = event.target?.result as string;
-        try {
-          const extracted = await extractPortfolioFromImage(base64);
-          setItems(extracted);
-          setStep('edit');
-        } catch (err: any) {
-          const errMsg = err.message || "";
-          if (errMsg.includes("Sunucu bağlantı hatası") || errMsg.includes("401") || errMsg.includes("API") || errMsg.includes("AI servisi")) {
-            setError("Sunucu bağlantı hatası oluştu. Lütfen teknik ekiple iletişime geçin veya anahtarınızı kontrol edin.");
-          } else {
-            setError("Görsel okunamadı. Lütfen manuel giriş yapın.");
-          }
-          setItems([{ symbol: '', amount: 0, cost: 0 }]);
-          setStep('edit');
-        } finally {
-          setLoading(false);
-        }
+        setSelectedImage(base64);
+        setStep('preview');
       };
       reader.readAsDataURL(file);
     } catch (err) {
       setError("Dosya yükleme hatası.");
+    }
+  };
+
+  const handleExtractImage = async () => {
+    if (!selectedImage) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const extracted = await extractPortfolioFromImage(selectedImage);
+      setItems(extracted);
+      setStep('edit');
+    } catch (err: any) {
+      const errMsg = err.message || "";
+      if (errMsg.includes("Sunucu bağlantı") || errMsg.includes("limiti doldu") || errMsg.includes("401") || errMsg.includes("API") || errMsg.includes("AI servisi")) {
+        setError(errMsg);
+      } else {
+        setError("Görsel okunamadı. Lütfen manuel giriş yapın.");
+      }
+      setItems([{ symbol: '', amount: 0, cost: 0 }]);
+      setStep('edit');
+    } finally {
       setLoading(false);
     }
   };
@@ -331,6 +338,38 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
           </div>
         );
 
+      case 'preview':
+        return (
+          <div className="flex flex-col items-center justify-center p-8 text-center space-y-6">
+            <div className="w-full max-w-sm rounded-xl overflow-hidden border border-white/10 shadow-2xl relative bg-slate-900/50">
+               {selectedImage && <img src={selectedImage} alt="Portföy Önizleme" className="w-full h-auto object-contain opacity-80" />}
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-white uppercase tracking-tight">Görsel Onayı</h3>
+              <p className="text-sm text-slate-400 mt-2">Bu görselden verileri okuyup çıkartacağız. Devam etmek istiyor musun?</p>
+            </div>
+            {error && <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] font-bold uppercase">{error}</div>}
+            <div className="flex w-full gap-3">
+              <button 
+                onClick={() => setStep('upload')}
+                disabled={loading}
+                className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-2xl font-black uppercase tracking-[0.1em] hover:bg-slate-700 transition-all text-xs disabled:opacity-50"
+              >
+                İptal Et
+              </button>
+              <button 
+                onClick={handleExtractImage}
+                disabled={loading}
+                className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.1em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all text-xs disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Bot className="w-4 h-4" />}
+                {loading ? 'OKUNUYOR...' : 'GÖRSELİ OKU (1 GÜNLÜK HAK)'}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-500 font-bold max-w-[250px] mx-auto text-center">Görsel okuma işlemi için günlük 1 hakkınız vardır.</p>
+          </div>
+        );
+
       case 'edit':
         return (
           <div className="p-6 space-y-6">
@@ -426,7 +465,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
               >
                 YORUMU OLUŞTUR (1 HAK)
               </button>
-              <p className="text-[10px] text-slate-500 text-center font-bold">GÜNLÜK 1 ANALİZ HAKKINIZ VARDIR.</p>
+              <p className="text-[10px] text-slate-500 text-center font-bold">GÜNLÜK 3 ANALİZ HAKKINIZ VARDIR.</p>
             </div>
           </div>
         );
