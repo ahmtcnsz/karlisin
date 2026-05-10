@@ -692,7 +692,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
             {isDevOrPreview() && (
               <button 
                   onClick={async () => {
-                     await fetch(getApiUrl('/api/portfolio/reset-limit'), { method: 'POST' });
+                     await fetch(getApiUrl('/api/portfolio/reset-limit'), { method: 'POST', headers: { 'x-device-id': getDeviceId() } });
                      localStorage.removeItem('portfolio_analysis_history');
                      setResult(null);
                      setCanAnalyze(true);
@@ -720,7 +720,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
               {isDevOrPreview() && (
                 <button 
                   onClick={async () => {
-                     await fetch(getApiUrl('/api/portfolio/reset-limit'), { method: 'POST' });
+                     await fetch(getApiUrl('/api/portfolio/reset-limit'), { method: 'POST', headers: { 'x-device-id': getDeviceId() } });
                      localStorage.removeItem('portfolio_analysis_history');
                      setCanAnalyze(true);
                      setStep('upload');

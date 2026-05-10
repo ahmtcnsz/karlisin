@@ -18,7 +18,13 @@ let genAI: GoogleGenerativeAI | null = null;
 const rateLimitCache = new NodeCache({ stdTTL: 86400 });
 
 // Robust IP extraction
-const getClientIp = (req: any): string => {
+const getClientIdentifier = (req: any): string => {
+  const fromBody = req.body?.deviceId;
+  if (fromBody) return fromBody;
+  
+  const fromQuery = req.query?.deviceId;
+  if (fromQuery) return fromQuery;
+
   const deviceId = req.headers['x-device-id'];
   if (deviceId) return Array.isArray(deviceId) ? deviceId[0] : (deviceId as string).trim();
 
@@ -35,10 +41,10 @@ const getClientIp = (req: any): string => {
 };
 
 // Rate limit helper
-const checkIpLimit = (ip: string): { allowed: boolean; remaining: number } => {
-  const LIMIT = 3; // 3 hakkı olsun
+const checkIpLimit = (identifier: string): { allowed: boolean; remaining: number } => {
+  const LIMIT = 3; // 3 hakkı olsun, normal limite dönüldü
   const today = new Date().toISOString().split('T')[0];
-  const key = `limit:${ip}:${today}`;
+  const key = `limit:${identifier}:${today}`;
   const count = rateLimitCache.get<number>(key) || 0;
   
   if (count >= LIMIT) return { allowed: false, remaining: 0 };
@@ -863,10 +869,10 @@ async function startServer() {
 
     const aiClient = getGenAI();
     
-    // Güvenilir IP tespiti
-    const guestIp = getClientIp(req);
+    // Güvenilir Cihaz/IP tespiti
+    const guestIp = getClientIdentifier(req);
     
-    console.log(`[Karlısın-AI] Status Check IP: ${guestIp} (XFF: ${req.headers['x-forwarded-for']}, Real-IP: ${req.headers['x-real-ip']})`);
+    console.log(`[Karlısın-AI] Status Check ID: ${guestIp}`);
     
     const today = new Date().toISOString().split('T')[0];
     const key = `limit:${guestIp}:${today}`;
@@ -894,8 +900,8 @@ async function startServer() {
     const aiClient = getGenAI();
     if (!aiClient) return res.status(503).json({ error: 'AI servisi yapılandırılmamış' });
 
-    // IP Based Limit Check for extract (1 per day)
-    const guestIp = getClientIp(req);
+    // ID Based Limit Check for extract (1 per day)
+    const guestIp = getClientIdentifier(req);
     const today = new Date().toISOString().split('T')[0];
     const key = `extract_limit:${guestIp}:${today}`;
     const count = rateLimitCache.get<number>(key) || 0;
@@ -1018,9 +1024,9 @@ async function startServer() {
     }
   });
 
-  // Dev only route to reset IP limit
+  // Dev only route to reset ID limit
   app.post('/api/portfolio/reset-limit', (req, res) => {
-    const guestIp = getClientIp(req);
+    const guestIp = getClientIdentifier(req);
     const today = new Date().toISOString().split('T')[0];
     rateLimitCache.del(`limit:${guestIp}:${today}`);
     res.json({ success: true, message: 'Limit sıfırlandı' });
@@ -1033,8 +1039,8 @@ async function startServer() {
     const aiClient = getGenAI();
     if (!aiClient) return res.status(503).json({ error: 'AI servisi yapılandırılmamış' });
 
-    // IP Based Limit Check
-    const guestIp = getClientIp(req);
+    // ID Based Limit Check
+    const guestIp = getClientIdentifier(req);
     const { allowed } = checkIpLimit(guestIp);
     
     if (!allowed && process.env.NODE_ENV === 'production') {

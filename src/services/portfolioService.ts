@@ -27,7 +27,7 @@ export const extractPortfolioFromImage = async (base64Image: string): Promise<Po
         'Content-Type': 'application/json',
         'x-device-id': getDeviceId()
       },
-      body: JSON.stringify({ image: base64Image })
+      body: JSON.stringify({ image: base64Image, deviceId: getDeviceId() })
     });
     const contentType = response.headers.get("content-type");
     if (response.ok && contentType && contentType.includes("application/json")) {
@@ -57,7 +57,7 @@ export const analyzePortfolio = async (portfolio: PortfolioItem[]): Promise<Anal
         'Content-Type': 'application/json',
         'x-device-id': getDeviceId()
       },
-      body: JSON.stringify({ portfolio })
+      body: JSON.stringify({ portfolio, deviceId: getDeviceId() })
     });
     const contentType = response.headers.get("content-type");
     if (response.ok && contentType && contentType.includes("application/json")) {
@@ -94,7 +94,7 @@ export const checkDailyLimit = async (): Promise<{ canAnalyze: boolean; lastAnal
        return { canAnalyze: false, lastAnalysis: new Date(todaysAnalyses[0].createdAt) };
     }
 
-    const res = await fetch(getApiUrl(`/api/portfolio/ai-status?t=${Date.now()}`), {
+    const res = await fetch(getApiUrl(`/api/portfolio/ai-status?t=${Date.now()}&deviceId=${encodeURIComponent(getDeviceId())}`), {
       headers: { 'x-device-id': getDeviceId() }
     });
     const data = await res.json();
