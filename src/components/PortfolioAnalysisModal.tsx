@@ -71,7 +71,7 @@ const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onCh
 };
 
 export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ isOpen, onClose }) => {
-  const [step, setStep] = useState<'upload' | 'preview' | 'edit' | 'analyzing' | 'result' | 'history' | 'limit'>('upload');
+  const [step, setStep] = useState<'upload' | 'preview' | 'edit' | 'analyzing' | 'result' | 'history' | 'limit' | 'checking_limit'>('checking_limit');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -252,6 +252,18 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
 
   const renderCurrentStep = () => {
     switch (step) {
+      case 'checking_limit':
+        return (
+          <div className="flex flex-col items-center justify-center p-12 text-center space-y-6">
+            <div className="w-16 h-16 bg-slate-900 border border-slate-700/50 rounded-full flex items-center justify-center animate-pulse">
+              <Bot className="w-8 h-8 text-slate-500" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-white uppercase tracking-tight">ANALİZ DURUMU KONTROL EDİLİYOR</h3>
+              <p className="text-xs text-slate-400">Lütfen bekleyin...</p>
+            </div>
+          </div>
+        );
       case 'upload':
         if (loading) {
           return (
@@ -638,7 +650,11 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <TableIcon className="w-3 h-3" /> VARLIK DAĞILIMI (ÖZET)
                 </h4>
-                <p className="text-sm text-white font-medium italic">{result?.distribution}</p>
+                <p className="text-sm text-white font-medium italic">
+                  {typeof result?.distribution === 'object' 
+                    ? Object.entries(result.distribution).map(([k,v]) => `${k}: ${v}`).join(', ') 
+                    : result?.distribution}
+                </p>
               </div>
 
               <div className="relative p-5 rounded-2xl overflow-hidden group">
@@ -654,9 +670,9 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
                     YAPAY ZEKA ANALİZ NOTU
                   </h4>
                   <div className="text-sm text-slate-300 leading-relaxed space-y-3 font-medium">
-                    {result?.technicalNote?.split('\n').map((paragraph: string, i: number) => (
+                    {typeof result?.technicalNote === 'string' ? result?.technicalNote?.split('\n').map((paragraph: string, i: number) => (
                       <p key={i}>{paragraph}</p>
-                    ))}
+                    )) : Array.isArray(result?.technicalNote) ? result?.technicalNote.map((p, i) => <p key={i}>{typeof p === 'string' ? p : JSON.stringify(p)}</p>) : <p>{JSON.stringify(result?.technicalNote)}</p>}
                   </div>
                 </div>
               </div>

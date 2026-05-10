@@ -454,7 +454,7 @@ const DividendTracker: React.FC = () => {
   const [calendarSearch, setCalendarSearch] = useState('');
   const [istanbulTime, setIstanbulTime] = useState('');
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
-  const [canAnalyze, setCanAnalyze] = useState(true);
+  const [canAnalyze, setCanAnalyze] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkLimitStatus = async () => {
@@ -1015,7 +1015,9 @@ const DividendTracker: React.FC = () => {
                         </div>
                         <div className="flex flex-col">
                           <h3 className="text-white font-black text-sm md:text-base tracking-tight leading-none uppercase">
-                            {canAnalyze ? (
+                            {canAnalyze === null ? (
+                              <><span className="text-slate-400">ANALİZ DURUMU</span> KONTROL EDİLİYOR...</>
+                            ) : canAnalyze ? (
                               <>PORTFÖYÜNÜ <span className="text-cyan-400">YOLLA</span>, SENİN İÇİN <span className="text-purple-400">ANALİZ EDELİM</span></>
                             ) : (
                               <>BUGÜNKÜ <span className="text-amber-400">ANALİZ HAKKIN DOLDU</span>, YARIN YİNE <span className="text-purple-400">BEKLERİZ</span></>
@@ -1027,8 +1029,11 @@ const DividendTracker: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center shrink-0">
-                        <button className="px-4 py-1.5 bg-slate-900/80 text-white rounded-full border border-white/10 text-xs font-black hover:bg-white hover:text-slate-900 transition-all uppercase tracking-widest shadow-xl">
-                          {canAnalyze ? 'Gönder!' : 'Arşivi Gör'}
+                        <button 
+                          disabled={canAnalyze === null}
+                          className="px-4 py-1.5 bg-slate-900/80 text-white rounded-full border border-white/10 text-xs font-black hover:bg-white hover:text-slate-900 transition-all uppercase tracking-widest shadow-xl disabled:opacity-50"
+                        >
+                          {canAnalyze === null ? 'Bekleniyor..' : canAnalyze ? 'Gönder!' : 'Arşivi Gör'}
                         </button>
                       </div>
                     </div>

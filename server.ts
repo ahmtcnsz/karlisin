@@ -1111,12 +1111,12 @@ async function startServer() {
 
         Analiz şunları içermeli:
         1. Portföy Sağlık Skoru (1-100 arası).
-        2. Varlık Dağılım Özeti (örn: '%40 Teknoloji, %30 Döviz...').
+        2. Varlık Dağılım Özeti (örn: '%40 Teknoloji, %30 Döviz...'. Mutlaka TEK BİR DÜZ METİN/STRING olmalı, JSON objesi kullanma).
         3. Teknik Not (Kullanıcıya profesyonel bir yatırım danışmanı gibi saygılı ve anlaşılır bir dille hitap et. Kullanıcının girdiği maliyet veya tutar üzerinden her hisseyi tek tek kısa kısa yorumla. Ayrıca analizine mutlaka şu minvalde bir ekleme yap: "Maliyet hesaplamalarınızı mevcut genel piyasa koşulları ve anlık fiyatlamalar üzerinden genel bir tahminle yaptım. Daha kesin sonuçlar için maliyetinizi manuel olarak sisteme girebilirsiniz, böylece toplam kar/zarar hesaplamalarınızı bu kesin maliyet üzerinden gerçekleştirebilirim." Ardından portföyün genel durumu hakkında toparlayıcı bir kapanış yap).
         4. Mutlaka "Bu bir yatırım tavsiyesi değildir, sadece eğitim amaçlı bir AI analizidir." ifadesini yorumun içine ekle.
 
         Yanıtı MUTLAKA şu JSON formatında ver, markdown kod bloğu kullanma:
-        {"score": 85, "distribution": "...", "technicalNote": "..."}
+        {"score": 85, "distribution": "Sadece düz bir metin (string)", "technicalNote": "..."}
       `;
 
       const result = await model.generateContent(prompt);
