@@ -126,12 +126,6 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
 
   const checkInitialLimit = async () => {
     try {
-      const existingToday = await getTodayAnalysis();
-      if (existingToday) {
-        setResult(existingToday);
-        setStep('result');
-        return;
-      }
       const { canAnalyze: allowed } = await checkDailyLimit();
       setCanAnalyze(allowed);
       setStep(allowed ? 'upload' : 'limit');
@@ -314,7 +308,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
                     aiStatus.status === 'authenticated' ? "bg-emerald-500" : "bg-rose-500"
                   )} />
                   {aiStatus.status === 'authenticated' 
-                    ? `AI Aktif - Hak: ${aiStatus.remaining}/1` 
+                    ? `AI Aktif - Kalan Hak: ${aiStatus.remaining}/3` 
                     : "AI Bağlantı Hatası"
                   }
                 </div>
@@ -714,7 +708,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
             </div>
             <div>
               <h3 className="text-xl font-black text-white uppercase tracking-tight">GÜNLÜK SINIRA ULAŞTIN</h3>
-              <p className="text-sm text-slate-400 mt-2">Günlük 1 adet ücretsiz analiz hakkınız bulunmaktadır. Lütfen yarın tekrar deneyin.</p>
+              <p className="text-sm text-slate-400 mt-2">Günlük 3 adet ücretsiz analiz hakkınız bulunmaktadır. Lütfen yarın tekrar deneyin.</p>
             </div>
             <div className="w-full space-y-3">
               {isDevOrPreview() && (
@@ -779,7 +773,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
                       </div>
                       <div className="text-left">
                         <div className="text-xs font-black text-white uppercase tracking-wider">
-                          {h.createdAt?.toDate ? h.createdAt.toDate().toLocaleDateString('tr-TR') : new Date(h.createdAt).toLocaleDateString('tr-TR')} ANALİZİ
+                          {h.createdAt?.toDate ? h.createdAt.toDate().toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }) : new Date(h.createdAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })} YORUMU
                         </div>
                         <div className="text-[10px] text-slate-500 font-bold uppercase truncate max-w-[150px]">
                           {h.portfolio.map(p => p.symbol).join(', ')}
