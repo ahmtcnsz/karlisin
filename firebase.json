@@ -10,7 +10,7 @@
       {
         "source": "/api/**",
         "run": {
-          "serviceId": "karl-s-n-2026-maa-hesaplama-pazar-kar-analiz-ara",
+          "serviceId": "karl-s-n-temett-da-t-m-temett-da-tan-hisseler-tak",
           "region": "europe-west2"
         }
       },
