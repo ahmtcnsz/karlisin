@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSeo } from './Sitemap';
 import TahminMotoru from './TahminMotoru';
 import { 
   LineChart, 
@@ -432,6 +434,7 @@ const DividendGrowthChart = ({ history }: { history: any[] }) => {
 };
 
 const DividendTracker: React.FC = () => {
+  useSeo('Temettü Takibi', 'BIST ve global borsalar için güncel temettü takvimi, verim oranları ve 2026 temettü tahminleri.');
   // Primary States
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -774,6 +777,10 @@ const DividendTracker: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/30 pt-16">
+      <Helmet>
+        <title>Temettü Takvimi 2026 - BIST Temettü Dağıtan Hisseler | Karlısın</title>
+        <meta name="description" content="En güncel temettü takvimi ve verim analizi. Temettü emekliliği için gereken tüm finansal veriler ve 2026 tahmini verim oranları." />
+      </Helmet>
       {/* Search Header */}
       <div className="border-b border-white/5 bg-slate-900/40 backdrop-blur-xl sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const articles = [
   {
     id: 19,
+    slug: 'temettu-nedir-borsada-temettu-dagitimi-ve-pasif-gelir-rehberi',
     title: 'Temettü Nedir? Borsada Temettü Dağıtımı ve Pasif Gelir Rehberi',
     excerpt: 'Borsada yatırım yaparken sadece hisse senedinin fiyat artışından değil, aynı zamanda şirketin elde ettiği karlardan pay alabileceğinizi biliyor muydunuz?',
     category: 'Rehber',
@@ -15,6 +16,7 @@ const articles = [
   },
   {
     id: 18,
+    slug: 'temettu-verimi-nedir-ve-neden-onemlidir',
     title: 'Temettü Verimi Nedir ve Neden Önemlidir?',
     excerpt: 'Bir şirketin ne kadar temettü dağıttığı kadar, bu temettünün hisse fiyatına oranının ne olduğu da yatırımcılar için kritik bir metrik olan temettü verimini oluşturur.',
     category: 'Rehber',
@@ -24,6 +26,7 @@ const articles = [
   },
   {
     id: 15,
+    slug: 'karli-bir-e-ticaret-markasi-insasi-2026-yol-haritasi',
     title: 'Karlı Bir E-ticaret Markası İnşası: 2026 Yol Haritası',
     excerpt: 'Sıfırdan kârlı bir marka yaratmanın matematiği, lojistik stratejileri ve 2026 yılındaki büyüme fırsatları.',
     category: 'Marka',
@@ -33,6 +36,7 @@ const articles = [
   },
   {
     id: 14,
+    slug: '2026-da-borsa-istanbul-temettu-emekliligi-hayal-mi',
     title: '2026\'da Borsa İstanbul: Temettü Emekliliği Hayal mi?',
     excerpt: 'Enflasyon ve faiz sarmalında temettü yatırımcılığının 2026 yılındaki rolünü ve Karlısın ile nasıl pasif gelir inşa edilebileceğini tartışıyoruz.',
     category: 'Yatırım',
@@ -42,6 +46,7 @@ const articles = [
   },
   {
     id: 13,
+    slug: 'e-ticarette-kar-hesapla-ve-fiyat-belirle-kaca-satayim',
     title: 'E-ticarette Kar Hesapla ve Fiyat Belirle: Kaça Satayım?',
     excerpt: 'Satış fiyatınızı belirlerken yapılan en büyük hatalar ve doğru kar hesaplama yöntemleri ile Karlısın rehberi.',
     category: 'SEO Rehber',
@@ -77,7 +82,7 @@ export default function BlogSnippet() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.1 }}
-            onClick={() => navigate('/blog')}
+            onClick={() => navigate(`/blog/${article.slug || article.id}`)}
             className="bg-white/5 backdrop-blur-md rounded-3xl border border-white/5 overflow-hidden group hover:border-indigo-500/30 transition-all flex flex-col cursor-pointer"
           >
             <div className="aspect-[16/9] overflow-hidden relative">

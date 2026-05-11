@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSeo } from './Sitemap';
 import { 
   Calculator, 
   Info, 
@@ -60,6 +61,7 @@ interface MonthlyCalculation {
 }
 
 export default function SalaryCalculator() {
+  useSeo('2026 Maaş Hesaplama', '2026 gelir vergisi dilimleri ve asgari ücret projeksiyonları ile brütten nete maaş hesaplama robotu.');
   const [calculationType, setCalculationType] = useState<'grossToNet' | 'netToGross'>('grossToNet');
   const [year, setYear] = useState(2026);
   const [targetAmount, setTargetAmount] = useState<number | ''>('');

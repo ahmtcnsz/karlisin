@@ -1,9 +1,11 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
+import { useSeo } from './Sitemap';
 import { Target, Zap, ShieldCheck, Users, TrendingUp, Sparkles } from 'lucide-react';
 
 export default function About() {
+  useSeo('Hakkımızda', 'Karlısın platformu, finansal şeffaflık ve doğru hesaplama araçları misyonuyla geliştirilmiştir.');
   const sections = [
     {
       icon: <Target className="text-indigo-400" size={24} />,

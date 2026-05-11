@@ -10,6 +10,7 @@ import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore
 const articles = [
   {
     id: 1,
+    slug: 'haftalik-temettu-analizi-portfoy-stratejileri',
     title: 'Haftalık Temettü Analizi: Portföy Stratejileri',
     excerpt: 'Bugün yayınladığımız analizde BIST 100 ve global piyasalardaki temettü verimi en yüksek şirketleri inceledik.',
     category: 'Analiz',
@@ -26,6 +27,7 @@ const articles = [
   },
   {
     id: 2,
+    slug: 'dijital-donusumde-e-ticaretin-gelecegi',
     title: 'Dijital Dönüşümde E-ticaretin Geleceği',
     excerpt: 'E-ticarette başarının anahtarı artık sadece ürün satmak değil, veriyi doğru okumaktan geçiyor.',
     category: 'Gelecek',
@@ -41,6 +43,7 @@ const articles = [
   },
   {
     id: 3,
+    slug: 'yeni-nesil-vergi-yapilandirmasi-ve-karlilik',
     title: 'Yeni Nesil Vergi Yapılandırması ve Karlılık',
     excerpt: 'Vergi maliyetlerini yasal yollarla optimize ederek kâr marjınızı nasıl %5 artırırsınız?',
     category: 'Finans',
@@ -55,6 +58,7 @@ const articles = [
   },
   {
     id: 4,
+    slug: 'haftalik-analiz-e-ticaret-basari-ipuclari',
     title: 'Haftalık Analiz: E-ticaret Başarı İpuçları',
     excerpt: 'Kendi markasını kurmak isteyenler için bu haftanın altın değerindeki tavsiyeleri.',
     category: 'Özel',
@@ -71,6 +75,7 @@ const articles = [
   },
   {
     id: 5,
+    slug: 'maliyet-yonetimi-2026-stratejileri',
     title: 'Maliyet Yönetimi: 2026 Stratejileri',
     excerpt: 'Artan maliyetler karşısında kâr marjınızı korumanın yolları ve yeni ekonomi modeli.',
     category: 'Finans',
@@ -87,6 +92,7 @@ const articles = [
   },
   {
     id: 6,
+    slug: '2026-da-pasif-gelir-modelleri-nereden-baslamali',
     title: '2026\'da Pasif Gelir Modelleri: Nereden Başlamalı?',
     excerpt: 'Finansal özgürlük yolunda pasif gelir inşa etmek için 2026 yılının en kârlı ve sürdürülebilir modellerini keşfedin.',
     category: 'Strateji',
@@ -103,6 +109,7 @@ const articles = [
   },
   {
     id: 7,
+    slug: 'b2b-e-ticarette-musteri-edinme-maliyeti-cac-nasil-dusurulur',
     title: 'B2B E-ticarette Müşteri Edinme Maliyeti (CAC) Nasıl Düşürülür?',
     excerpt: 'Artan reklam maliyetleri karşısında, B2B sektöründe müşteri başına maliyeti optimize etmenin 5 stratejik yolu.',
     category: 'Analiz',
@@ -119,6 +126,7 @@ const articles = [
   },
   {
     id: 8,
+    slug: 'kuresel-pazarlarda-marka-olmak-yerellik-ve-evrensellik-dengesi',
     title: 'Küresel Pazarlarda Marka Olmak: Yerellik ve Evrensellik Dengesi',
     excerpt: 'Türk markalarının yurt dışı pazarlara açılırken yaptığı en yaygın 3 hatayı ve lokalizasyonun gücünü inceliyoruz.',
     category: 'Gelecek',
@@ -135,6 +143,7 @@ const articles = [
   },
   {
     id: 9,
+    slug: 'finansal-ozgurlugun-gizli-formulu-bilesik-getiri-gucu',
     title: 'Finansal Özgürlüğün Gizli Formülü: Bileşik Getiri Gücü',
     excerpt: 'Einstein\'ın "Dünyanın 8. harikası" dediği bileşik getiriyi kullanarak 10 yılda nasıl servet inşa edilir?',
     category: 'Strateji',
@@ -153,6 +162,7 @@ const articles = [
   },
   {
     id: 10,
+    slug: 'yapay-zeka-destekli-karlilik-analizi-2026-ve-otesi',
     title: 'Yapay Zeka Destekli Karlılık Analizi: 2026 ve Ötesi',
     excerpt: 'Verilerinizdeki saklı hazineyi keşfedin. Yapay zeka, finansal kararlarınızı nasıl bir üst seviyeye taşıyor?',
     category: 'Gelecek',
@@ -171,6 +181,7 @@ const articles = [
   },
   {
     id: 11,
+    slug: '2026-rehberi-brutten-nete-maas-hesaplama-nasil-yapilir',
     title: '2026 Rehberi: Brütten Nete Maaş Hesaplama Nasıl Yapılır?',
     excerpt: 'Gelir vergisi dilimleri, SGK işçi payı ve damga vergisi... Maaş dökümünüzdeki tüm detayları uzman bakışıyla inceleyin.',
     category: 'Maaş',
@@ -198,6 +209,7 @@ const articles = [
   },
   {
     id: 12,
+    slug: 'kaca-satayim-e-ticarette-kar-hesaplama-ve-fiyatlandirma',
     title: 'Kaça Satayım? E-Ticarette Kâr Hesaplama ve Fiyatlandırma',
     excerpt: 'Ürününüzü kaça satmalısınız? Komisyonlar, kargo ve reklam giderleri sonrası net kârınızı nasıl korursunuz?',
     category: 'E-Ticaret',
@@ -216,6 +228,7 @@ const articles = [
   },
   {
     id: 13,
+    slug: 'e-ticarette-kar-hesapla-ve-fiyat-belirle-kaca-satayim',
     title: 'E-ticarette Kar Hesapla ve Fiyat Belirle: Kaça Satayım?',
     excerpt: 'Satış fiyatınızı belirlerken yapılan en büyük hatalar ve doğru kar hesaplama yöntemleri ile Karlısın rehberi.',
     category: 'SEO Rehber',
@@ -242,6 +255,7 @@ const articles = [
   },
   {
     id: 14,
+    slug: '2026-da-borsa-istanbul-temettu-emekliligi-hayal-mi',
     title: '2026\'da Borsa İstanbul: Temettü Emekliliği Hayal mi?',
     excerpt: 'Enflasyon ve faiz sarmalında temettü yatırımcılığının 2026 yılındaki rolünü ve Karlısın ile nasıl pasif gelir inşa edilebileceğini tartışıyoruz.',
     category: 'Yatırım',
@@ -263,6 +277,7 @@ const articles = [
   },
   {
     id: 15,
+    slug: 'karli-bir-e-ticaret-markasi-insasi-2026-yol-haritasi',
     title: 'Karlı Bir E-ticaret Markası İnşası: 2026 Yol Haritası',
     excerpt: 'Sıfırdan kârlı bir marka yaratmanın matematiği, lojistik stratejileri ve 2026 yılındaki büyüme fırsatları.',
     category: 'Marka',
@@ -286,6 +301,7 @@ const articles = [
   },
   {
     id: 16,
+    slug: '2026-maas-hesaplama-rehberi-vergi-dilimi-dolar-ve-altin-karsiligi-analizi',
     title: '2026 Maaş Hesaplama Rehberi: Vergi Dilimi, Dolar ve Altın Karşılığı Analizi',
     excerpt: 'Karlısın ile finansal geleceğinizi planlayın: 2026 maaş vergi dilimleri, alım gücü analizi ve yatırım projeksiyonları.',
     category: 'Maaş',
@@ -331,6 +347,7 @@ const articles = [
   },
   {
     id: 17,
+    slug: 'pazaryeri-saticilari-icin-kar-rehberi-trendyol-hepsiburada-ve-amazon-da-zarar-etmekten-nasil-kurtulursunuz',
     title: 'Pazaryeri Satıcıları İçin Kâr Rehberi: Trendyol, Hepsiburada ve Amazon’da Zarar Etmekten Nasıl Kurtulursunuz?',
     excerpt: 'E-ticarette "kaça satmalıyım?" sorusuna profesyonel bir cevap. 2026 kâr marjı yönetimi, komisyon ve kargo baremleri rehberi.',
     category: 'E-Ticaret',
@@ -378,6 +395,7 @@ const articles = [
   },
   {
     id: 18,
+    slug: 'temettu-verimi-nedir-ve-neden-onemlidir',
     title: 'Temettü Verimi Nedir ve Neden Önemlidir?',
     excerpt: 'Bir şirketin ne kadar temettü dağıttığı kadar, bu temettünün hisse fiyatına oranının ne olduğu da yatırımcılar için kritik bir metrik olan temettü verimini oluşturur.',
     category: 'Rehber',
@@ -419,6 +437,7 @@ const articles = [
   },
   {
     id: 19,
+    slug: 'temettu-nedir-borsada-temettu-dagitimi-ve-pasif-gelir-rehberi',
     title: 'Temettü Nedir? Borsada Temettü Dağıtımı ve Pasif Gelir Rehberi',
     excerpt: 'Borsada yatırım yaparken sadece hisse senedinin fiyat artışından değil, aynı zamanda şirketin elde ettiği karlardan pay alabileceğinizi biliyor muydunuz?',
     category: 'Rehber',
@@ -463,23 +482,29 @@ export default function Blog() {
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedArticle, setSelectedArticle] = useState<typeof articles[0] | null>(null);
   const [broadcastSent, setBroadcastSent] = useState(false);
-  const { id: pathId } = useParams();
+  const { id: pathSlug } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // URL'den makale ID'sini oku (örn: /blog/16 veya /blog?id=16)
+  // URL'den makale slug'ını veya ID'sini oku
   useEffect(() => {
-    const id = pathId || searchParams.get('id');
-    if (id) {
-      const article = articles.find(a => String(a.id) === id);
+    const slugOrId = pathSlug || searchParams.get('id');
+    if (slugOrId) {
+      // Önce slug ile ara
+      let article = articles.find(a => a.slug === slugOrId);
+      // Bulunamazsa ID ile ara (geriye dönük uyumluluk)
+      if (!article) {
+        article = articles.find(a => String(a.id) === slugOrId);
+      }
+
       if (article) {
         setSelectedArticle(article);
       }
     }
-  }, [pathId, searchParams]);
+  }, [pathSlug, searchParams]);
 
   const handleShare = async (article: typeof articles[0]) => {
-    const shareUrl = `https://www.karlisin.com/blog/${article.id}`;
+    const shareUrl = `https://www.karlisin.com/blog/${article.slug || article.id}`;
     
     if (navigator.share) {
       try {
@@ -543,7 +568,7 @@ export default function Blog() {
               subscribers,
               articleTitle: lastArticle.title,
               articleExcerpt: lastArticle.excerpt,
-              articleUrl: `https://www.karlisin.com/blog?id=${currentArticleId}`
+              articleUrl: `https://www.karlisin.com/blog/${lastArticle.slug || currentArticleId}`
             })
           });
 
@@ -653,7 +678,7 @@ export default function Blog() {
                     <motion.div
                       key={related.id}
                       onClick={() => {
-                        navigate(`/blog/${related.id}`);
+                        navigate(`/blog/${related.slug || related.id}`);
                         window.scrollTo(0, 0);
                       }}
                       className="group bg-white/5 rounded-3xl border border-white/5 hover:border-indigo-500/30 overflow-hidden cursor-pointer transition-all"
@@ -725,7 +750,7 @@ export default function Blog() {
         <motion.article 
           initial={{ opacity: 0, y: 30 }} 
           animate={{ opacity: 1, y: 0 }} 
-          onClick={() => navigate(`/blog/${articles[articles.length - 1].id}`)} 
+          onClick={() => navigate(`/blog/${articles[articles.length - 1].slug || articles[articles.length - 1].id}`)} 
           className="bg-white/5 backdrop-blur-md rounded-[48px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer shadow-2xl max-w-5xl"
         >
           <div className="aspect-video overflow-hidden relative">
@@ -760,7 +785,7 @@ export default function Blog() {
               whileInView={{ opacity: 1, y: 0 }} 
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }} 
-              onClick={() => navigate(`/blog/${article.id}`)} 
+              onClick={() => navigate(`/blog/${article.slug || article.id}`)} 
               className="bg-white/5 backdrop-blur-md rounded-[40px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer text-center items-center"
             >
               <div className="aspect-[16/9] w-full overflow-hidden relative">

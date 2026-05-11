@@ -1,9 +1,33 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, ArrowRight, Home, Calculator, ShoppingBag, PieChart, BookOpen, Shield, FileText, Info, TrendingUp } from 'lucide-react';
 
+const blogSlugs = [
+  'temettu-nedir-borsada-temettu-dagitimi-ve-pasif-gelir-rehberi',
+  'temettu-verimi-nedir-ve-neden-onemlidir',
+  'pazaryeri-saticilari-icin-kar-rehberi-trendyol-hepsiburada-ve-amazon-da-zarar-etmekten-nasil-kurtulursunuz',
+  '2026-maas-hesaplama-rehberi-vergi-dilimi-dolar-ve-altin-karsiligi-analizi',
+  'karli-bir-e-ticaret-markasi-insasi-2026-yol-haritasi',
+  '2026-da-borsa-istanbul-temettu-emekliligi-hayal-mi',
+  '2026-rehberi-brutten-nete-maas-hesaplama-nasil-yapilir',
+  'kaca-satayim-e-ticarette-kar-hesaplama-ve-fiyatlandirma',
+  'yapay-zeka-destekli-karlilik-analizi-2026-ve-otesi',
+  'finansal-ozgurlugun-gizli-formulu-bilesik-getiri-gucu'
+];
+
+export const useSeo = (title: string, description?: string) => {
+  useEffect(() => {
+    document.title = `${title} | Karlısın.com`;
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', description || 'Karlısın - E-Ticaret ve Finansal Karar Destek Platformu');
+    }
+  }, [title, description]);
+};
+
 export default function Sitemap() {
+  useSeo('Site Haritası', 'Karlısın.com üzerindeki tüm araçlar, hesaplayıcılar ve rehber içerikler. Temettü takvimi ve pazar yeri kar hesaplayıcıları burada.');
   const sections = [
     {
       title: 'Hesaplama Araçları',
@@ -20,6 +44,11 @@ export default function Sitemap() {
       icon: <BookOpen size={20} className="text-purple-400" />,
       links: [
         { name: 'Finans Blogu', path: '/blog', icon: <BookOpen size={16} /> },
+        ...blogSlugs.map(slug => ({
+          name: slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+          path: `/blog/${slug}`,
+          icon: <ChevronRight size={14} className="text-slate-500" />
+        })),
         { name: 'Hakkımızda', path: '/hakkimizda', icon: <Info size={16} /> },
         { name: 'Geri Bildirim', path: '#', onClick: () => (window as any).toggleFeedback?.(), icon: <FileText size={16} /> },
       ]

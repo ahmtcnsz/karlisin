@@ -1,5 +1,7 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
+import { useSeo } from './Sitemap';
 import { 
   Zap, 
   TrendingUp, 
@@ -53,8 +55,13 @@ const FeatureCard = ({ icon: Icon, title, description, badge, color }: {
 );
 
 export const MarketPulse = () => {
+  useSeo('Piyasanın Nabzı', 'Global borsa verileri, temettü skorları ve makro-ekonomik göstergeler ile piyasayı dinleyin.');
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/30">
+      <Helmet>
+        <title>Piyasanın Nabzı - Borsa ve Temettü Analiz Motoru | Karlısın</title>
+        <meta name="description" content="Borsa İstanbul ve global piyasalar için temettü güvenliği, makro veriler ve akıllı analiz araçları." />
+      </Helmet>
       
       {/* Hero Section */}
       <div className="relative pt-24 pb-32 overflow-hidden">
