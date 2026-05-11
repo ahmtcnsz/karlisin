@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { Resend } from 'resend';
 import path from 'path';
+import fs from 'fs';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
@@ -1745,10 +1746,10 @@ async function startServer() {
   // 3. VITE / STATIC ASSET SERVİSİ (EN SONDA OLMALI)
   // ---------------------------------------------------------
   
-  const isProduction = process.env.NODE_ENV === 'production' || !!process.env.K_SERVICE;
+  const distPath = path.resolve(__dirname, 'dist');
+  const isProduction = (process.env.NODE_ENV === 'production' || !!process.env.K_SERVICE) && fs.existsSync(distPath);
   
   if (isProduction) {
-    const distPath = path.resolve(__dirname, 'dist');
     console.log(`[Karlısın-INIT] Versiyon: 2.2.1-stable`);
     console.log(`[Karlısın-INIT] Production modu aktif.`);
     console.log(`[Karlısın-INIT] Statik dosya yolu: ${distPath}`);

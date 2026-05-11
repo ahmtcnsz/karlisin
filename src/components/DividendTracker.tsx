@@ -44,6 +44,8 @@ import {
   Calculator,
   Lightbulb,
   Layers,
+  BarChart3,
+  Verified,
   X
 } from 'lucide-react';
 import { cn, getApiUrl } from '../lib/utils';
@@ -457,6 +459,7 @@ const DividendTracker: React.FC = () => {
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [canAnalyze, setCanAnalyze] = useState<boolean | null>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
 
   useEffect(() => {
     // Show welcome modal on mount
@@ -495,7 +498,7 @@ const DividendTracker: React.FC = () => {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    const isAnyModalOpen = isInformationModalOpen || isCalculatorModalOpen || showAllDividends || showWelcomeModal;
+    const isAnyModalOpen = isInformationModalOpen || isCalculatorModalOpen || showAllDividends || showWelcomeModal || isBlogModalOpen;
     
     if (isAnyModalOpen) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -787,49 +790,58 @@ const DividendTracker: React.FC = () => {
             </div>
           </div>
 
-          <div className="relative w-full md:w-96 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 group-focus-within:text-indigo-400 transition-colors" />
-            <input
-              type="text"
-              placeholder="Hisse senedi ara (örn: AAPL, KO, THYAO.IS)..."
-              className="w-full bg-slate-900 border border-white/10 rounded-2xl py-2.5 pl-11 pr-5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-500 transition-all font-medium"
-              value={query}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-            
-            <AnimatePresence>
-              {searchResults.length > 0 && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[100] backdrop-blur-3xl"
-                >
-                  <div className="max-h-80 overflow-y-auto">
-                    {searchResults.map((item) => (
-                      <button
-                        key={item.symbol}
-                        onClick={() => {
-                          setSelectedSymbol(item.symbol);
-                          fetchData(item.symbol);
-                          setQuery('');
-                        }}
-                        className="w-full px-5 py-3 text-left hover:bg-white/5 flex items-center justify-between transition-colors border-b border-white/5 last:border-0"
-                      >
-                        <div className="truncate pr-4">
-                          <div className="font-bold text-white">{item.symbol}</div>
-                          <div className="text-[10px] text-slate-500 truncate font-black tracking-widest uppercase">{item.longname || item.shortname || item.exchange}</div>
-                        </div>
-                        <div className="flex-shrink-0 flex items-center gap-2">
-                          <span className="text-[9px] font-black text-slate-400 bg-white/5 px-2 py-0.5 rounded border border-white/5 uppercase">{item.exchange}</span>
-                          <ChevronRight className="w-4 h-4 text-slate-600" />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="relative w-full md:w-96 flex items-center gap-2">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 group-focus-within:text-indigo-400 transition-colors" />
+              <input
+                type="text"
+                placeholder="Hisse senedi ara (örn: AAPL, KO, THYAO.IS)..."
+                className="w-full bg-slate-900 border border-white/10 rounded-2xl py-2.5 pl-11 pr-5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:text-slate-500 transition-all font-medium"
+                value={query}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+              
+              <AnimatePresence>
+                {searchResults.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[100] backdrop-blur-3xl"
+                  >
+                    <div className="max-h-80 overflow-y-auto">
+                      {searchResults.map((item) => (
+                        <button
+                          key={item.symbol}
+                          onClick={() => {
+                            setSelectedSymbol(item.symbol);
+                            fetchData(item.symbol);
+                            setQuery('');
+                          }}
+                          className="w-full px-5 py-3 text-left hover:bg-white/5 flex items-center justify-between transition-colors border-b border-white/5 last:border-0"
+                        >
+                          <div className="truncate pr-4">
+                            <div className="font-bold text-white">{item.symbol}</div>
+                            <div className="text-[10px] text-slate-500 truncate font-black tracking-widest uppercase">{item.longname || item.shortname || item.exchange}</div>
+                          </div>
+                          <div className="flex-shrink-0 flex items-center gap-2">
+                            <span className="text-[9px] font-black text-slate-400 bg-white/5 px-2 py-0.5 rounded border border-white/5 uppercase">{item.exchange}</span>
+                            <ChevronRight className="w-4 h-4 text-slate-600" />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <button 
+              onClick={() => setIsBlogModalOpen(true)}
+              className="p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all shrink-0 group/edu"
+              title="Temettü Rehberi"
+            >
+              <Lightbulb className="w-5 h-5 group-hover/edu:scale-110 transition-transform" />
+            </button>
           </div>
         </div>
       </div>
@@ -1905,6 +1917,143 @@ const DividendTracker: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* SEO Optimized Content Section */}
+      <section className="max-w-7xl mx-auto px-6 py-24 border-t border-white/5 text-center">
+        <div className="flex flex-col gap-16 items-center">
+          <div className="space-y-8 max-w-4xl mx-auto">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.2] tracking-tight">
+              2026 Temettü Takvimi ve <span className="text-indigo-400 italic">Kar Payı Analizi</span>
+            </h2>
+            <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
+              Karlısın olarak, pasif gelir yolculuğunuzda en doğru veriye ulaşmanızı sağlıyoruz. 
+              <strong> 2026 BİST temettü takvimi</strong> aracımızla, şirketlerin nakit kar payı dağıtım tarihlerini, 
+              verim oranlarını ve net ödeme tutarlarını saniyeler içinde analiz edin.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+              {[
+                'Güncel 2026 temettü takvimi ve KAP bildirimleri',
+                'Yapay Zeka (Gemini) destekli kazanç simülasyonu',
+                'Brüt ve net temettü kalemlerinin otomatik ayrıştırılması',
+                'BİST ve Global piyasalar için çapraz veri doğrulaması'
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 group hover:border-indigo-500/30 transition-all">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                    <Verified size={20} />
+                  </div>
+                  <span className="text-slate-300 font-bold text-sm lg:text-base">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-full bg-white/5 rounded-[48px] p-10 md:p-16 border border-white/10 relative overflow-hidden group shadow-2xl text-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-30 group-hover:opacity-50 transition-opacity duration-700" />
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
+              <div className="lg:col-span-2 space-y-6 text-center lg:text-left">
+                <h3 className="text-3xl md:text-4xl font-black text-white leading-tight">Yapay Zeka Destekli Tahmin Motoru</h3>
+                <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                  Karmaşık bilançolar ve kap bildirimleri arasında boğulmayın. Karlısın'ın 
+                  <strong> AI destekli temettü takip</strong> sistemi, şirketlerin geçmiş performansını 
+                  ve gelecek beklentilerini analiz ederek size özel projeksiyonlar sunar.
+                </p>
+                <div className="flex flex-wrap gap-4 pt-4 justify-center lg:justify-start">
+                  <div className="px-6 py-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-xs font-black text-indigo-400 tracking-widest uppercase shadow-lg">
+                    #TEMETTU2026
+                  </div>
+                  <div className="px-6 py-3 bg-purple-500/10 rounded-2xl border border-purple-500/20 text-xs font-black text-purple-400 tracking-widest uppercase shadow-lg">
+                    #PASİFGELİR
+                  </div>
+                  <div className="px-6 py-3 bg-white/5 rounded-2xl border border-white/10 text-xs font-black text-slate-400 tracking-widest uppercase shadow-lg">
+                    #GEMINI-INSIGHT
+                  </div>
+                </div>
+              </div>
+              <div className="hidden lg:flex justify-center">
+                <div className="w-48 h-48 rounded-[40px] bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center p-8 shadow-[0_0_50px_rgba(99,102,241,0.3)] animate-pulse">
+                  <PieChart size={80} className="text-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section for SEO */}
+      <section className="max-w-4xl mx-auto px-6 py-24">
+        <h2 className="text-3xl font-black text-white mb-12 text-center">Sıkça Sorulan Sorular</h2>
+        <div className="space-y-6">
+          {[
+            {
+              q: "2026 temettü takvimi ne zaman açıklanıyor?",
+              a: "Temettü takvimi, şirketlerin yönetim kurulu kararları ve KAP bildirimleri ile yıl boyunca güncellenir. Genellikle Mart-Nisan aylarında yoğunlaşan ödemeler, Karlısın üzerinde anlık olarak listelenir."
+            },
+            {
+              q: "Brüt ve net temettü arasındaki fark nedir?",
+              a: "Brüt temettü, şirketin dağıttığı toplam tutardır. Net temettü ise bu tutardan %10 stopaj kesintisi yapıldıktan sonra hesabınıza geçen rakamdır. Aracımız bu hesaplamayı otomatik yapar."
+            },
+            {
+              q: "Temettü verimi nasıl hesaplanır?",
+              a: "Temettü verimi, hisse başına ödenen nakit kar payının hisse fiyatına bölünmesiyle hesaplanır. Yüksek temettü verimi, yatırılan sermayeye göre alınan pasif gelirin yüksekliğini gösterir."
+            },
+            {
+              q: "Temettü emekliliği nedir?",
+              a: "Düzenli temettü ödeyen ve karını büyüten şirketlere uzun vadeli yatırım yaparak, yaşam giderlerini bu ödemelerle karşılama stratejisidir. Karlısın size bu yolculukta projeksiyon araçları sunar."
+            }
+          ].map((item, i) => (
+            <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-indigo-500/30 transition-colors">
+              <h3 className="text-white font-bold mb-3">{item.q}</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">{item.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stacked Feature Sections */}
+      <section className="max-w-7xl mx-auto px-6 py-24 space-y-32">
+        <div className="flex flex-col items-center gap-12 text-center max-w-4xl mx-auto">
+          <div className="space-y-6 flex flex-col items-center">
+            <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center text-indigo-400 border border-indigo-500/20 shadow-xl">
+              <BarChart3 size={40} />
+            </div>
+            <h3 className="text-4xl md:text-5xl font-black text-white leading-tight">Detaylı Raporlama ve <span className="text-indigo-400">Verim Analizi</span></h3>
+            <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
+              Sadece ödeme tarihlerini değil, pörtföyünüzün verimini ve büyüme hızını analiz edin. 
+              Temettü takviminizi Excel'e aktarın ve finansal özgürlük planınızı profesyonelce yönetin.
+            </p>
+            <div className="grid grid-cols-2 gap-6 pt-4 w-full">
+              <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                <p className="text-3xl font-black text-white">100%</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">Veri Doğruluğu</p>
+              </div>
+              <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                <p className="text-3xl font-black text-white">Gerçek</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">Zamanlı KAP Akışı</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-12 text-center max-w-4xl mx-auto">
+          <div className="space-y-6 flex flex-col items-center">
+            <div className="w-20 h-20 bg-purple-500/10 rounded-3xl flex items-center justify-center text-purple-400 border border-purple-500/20 shadow-xl">
+              <TrendingUp size={40} />
+            </div>
+            <h3 className="text-4xl md:text-5xl font-black text-white leading-tight">AI Destekli <span className="text-purple-400">Tahmin Motoru</span></h3>
+            <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
+              Google Gemini destekli algoritmalarımız, şirket bilançolarını analiz ederek 
+              gelecek yılın temettü ödemelerini tahminler. Belirsizlikleri ortadan kaldırın.
+            </p>
+            <div className="flex flex-wrap gap-4 pt-4 justify-center">
+              {['Gemini 1.5 Flash', 'Maliyeti Optimize Et', 'Projeksiyon Analizi'].map((tag, i) => (
+                <span key={i} className="px-6 py-3 bg-purple-500/5 rounded-full border border-purple-500/10 text-sm font-bold text-purple-300">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer Branding */}
       <footer className="max-w-7xl mx-auto px-4 py-16 space-y-12">
         {/* Quality Seal & Data Transparency */}
@@ -2018,6 +2167,151 @@ const DividendTracker: React.FC = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isBlogModalOpen && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsBlogModalOpen(false)}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-4xl max-h-[85vh] bg-slate-900 border border-white/10 rounded-[40px] shadow-2xl flex flex-col overflow-hidden"
+            >
+              {/* Header */}
+              <div className="p-8 md:p-10 border-b border-white/5 bg-slate-900/50 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-5">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                    <Lightbulb className="text-amber-400 w-7 h-7" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none mb-1">
+                      Temettü Rehberi
+                    </h3>
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">
+                      Bilinçli Yatırımın Temelleri
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsBlogModalOpen(false)}
+                  className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-6 h-6 text-white" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-8 md:p-12 scrollbar-hide space-y-12">
+                <section className="space-y-6">
+                  <h4 className="text-3xl font-black text-white italic uppercase tracking-tighter border-l-4 border-indigo-500 pl-6 py-1">
+                    Temettü Verimi Nedir ve Neden Önemlidir?
+                  </h4>
+                  <p className="text-slate-400 text-lg leading-relaxed font-medium">
+                    Bir şirketin ne kadar temettü dağıttığı kadar, bu temettünün hisse fiyatına oranının ne olduğu da yatırımcılar için kritik bir metrik olan temettü verimini oluşturur.
+                  </p>
+                  <div className="bg-indigo-600/10 border border-indigo-500/20 p-8 rounded-3xl flex flex-col md:flex-row items-center justify-center gap-6">
+                    <div className="text-center md:text-left">
+                      <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">HESAPLAMA FORMÜLÜ</div>
+                      <div className="text-xl md:text-2xl font-black text-white italic tracking-tighter">
+                        Temettü Verimi = (Hisse Başı Net Temettü / Hisse Fiyatı) x 100
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+                    <p className="text-sm text-slate-300 leading-relaxed font-medium">
+                      Örneğin; fiyatı 100 TL olan bir hisse, hisse başına 10 TL net temettü dağıtıyorsa, o hissenin temettü verimi %10 demektir. Yüksek ve sürdürülebilir temettü verimi sunan şirketler, borsadaki dalgalanmalara karşı yatırımcılarına sağlam bir koruma kalkanı sağlar.
+                    </p>
+                  </div>
+                </section>
+
+                <section className="space-y-6">
+                  <h4 className="text-3xl font-black text-white italic uppercase tracking-tighter border-l-4 border-emerald-500 pl-6 py-1">
+                    Temettü Emekliliği Mümkün mü?
+                  </h4>
+                  <p className="text-slate-400 text-lg leading-relaxed font-medium">
+                    Son yılların en popüler yatırım hedeflerinden biri olan temettü emekliliği, tamamen "bileşik getiri" mucizesine dayanır. Mantık çok basittir:
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { icon: Briefcase, text: "Düzenli ve yüksek temettü ödeyen sağlam şirketlere yatırım yapın." },
+                      { icon: DollarSign, text: "Şirketten aldığınız temettü ödemelerini (nakdi) harcamayın." },
+                      { icon: RefreshCw, text: "Aldığınız bu nakit ile tekrar aynı şirketin hisselerinden alın." },
+                      { icon: TrendingUp, text: "Bir sonraki yıl alacağınız temettü tutarı daha da büyüyecektir." }
+                    ].map((step, idx) => (
+                      <div key={idx} className="bg-slate-800/40 border border-white/5 p-6 rounded-3xl space-y-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                          <step.icon size={20} />
+                        </div>
+                        <p className="text-xs font-bold text-slate-300 leading-relaxed">{step.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-gradient-to-r from-emerald-600/10 to-indigo-600/10 border border-emerald-500/20 p-8 rounded-3xl">
+                    <p className="text-slate-200 text-sm font-bold leading-loose">
+                      Yıllar içinde kartopu etkisiyle büyüyen hisse portföyünüz, bir süre sonra size çalışmadan yaşayabileceğiniz, düzenli bir maaş gibi pasif gelir sunmaya başlar. İşte bu noktaya ulaştığınızda <span className="text-emerald-400 font-black italic underline decoration-emerald-500/30 underline-offset-4">"temettü emeklisi"</span> olmuş sayılırsınız!
+                    </p>
+                  </div>
+                </section>
+
+                <section className="space-y-8 bg-slate-950/50 p-8 md:p-12 rounded-[40px] border border-white/5 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 blur-[100px] rounded-full -mr-20 -mt-20 group-hover:bg-indigo-600/10 transition-colors" />
+                  
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-950 shadow-xl">
+                      <ShieldCheck size={24} />
+                    </div>
+                    <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter">
+                      Karlisin.com Önerisi: Nelere Dikkat Edilmeli?
+                    </h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                    <div className="space-y-3">
+                      <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">01. SÜRDÜRÜLEBİLİRLİK</div>
+                      <p className="text-sm text-slate-300 font-medium leading-relaxed">
+                        Sadece bir yıl yüksek temettü veren değil, geçmiş yıllarda düzenli temettü ödeme alışkanlığı olan şirketleri tercih edin.
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">02. BÜYÜME POTANSİYELİ</div>
+                      <p className="text-sm text-slate-300 font-medium leading-relaxed">
+                        Şirketin karları büyümeli ki, gelecekte dağıtacağı temettü miktarı da enflasyona karşı erimesin ve artsın.
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="text-[10px] font-black text-amber-400 uppercase tracking-widest">03. SEKTÖREL ÇEŞİTLİLİK</div>
+                      <p className="text-sm text-slate-300 font-medium leading-relaxed">
+                        Tüm bütçenizi tek bir temettü hissesine yatırmak yerine, riski bölmek için farklı sektörlerden oluşan bir sepet yapın.
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-500 font-black uppercase tracking-[0.2em] italic text-center pt-8 border-t border-white/5 relative z-10">
+                    Borsada bilinçli adımlar atarak yatırımlarınızı büyütmek için bizi takip etmeye devam edin. Bol kazançlar!
+                  </p>
+                </section>
+              </div>
+
+              {/* Action */}
+              <div className="p-8 border-t border-white/5 bg-slate-900/50 shrink-0">
+                <button 
+                  onClick={() => setIsBlogModalOpen(false)}
+                  className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/20 active:scale-95"
+                >
+                  OKUDUM, BİLİNÇLENDİM
+                </button>
               </div>
             </motion.div>
           </div>

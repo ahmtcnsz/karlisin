@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   Bot,
   Info,
-  ScanLine
+  ScanLine,
+  RefreshCw
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { cn, getApiUrl, isDevOrPreview, getDeviceId } from '../lib/utils';
@@ -81,7 +82,7 @@ const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onCh
 };
 
 export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ isOpen, onClose }) => {
-  const [step, setStep] = useState<'upload' | 'preview' | 'edit' | 'analyzing' | 'result' | 'history' | 'limit' | 'checking_limit'>('checking_limit');
+  const [step, setStep] = useState<'upload' | 'preview' | 'edit' | 'analyzing' | 'result' | 'history' | 'limit' | 'checking_limit' | 'busy'>('checking_limit');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -182,7 +183,14 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
       setStep('edit');
       checkAiStatus();
     } catch (err: any) {
+      console.error("Extract Error:", err);
       const errMsg = err.message || "";
+      
+      if (errMsg.includes('503') || errMsg.includes('yoğunluk') || errMsg.includes('Service Unavailable')) {
+        setStep('busy');
+        return;
+      }
+
       setError(errMsg || "Görsel okunamadı. Lütfen manuel giriş yapın.");
       setItems([{ symbol: '', amount: 0, cost: 0 }]);
       setStep('edit');
@@ -238,6 +246,11 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
     } catch (err: any) {
       console.error("Analysis Error:", err);
       const errMsg = err.message || "";
+      
+      if (errMsg.includes('503') || errMsg.includes('yoğunluk') || errMsg.includes('Service Unavailable')) {
+        setStep('busy');
+        return;
+      }
       
       if (err.message?.includes('429') || err.message?.includes('limiti doldu')) {
         setStep('limit');
@@ -758,6 +771,108 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
                 [TEST] LİMİTLERİ VE GEÇMİŞİ SIFIRLA
               </button>
             )}
+          </div>
+        );
+
+      case 'busy':
+        return (
+          <div className="flex flex-col items-center justify-center p-10 text-center space-y-8 min-h-[400px]">
+             <div className="relative">
+              {/* Outer glowing rings */}
+              <motion.div 
+                animate={{ 
+                  scale: [1, 1.4, 1],
+                  opacity: [0.1, 0.3, 0.1],
+                  rotate: 360
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 -m-8 border-2 border-dashed border-amber-500/20 rounded-full"
+              />
+              <motion.div 
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  opacity: [0.2, 0.4, 0.2],
+                  rotate: -360
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 -m-4 border border-amber-400/30 rounded-full"
+              />
+              
+              <div className="w-24 h-24 bg-gradient-to-br from-amber-500/20 to-orange-600/20 rounded-3xl flex items-center justify-center text-amber-500 border border-amber-500/30 shadow-2xl shadow-amber-500/20 relative z-10 overflow-hidden">
+                 <motion.div
+                   animate={{ 
+                     y: [0, -5, 0],
+                     rotate: [0, 5, -5, 0]
+                   }}
+                   transition={{ duration: 2, repeat: Infinity }}
+                 >
+                   <Bot className="w-12 h-12" />
+                 </motion.div>
+                 
+                 {/* Scanning line */}
+                 <motion.div 
+                   animate={{ top: ['0%', '100%', '0%'] }}
+                   transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                   className="absolute left-0 right-0 h-0.5 bg-amber-400/50 blur-[2px] z-20"
+                 />
+              </div>
+
+              {/* Status particle effect */}
+              <motion.div 
+                animate={{ 
+                  opacity: [0, 1, 0],
+                  y: [-20, -50],
+                  x: [0, 20]
+                }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                className="absolute top-0 right-0 text-[10px] font-black text-amber-500"
+              >
+                503 ERROR
+              </motion.div>
+            </div>
+
+            <div className="space-y-4 max-w-xs relative z-10">
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">AI SERVİSİ YORGUN</h3>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed font-medium">
+                Yapay zeka servisimizde şu an çok fazla talep var. Senin analizini yapmak için 
+                <span className="text-amber-400 font-bold block mt-1">biraz nefes almasını bekliyoruz.</span>
+              </p>
+              <div className="pt-2">
+                <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Tahmini Bekleme: ~5 Saniye
+                </span>
+              </div>
+            </div>
+
+            <div className="w-full flex flex-col gap-3 relative z-10">
+              <button 
+                onClick={() => {
+                  setStep('analyzing');
+                  setTimeout(() => {
+                    if (items.length > 0 && items[0].symbol !== '') {
+                      startAnalysis();
+                    } else if (selectedImage) {
+                      handleExtractImage();
+                    } else {
+                      setStep('upload');
+                    }
+                  }, 500);
+                }}
+                className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-amber-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 group"
+              >
+                <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                ŞİMDİ TEKRAR DENE
+              </button>
+              <button 
+                onClick={() => setStep('edit')}
+                className="w-full py-3 text-slate-500 hover:text-slate-300 font-black uppercase tracking-widest text-[10px] transition-colors"
+              >
+                VERİLERİ DÜZENLEMEYE DÖN
+              </button>
+            </div>
           </div>
         );
 

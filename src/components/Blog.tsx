@@ -375,6 +375,85 @@ const articles = [
       <p>2026 e-ticaret rekabetinde ayakta kalmak için sadece iyi ürün bulmak yetmez; matematiği iyi yönetmek gerekir. Karlısın, e-ticaret satıcılarının en yakın finansal dostu olmak için burada.</p>
       <p>Siz de hemen <a href="/pazaryeri-kar-hesaplama" style="color: #818cf8; text-decoration: underline;">Pazaryeri Kâr Hesaplama</a> aracımızı deneyin, sürpriz kesintilere veda edin!</p>
     `
+  },
+  {
+    id: 18,
+    title: 'Temettü Verimi Nedir ve Neden Önemlidir?',
+    excerpt: 'Bir şirketin ne kadar temettü dağıttığı kadar, bu temettünün hisse fiyatına oranının ne olduğu da yatırımcılar için kritik bir metrik olan temettü verimini oluşturur.',
+    category: 'Rehber',
+    date: '11 Mayıs 2026',
+    readTime: '10 dk',
+    image: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Bir şirketin ne kadar temettü dağıttığı kadar, bu temettünün hisse fiyatına oranının ne olduğu da yatırımcılar için kritik bir metrik olan temettü verimini oluşturur.</p>
+      
+      <div style="background: rgba(79, 70, 229, 0.1); border: 1px solid rgba(79, 70, 229, 0.2); padding: 24px; border-radius: 16px; margin: 24px 0; text-align: center;">
+        <h4 style="color: #818cf8; font-size: 14px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">HESAPLAMA FORMÜLÜ</h4>
+        <p style="color: white; font-size: 20px; font-weight: 900; font-style: italic;">Temettü Verimi = (Hisse Başına Dağıtılan Net Temettü Tutarı / Hisse Senedi Fiyatı) x 100</p>
+      </div>
+
+      <p>Örneğin; fiyatı 100 TL olan bir hisse, hisse başına 10 TL net temettü dağıtıyorsa, o hissenin temettü verimi %10 demektir. Yüksek ve sürdürülebilir temettü verimi sunan şirketler, borsadaki dalgalanmalara karşı yatırımcılarına sağlam bir koruma kalkanı sağlar.</p>
+
+      <h3 style="color: white; margin-top: 32px; font-weight: 900;">Temettü Emekliliği Mümkün mü?</h3>
+      <p>Son yılların en popüler yatırım hedeflerinden biri olan temettü emekliliği, tamamen "bileşik getiri" mucizesine dayanır. Mantık çok basittir:</p>
+      <ul>
+        <li>Düzenli ve yüksek temettü ödeyen sağlam şirketlere yatırım yapın.</li>
+        <li>Şirketten aldığınız temettü ödemelerini (nakdi) harcamayın.</li>
+        <li>Aldığınız bu nakit ile tekrar aynı şirketin hisselerinden alın.</li>
+        <li>Hisse sayınız arttıkça, bir sonraki yıl alacağınız temettü tutarı daha da büyüyecektir.</li>
+      </ul>
+
+      <p>Yıllar içinde kartopu etkisiyle büyüyen hisse portföyünüz, bir süre sonra size çalışmadan yaşayabileceğiniz, düzenli bir maaş gibi pasif gelir sunmaya başlar. İşte bu noktaya ulaştığınızda "temettü emeklisi" olmuş sayılırsınız!</p>
+
+      <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 32px; border-radius: 24px; margin-top: 40px;">
+        <h4 style="color: white; font-size: 22px; font-weight: 900; font-style: italic; margin-bottom: 24px; text-transform: uppercase;">Karlisin.com Önerisi: Temettü Yatırımı Yaparken Nelere Dikkat Edilmeli?</h4>
+        <ul style="space-y-4;">
+          <li style="margin-bottom: 16px;"><strong>Sürdürülebilirlik:</strong> Sadece bir yıl yüksek temettü veren değil, geçmiş yıllarda düzenli temettü ödeme alışkanlığı olan şirketleri tercih edin.</li>
+          <li style="margin-bottom: 16px;"><strong>Büyüme Potansiyeli:</strong> Şirketin karları büyümeli ki, gelecekte dağıtacağı temettü miktarı da enflasyona karşı erimesin ve artsın.</li>
+          <li style="margin-bottom: 16px;"><strong>Sektörel Çeşitlilik:</strong> Tüm bütçenizi tek bir temettü hissesine yatırmak yerine, riski bölmek için farklı sektörlerden (örneğin; sanayi, enerji, otomotiv) oluşan bir temettü sepeti yapın.</li>
+        </ul>
+      </div>
+
+      <p style="margin-top: 32px; color: #94a3b8; font-size: 14px; font-weight: 700;">Borsada bilinçli adımlar atarak yatırımlarınızı büyütmek, pasif gelir elde etmek ve finansal özgürlüğüne kavuşmak için ihtiyacınız olan tüm rehber içerikler Karlisin.com'da! Yatırımlarınıza yön verecek güncel analizler, borsa terimleri ve daha fazlası için bizi takip etmeye devam edin. Bol kazançlar!</p>
+    `
+  },
+  {
+    id: 19,
+    title: 'Temettü Nedir? Borsada Temettü Dağıtımı ve Pasif Gelir Rehberi',
+    excerpt: 'Borsada yatırım yaparken sadece hisse senedinin fiyat artışından değil, aynı zamanda şirketin elde ettiği karlardan pay alabileceğinizi biliyor muydunuz?',
+    category: 'Rehber',
+    date: '11 Mayıs 2026',
+    readTime: '8 dk',
+    image: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Borsada yatırım yaparken sadece hisse senedinin fiyat artışından değil, aynı zamanda şirketin elde ettiği karlardan da pay alabileceğinizi biliyor muydunuz? İşte yatırımcıların en çok sevdiği pasif gelir yöntemlerinden biri olan temettü, tam olarak bu anlama geliyor.</p>
+
+      <p>Karlisin.com olarak bu yazımızda; "Temettü nedir?", "Temettü dağıtımı nasıl yapılır?", "Temettü emekliliği hayal mi?" gibi yatırımcıların en çok merak ettiği sorulara kapsamlı ve anlaşılır yanıtlar veriyoruz. Finansal özgürlüğe giden yolda en güçlü silahlarınızdan biri olan temettü kavramını tüm detaylarıyla inceleyelim!</p>
+
+      <h3 style="color: white; margin-top: 32px; font-weight: 900;">Temettü Nedir? (Kar Payı)</h3>
+      <p>En yalın haliyle temettü (kar payı), bir şirketin yıl içinde elde ettiği net kardan, yasal yedekler ve vergiler düşüldükten sonra kalan kısmının, hisse senedi sahiplerine (ortaklara) dağıtılmasıdır.</p>
+
+      <p>Borsada işlem gören bir şirketin hisse senedini aldığınızda, o şirkete yasal olarak ortak olursunuz. Şirket kar ettiğinde, yönetim kurulu bu karın bir kısmını yatırımlara ayırırken, geri kalan kısmını yatırımcılarını ödüllendirmek amacıyla nakit olarak hesaplarına yatırabilir. Başarılı ve istikrarlı büyüyen şirketler, yatırımcıların güvenini tazelemek için düzenli olarak temettü ödemesi yapmayı tercih eder.</p>
+
+      <h3 style="color: white; margin-top: 32px; font-weight: 900;">Temettü Dağıtımı Nasıl Yapılır?</h3>
+      <p>Şirketlerin temettü dağıtma süreci belirli yasal adımlara ve kurallara bağlıdır. Borsa İstanbul'da (BIST) temettü dağıtımı genellikle şu aşamalardan geçer:</p>
+      <ul style="space-y-4;">
+        <li style="margin-bottom: 12px;"><strong>Kararın Alınması:</strong> Şirketin Yönetim Kurulu, yıl sonu bilançoları açıklandıktan sonra elde edilen kardan ne kadarının dağıtılacağını teklif eder.</li>
+        <li style="margin-bottom: 12px;"><strong>Genel Kurul Onayı:</strong> Yönetim Kurulunun bu teklifi, şirketin Olağan Genel Kurul toplantısında hissedarların onayına sunulur. Onaylanması halinde temettü dağıtımı kesinleşir.</li>
+        <li style="margin-bottom: 12px;"><strong>Tarihin Belirlenmesi:</strong> Genel kurulda kar payının hangi tarihte ve ne şekilde (nakit veya bedelsiz hisse olarak) ödeneceği karara bağlanır.</li>
+        <li style="margin-bottom: 12px;"><strong>Hesaplara Geçiş:</strong> Belirlenen tarihte (hak kullanım tarihi), hisse senedini elinde bulunduran yatırımcıların aracı kurum hesaplarına temettü gelirleri otomatik olarak aktarılır.</li>
+      </ul>
+
+      <h3 style="color: white; margin-top: 32px; font-weight: 900;">Temettü Alma Şartları Nelerdir?</h3>
+      <p>Temettü alabilmek için karmaşık işlemler yapmanıza gerek yoktur. Karlisin.com okurları için en basit haliyle özetleyelim:</p>
+      <ul>
+        <li>Şirketin temettü dağıtacağı tarih olan "hak kullanım tarihinden" sadece bir gün önce, o şirketin hisse senedine sahip olmanız yeterlidir.</li>
+        <li>Temettü dağıtıldığı gün hisseyi satsanız bile, önceki gün elinizde olduğu için temettü hakkınızı kaybetmezsiniz.</li>
+        <li>Herhangi bir başvuru yapmanıza veya form doldurmanıza gerek yoktur; tutar yatırım hesabınıza otomatik yansır.</li>
+      </ul>
+
+      <p style="margin-top: 32px; color: #94a3b8; font-size: 14px; font-weight: 700;">Borsada bilinçli adımlar atarak yatırımlarınızı büyütmek, pasif gelir elde etmek ve finansal özgürlüğünüze kavuşmak için ihtiyacınız olan tüm rehber içerikler Karlisin.com'da! Yatırımlarınıza yön verecek güncel analizler, borsa terimleri ve daha fazlası için bizi takip etmeye devam edin. Bol kazançlar!</p>
+    `
   }
 ];
 

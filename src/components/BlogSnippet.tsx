@@ -5,6 +5,24 @@ import { useNavigate } from 'react-router-dom';
 
 const articles = [
   {
+    id: 19,
+    title: 'Temettü Nedir? Borsada Temettü Dağıtımı ve Pasif Gelir Rehberi',
+    excerpt: 'Borsada yatırım yaparken sadece hisse senedinin fiyat artışından değil, aynı zamanda şirketin elde ettiği karlardan pay alabileceğinizi biliyor muydunuz?',
+    category: 'Rehber',
+    date: '11 Mayıs 2026',
+    readTime: '8 dk',
+    image: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&q=80&w=800',
+  },
+  {
+    id: 18,
+    title: 'Temettü Verimi Nedir ve Neden Önemlidir?',
+    excerpt: 'Bir şirketin ne kadar temettü dağıttığı kadar, bu temettünün hisse fiyatına oranının ne olduğu da yatırımcılar için kritik bir metrik olan temettü verimini oluşturur.',
+    category: 'Rehber',
+    date: '11 Mayıs 2026',
+    readTime: '10 dk',
+    image: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=800',
+  },
+  {
     id: 15,
     title: 'Karlı Bir E-ticaret Markası İnşası: 2026 Yol Haritası',
     excerpt: 'Sıfırdan kârlı bir marka yaratmanın matematiği, lojistik stratejileri ve 2026 yılındaki büyüme fırsatları.',
