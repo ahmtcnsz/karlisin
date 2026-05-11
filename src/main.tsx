@@ -4,7 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import App from './App.tsx';
 import './index.css';
 
-// Global error logger to help debug "Script error." issues
+// Global error logger to help debug "Script error." issues and force a GitHub sync
 window.onerror = (message, source, lineno, colno, error) => {
   console.error('[Global Error]:', { message, source, lineno, colno, error });
   return false;

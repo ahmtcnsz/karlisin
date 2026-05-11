@@ -8,11 +8,15 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "/api/**",
         "run": {
-          "serviceId": "karl-s-n-temett-da-t-m-temett-da-tan-hisseler-tak-1001236491636",
+          "serviceId": "karl-s-n-2026-maa-hesaplama-pazar-kar-analiz-ara",
           "region": "europe-west2"
         }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
       }
     ]
   }
