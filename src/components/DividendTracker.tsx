@@ -778,8 +778,8 @@ const DividendTracker: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/30 pt-16">
       <Helmet>
-        <title>Temettü Takvimi 2026 - BIST Temettü Dağıtan Hisseler | Karlısın</title>
-        <meta name="description" content="En güncel temettü takvimi ve verim analizi. Temettü emekliliği için gereken tüm finansal veriler ve 2026 tahmini verim oranları." />
+        <title>Temettü Hesaplama ve 2026 Takvimi - Pasif Gelir Motoru | Karlısın</title>
+        <meta name="description" content="Temettü verimi nasıl hesaplanır? 2026 temettü ödeyen şirketler hangileri? Karlısın ile en güncel temettü takvimi ve AI destekli kazanç analizine hemen ulaşın." />
       </Helmet>
       {/* Search Header */}
       <div className="border-b border-white/5 bg-slate-900/40 backdrop-blur-xl sticky top-16 z-40">
@@ -1924,92 +1924,86 @@ const DividendTracker: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* SEO Optimized Content Section */}
-      <section className="max-w-7xl mx-auto px-6 py-24 border-t border-white/5 text-center">
-        <div className="flex flex-col gap-16 items-center">
-          <div className="space-y-8 max-w-4xl mx-auto">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.2] tracking-tight">
-              2026 Temettü Takvimi ve <span className="text-indigo-400 italic">Kar Payı Analizi</span>
+      {/* SEO Optimized Content Section - Long-Tail & Search Intent Focused */}
+      <section className="max-w-7xl mx-auto px-6 py-24 border-t border-white/5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+          
+          {/* Column 1: Search Intent - Calculator focus */}
+          <div className="space-y-8">
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+              <Calculator className="text-indigo-400 w-6 h-6" />
+              Temettü Verimi Nasıl Hesaplanır?
             </h2>
-            <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
-              Karlısın olarak, pasif gelir yolculuğunuzda en doğru veriye ulaşmanızı sağlıyoruz. 
-              <strong> 2026 BİST temettü takvimi</strong> aracımızla, şirketlerin nakit kar payı dağıtım tarihlerini, 
-              verim oranlarını ve net ödeme tutarlarını saniyeler içinde analiz edin.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-              {[
-                'Güncel 2026 temettü takvimi ve KAP bildirimleri',
-                'Yapay Zeka (Gemini) destekli kazanç simülasyonu',
-                'Brüt ve net temettü kalemlerinin otomatik ayrıştırılması',
-                'BİST ve Global piyasalar için çapraz veri doğrulaması'
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 group hover:border-indigo-500/30 transition-all">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
-                    <Verified size={20} />
-                  </div>
-                  <span className="text-slate-300 font-bold text-sm lg:text-base">{item}</span>
-                </div>
-              ))}
+            <div className="bg-white/5 p-6 rounded-3xl border border-white/10 space-y-4">
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Yatırımcıların en çok sorduğu <strong>"Temettü verimi nasıl hesaplanır?"</strong> sorusunun cevabı oldukça basittir. 
+                Karlısın üzerindeki her hisse için otomatik hesaplanan bu değer; hisse başına ödenen net nakit tutarın, güncel piyasasına bölünmesiyle bulunur. 
+                <span className="text-indigo-400 font-bold block mt-2 underline">Örn: 10 TL Temettü / 100 TL Fiyat = %10 Verim.</span>
+              </p>
+              <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-white transition-colors">
+                ŞİMDİ HESAPLA →
+              </button>
             </div>
           </div>
 
-          <div className="w-full bg-white/5 rounded-[48px] p-10 md:p-16 border border-white/10 relative overflow-hidden group shadow-2xl text-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-30 group-hover:opacity-50 transition-opacity duration-700" />
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
-              <div className="lg:col-span-2 space-y-6 text-center lg:text-left">
-                <h3 className="text-3xl md:text-4xl font-black text-white leading-tight">Yapay Zeka Destekli Tahmin Motoru</h3>
-                <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  Karmaşık bilançolar ve kap bildirimleri arasında boğulmayın. Karlısın'ın 
-                  <strong> AI destekli temettü takip</strong> sistemi, şirketlerin geçmiş performansını 
-                  ve gelecek beklentilerini analiz ederek size özel projeksiyonlar sunar.
-                </p>
-                <div className="flex flex-wrap gap-4 pt-4 justify-center lg:justify-start">
-                  <div className="px-6 py-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-xs font-black text-indigo-400 tracking-widest uppercase shadow-lg">
-                    #TEMETTU2026
-                  </div>
-                  <div className="px-6 py-3 bg-purple-500/10 rounded-2xl border border-purple-500/20 text-xs font-black text-purple-400 tracking-widest uppercase shadow-lg">
-                    #PASİFGELİR
-                  </div>
-                  <div className="px-6 py-3 bg-white/5 rounded-2xl border border-white/10 text-xs font-black text-slate-400 tracking-widest uppercase shadow-lg">
-                    #GEMINI-INSIGHT
-                  </div>
-                </div>
-              </div>
-              <div className="hidden lg:flex justify-center">
-                <div className="w-48 h-48 rounded-[40px] bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center p-8 shadow-[0_0_50px_rgba(99,102,241,0.3)] animate-pulse">
-                  <PieChart size={80} className="text-white" />
-                </div>
-              </div>
-            </div>
+          {/* Column 2: Long-Tail Keyword focus */}
+          <div className="space-y-8">
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+              <TrendingUp className="text-emerald-400 w-6 h-6" />
+              2026 Düzenli Temettü Veren Şirketler
+            </h2>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Borsa İstanbul'da (BİST) <strong>2026 yılında düzenli temettü veren şirketler</strong> listesi, yatırımcılar için bir güven limanıdır. 
+              Karlısın temettü skorlaması; sadece yüksek verimi değil, şirketin son 10 yıldaki ödeme sürekliliğini de analiz eder. 
+              Temettü aristokratları olarak bilinen bu şirketler, pasif gelir inşa etmenin temelidir.
+            </p>
+          </div>
+
+          {/* Column 3: Strategy focus */}
+          <div className="space-y-8">
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+              <ShieldCheck className="text-purple-400 w-6 h-6" />
+              Pasif Gelir İçin Hisse Portföyü Oluşturma
+            </h2>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              <strong>Pasif gelir için hisse portföyü oluşturma</strong> sürecinde çeşitlendirme kritiktir. 
+              Karlısın analiz motoru, portföyünüzü sektör bazlı dağıtarak riskinizi minimize etmenize yardımcı olur. 
+              Enerji, sanayi ve bankacılık gibi farklı sektörlerden temettü ödeyen şirketleri bir araya getirerek bileşik getirinin gücünden faydalanın.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* FAQ Section for SEO */}
-      <section className="max-w-4xl mx-auto px-6 py-24">
-        <h2 className="text-3xl font-black text-white mb-12 text-center">Sıkça Sorulan Sorular</h2>
-        <div className="space-y-6">
+      {/* FAQ Section for SEO with Long-Tail Queries */}
+      <section className="max-w-4xl mx-auto px-6 py-24 bg-indigo-500/5 rounded-[48px] border border-indigo-500/10 mb-24">
+        <h2 className="text-3xl font-black text-white mb-12 text-center uppercase tracking-tighter italic">SSS: Temettü Yatırımı Hakkında Merak Edilenler</h2>
+        <div className="space-y-8">
           {[
             {
-              q: "2026 temettü takvimi ne zaman açıklanıyor?",
-              a: "Temettü takvimi, şirketlerin yönetim kurulu kararları ve KAP bildirimleri ile yıl boyunca güncellenir. Genellikle Mart-Nisan aylarında yoğunlaşan ödemeler, Karlısın üzerinde anlık olarak listelenir."
+              q: "2026 yılı BİST temettü takvimi ne zaman netleşir?",
+              a: "Borsa İstanbul şirketleri genellikle Ocak ve Mart ayları arasında Genel Kurul kararlarını açıklar. Karlısın takvimi, KAP bildirimlerini anlık tarayarak 2026 temettü tarihlerini en hızlı şekilde yansıtır."
             },
             {
-              q: "Brüt ve net temettü arasındaki fark nedir?",
-              a: "Brüt temettü, şirketin dağıttığı toplam tutardır. Net temettü ise bu tutardan %10 stopaj kesintisi yapıldıktan sonra hesabınıza geçen rakamdır. Aracımız bu hesaplamayı otomatik yapar."
+              q: "Bedelsiz sermaye artırımı temettü sayılır mı?",
+              a: "Bedelsiz artırımda nakit çıkışı olmaz, yeni hisseler verilir. SEO aramalarında sıkça karıştırılan bu durumun aksine, gerçek pasif gelir 'nakit temettü' (cash dividend) ödemesi ile sağlanır."
             },
             {
-              q: "Temettü verimi nasıl hesaplanır?",
-              a: "Temettü verimi, hisse başına ödenen nakit kar payının hisse fiyatına bölünmesiyle hesaplanır. Yüksek temettü verimi, yatırılan sermayeye göre alınan pasif gelirin yüksekliğini gösterir."
+              q: "Temettü ödemesi yapılınca hisse fiyatı neden düşer?",
+              a: "Temettü ödemesi gerçekleştiği gün, hissenin fiyatı dağıtılan brüt temettü miktarı kadar teknik olarak aşağı yönlü revize edilir. Bu, şirketin piyasadan nakit çıkışı yapmasının doğal bir sonucudur."
             },
             {
-              q: "Temettü emekliliği nedir?",
-              a: "Düzenli temettü ödeyen ve karını büyüten şirketlere uzun vadeli yatırım yaparak, yaşam giderlerini bu ödemelerle karşılama stratejisidir. Karlısın size bu yolculukta projeksiyon araçları sunar."
+              q: "Karlısın temettü tahminleri ne kadar güvenilir?",
+              a: "Yapay zeka modellerimiz (Gemini 1.5 Flash), şirketin geçmiş 5 yıllık nakit akışını ve sektör büyüme verilerini harmanlar. Yatırım tavsiyesi olmamakla birlikte, yüksek doğruluklu istatistiksel projeksiyonlar sunar."
             }
           ].map((item, i) => (
-            <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-indigo-500/30 transition-colors">
-              <h3 className="text-white font-bold mb-3">{item.q}</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">{item.a}</p>
+            <div key={i} className="group">
+              <h3 className="text-white font-black text-lg mb-4 flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                {item.q}
+              </h3>
+              <p className="text-slate-400 text-sm leading-relaxed pl-5 border-l-2 border-white/5 group-hover:border-indigo-500/50 transition-colors">
+                {item.a}
+              </p>
             </div>
           ))}
         </div>
