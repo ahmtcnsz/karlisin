@@ -1694,7 +1694,7 @@ async function startServer() {
   // 3. VITE / STATIC ASSET SERVİSİ (EN SONDA OLMALI)
   // ---------------------------------------------------------
   
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NODE_ENV === 'production' || !!process.env.K_SERVICE;
   
   if (isProduction) {
     const distPath = path.resolve(__dirname, 'dist');
