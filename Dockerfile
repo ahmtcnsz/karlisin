@@ -15,5 +15,7 @@ RUN npm run build
 # Uygulamanın çalışacağı port
 EXPOSE 3000
 
+ENV NODE_ENV=production
+
 # Express sunucusunu başlat
 CMD ["npm", "start"]
