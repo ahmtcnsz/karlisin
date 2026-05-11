@@ -43,7 +43,8 @@ import {
   PieChart,
   Calculator,
   Lightbulb,
-  Layers
+  Layers,
+  X
 } from 'lucide-react';
 import { cn, getApiUrl } from '../lib/utils';
 import { Link } from 'react-router-dom';
@@ -455,6 +456,19 @@ const DividendTracker: React.FC = () => {
   const [istanbulTime, setIstanbulTime] = useState('');
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [canAnalyze, setCanAnalyze] = useState<boolean | null>(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  useEffect(() => {
+    // Show welcome modal on mount
+    const hasSeenWelcome = sessionStorage.getItem('hasSeenDividendWelcome');
+    if (!hasSeenWelcome) {
+      const timer = setTimeout(() => {
+        setShowWelcomeModal(true);
+        sessionStorage.setItem('hasSeenDividendWelcome', 'true');
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     const checkLimitStatus = async () => {
@@ -481,7 +495,7 @@ const DividendTracker: React.FC = () => {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    const isAnyModalOpen = isInformationModalOpen || isCalculatorModalOpen || showAllDividends;
+    const isAnyModalOpen = isInformationModalOpen || isCalculatorModalOpen || showAllDividends || showWelcomeModal;
     
     if (isAnyModalOpen) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -2004,6 +2018,80 @@ const DividendTracker: React.FC = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showWelcomeModal && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowWelcomeModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-[32px] shadow-2xl overflow-hidden flex flex-col z-[10001]"
+            >
+              <div className="p-8 border-b border-white/5 bg-slate-900/50 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                    <ShieldCheck className="text-indigo-400 w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none mb-1">
+                      ÖNEMLİ BİLGİLENDİRME
+                    </h3>
+                    <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.3em]">
+                      GÜVENLİ VE ŞEFFAF YATIRIM
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowWelcomeModal(false)}
+                  className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
+
+              <div className="p-8 space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0 mt-1">
+                    <AlertTriangle className="text-amber-500 w-4 h-4" />
+                  </div>
+                  <p className="text-sm text-slate-300 font-medium leading-relaxed">
+                    Burada gördükleriniz bir yatırım tavsiyesi değildir, hata payları olabilir ve temettü takvimini ve ücretler için <span className="text-white font-bold tracking-widest">KAP'ı</span> takip ederek doğrulayın.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shrink-0 mt-1">
+                    <Sparkles className="text-indigo-500 w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-300 font-medium leading-relaxed">
+                      Yapay zeka destekli portföy analiz robotu geliştirilmekte olan bir araçtır.
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-bold mt-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/5">
+                      Hataları ve eksikleri giderilmeye devam ediyor.
+                    </p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setShowWelcomeModal(false)}
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/20 active:scale-95 mt-4"
+                >
+                  ANLADIM, DEVAM ET
+                </button>
               </div>
             </motion.div>
           </div>

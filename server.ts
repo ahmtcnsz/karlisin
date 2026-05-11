@@ -806,7 +806,7 @@ class UnifiedDataService {
 async function startServer() {
   const app = express();
   app.set('trust proxy', true);
-  const PORT = process.env.PORT || 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // API Key Diagnostics
   console.log('--- [KARLISIN ENGINE] API Diagnostics ---');

@@ -14,7 +14,7 @@ export interface PortfolioItem {
 export interface AnalysisResult {
   score: number;
   distribution: string;
-  technicalNote: string;
+  technicalNote: string | any[];
   createdAt: any;
   portfolio: PortfolioItem[];
 }
