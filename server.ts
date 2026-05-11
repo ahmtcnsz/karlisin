@@ -947,9 +947,18 @@ async function startServer() {
       // Markdown temizliği (eğer model ```json ... ``` bloğu içinde verdiyse)
       text = text.replace(/```json/g, "").replace(/```/g, "").trim();
       
+      let parsed = [];
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch (e) {
+          console.error("JSON parse error:", text);
+          // try to fix common JSON errors or just return empty list
+        }
+      }
+      
+      if (parsed && Array.isArray(parsed)) {
         // Temizlik: Sayısal alanları doğrula
         const sanitized = parsed.map((item: any) => ({
           symbol: String(item.symbol || '').toUpperCase(),
@@ -1013,14 +1022,20 @@ async function startServer() {
       res.status(422).json({ error: 'Görselden veri ayıklanamadı' });
     } catch (err: any) {
       console.error('[AI Extract Error]:', err);
-      const errMsg = err.message || '';
+      const errMsg = err.message || String(err) || '';
       if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key not valid') || errMsg.includes('400')) {
         return res.status(401).json({ 
           error: 'Sunucu bağlantı hatası oluştu', 
           message: 'AI Servis anahtarı (GEMINI_API_KEY) geçersiz veya yapılandırılmamış.' 
         });
       }
-      res.status(500).json({ error: 'AI servisi hatası', message: err.message });
+      if (errMsg.includes('503 Service Unavailable') || errMsg.includes('high demand') || errMsg.includes('503') || errMsg.includes('504')) {
+        return res.status(503).json({ 
+          error: 'AI Servis Yoğunluğu', 
+          message: 'Şu anda yapay zeka servisinde anlık bir yoğunluk yaşanıyor (503). Lütfen birkaç saniye bekleyip tekrar deneyin.' 
+        });
+      }
+      res.status(500).json({ error: 'AI servisi hatası', message: err.message, details: errMsg });
     }
   });
 
@@ -1132,24 +1147,35 @@ async function startServer() {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       
       if (jsonMatch) {
-        const analysis = JSON.parse(jsonMatch[0]);
-        return res.json({
-          ...analysis,
-          portfolio: cleanPortfolio,
-          createdAt: new Date()
-        });
+         try {
+           const analysis = JSON.parse(jsonMatch[0]);
+           return res.json({
+             ...analysis,
+             portfolio: cleanPortfolio,
+             createdAt: new Date()
+           });
+         } catch(e) {
+           console.error("JSON parse error in analyze:", text);
+           return res.status(422).json({ error: 'Yapay zeka yanıtı anlaşılamadı. Lütfen tekrar deneyin.' });
+         }
       }
       res.status(422).json({ error: 'Analiz oluşturulamadı' });
     } catch (err: any) {
       console.error('[AI Analyze Error]:', err);
-      const errMsg = err.message || '';
+      const errMsg = err.message || String(err) || '';
       if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key not valid') || errMsg.includes('400')) {
         return res.status(401).json({ 
           error: 'Sunucu bağlantı hatası oluştu', 
           message: 'AI Servis anahtarı (GEMINI_API_KEY) geçersiz veya yapılandırılmamış.' 
         });
       }
-      res.status(500).json({ error: 'AI servisi hatası', message: err.message });
+      if (errMsg.includes('503 Service Unavailable') || errMsg.includes('high demand') || errMsg.includes('503') || errMsg.includes('504')) {
+        return res.status(503).json({ 
+          error: 'AI Servis Yoğunluğu', 
+          message: 'Şu anda yapay zeka servisinde anlık bir yoğunluk yaşanıyor (503). Lütfen birkaç saniye bekleyip tekrar deneyin.' 
+        });
+      }
+      res.status(500).json({ error: 'AI servisi hatası', message: err.message, details: errMsg });
     }
   });
 

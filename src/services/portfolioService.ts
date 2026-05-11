@@ -34,10 +34,14 @@ export const extractPortfolioFromImage = async (base64Image: string): Promise<Po
       return await response.json();
     }
     
-    let errMessage = "API_KEY_INVALID";
+    let errMessage = "Bağlantı hatası veya sunucu yanıt vermedi.";
     if (contentType && contentType.includes("application/json")) {
       const errJson = await response.json();
-      if (errJson.error) errMessage = errJson.error;
+      if (errJson.message) {
+        errMessage = errJson.message;
+      } else if (errJson.error) {
+        errMessage = errJson.error;
+      }
     } else {
       const errText = await response.text();
       if (errText) errMessage = errText;
@@ -45,7 +49,7 @@ export const extractPortfolioFromImage = async (base64Image: string): Promise<Po
     throw new Error(errMessage);
   } catch (err: any) {
     console.error("Backend extract failed", err);
-    throw new Error(err.message || "API_KEY_INVALID");
+    throw new Error(err.message || "Bağlantı hatası");
   }
 };
 
@@ -63,10 +67,14 @@ export const analyzePortfolio = async (portfolio: PortfolioItem[]): Promise<Anal
     if (response.ok && contentType && contentType.includes("application/json")) {
       return await response.json();
     }
-    let errMessage = "API_KEY_INVALID";
+    let errMessage = "Bağlantı hatası veya sunucu yanıt vermedi.";
     if (contentType && contentType.includes("application/json")) {
       const errJson = await response.json();
-      if (errJson.error) errMessage = errJson.error;
+      if (errJson.message) {
+        errMessage = errJson.message;
+      } else if (errJson.error) {
+        errMessage = errJson.error;
+      }
     } else {
       const errText = await response.text();
       if (errText) errMessage = errText;
@@ -74,7 +82,7 @@ export const analyzePortfolio = async (portfolio: PortfolioItem[]): Promise<Anal
     throw new Error(errMessage);
   } catch (err: any) {
     console.error("Backend analyze failed", err);
-    throw new Error(err.message || "API_KEY_INVALID");
+    throw new Error(err.message || "Bağlantı hatası");
   }
 };
 

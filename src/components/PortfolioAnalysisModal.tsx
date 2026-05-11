@@ -15,7 +15,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Bot,
-  Info
+  Info,
+  ScanLine
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { cn, getApiUrl, isDevOrPreview, getDeviceId } from '../lib/utils';
@@ -172,11 +173,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
       setStep('edit');
     } catch (err: any) {
       const errMsg = err.message || "";
-      if (errMsg.includes("Sunucu bağlantı") || errMsg.includes("limiti doldu") || errMsg.includes("401") || errMsg.includes("API") || errMsg.includes("AI servisi")) {
-        setError(errMsg);
-      } else {
-        setError("Görsel okunamadı. Lütfen manuel giriş yapın.");
-      }
+      setError(errMsg || "Görsel okunamadı. Lütfen manuel giriş yapın.");
       setItems([{ symbol: '', amount: 0, cost: 0 }]);
       setStep('edit');
     } finally {
@@ -232,12 +229,12 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
       console.error("Analysis Error:", err);
       const errMsg = err.message || "";
       
-      if (err.message?.includes('429')) {
+      if (err.message?.includes('429') || err.message?.includes('limiti doldu')) {
         setStep('limit');
         return;
       }
 
-      setError(errMsg.includes("AI servisi") ? errMsg : "Sunucu bağlantı hatası oluştu. Lütfen teknik ekiple iletişime geçin veya daha sonra tekrar deneyin.");
+      setError(errMsg || "Sunucu bağlantı hatası oluştu. Lütfen teknik ekiple iletişime geçin veya daha sonra tekrar deneyin.");
       setStep('edit');
     } finally {
       setLoading(false);
@@ -350,13 +347,49 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
         return (
           <div className="flex flex-col items-center justify-center p-8 text-center space-y-6">
             <div className="w-full max-w-sm rounded-xl overflow-hidden border border-white/10 shadow-2xl relative bg-slate-900/50">
-               {selectedImage && <img src={selectedImage} alt="Portföy Önizleme" className="w-full h-auto object-contain opacity-80" />}
+               {selectedImage && <img src={selectedImage} alt="Portföy Önizleme" className={cn("w-full h-auto object-contain transition-all duration-700", loading ? "opacity-30 grayscale blur-[2px]" : "opacity-80")} />}
+               {loading && (
+                 <>
+                    <div className="absolute inset-0 bg-indigo-500/10 mix-blend-overlay z-10" />
+                    <motion.div 
+                      initial={{ top: 0 }}
+                      animate={{ top: "100%" }}
+                      transition={{ duration: 2, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
+                      className="absolute left-0 right-0 h-1 bg-indigo-500 shadow-[0_0_20px_4px_rgba(99,102,241,0.8)] z-20" 
+                    />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center z-30">
+                       <motion.div 
+                         initial={{ opacity: 0.5, scale: 0.95 }}
+                         animate={{ opacity: 1, scale: 1 }}
+                         transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse" }}
+                         className="bg-slate-900/90 backdrop-blur-sm border border-indigo-500/50 px-5 py-3 rounded-xl flex items-center justify-center gap-3 shadow-2xl"
+                       >
+                          <ScanLine className="w-6 h-6 text-indigo-400" />
+                          <div className="flex flex-col text-left">
+                            <span className="text-sm font-black tracking-widest text-indigo-400 uppercase leading-none mb-1">YAPAY ZEKA</span>
+                            <span className="text-[10px] font-bold text-slate-300 leading-none">Görseli Analiz Ediyor...</span>
+                          </div>
+                       </motion.div>
+                    </div>
+                 </>
+               )}
             </div>
             <div>
               <h3 className="text-xl font-black text-white uppercase tracking-tight">Görsel Onayı</h3>
               <p className="text-sm text-slate-400 mt-2">Bu görselden verileri okuyup çıkartacağız. Devam etmek istiyor musun?</p>
             </div>
             {error && <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] font-bold uppercase">{error}</div>}
+            
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3 text-left">
+              <Info className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <strong className="text-amber-500 text-xs uppercase tracking-widest block mb-1">GÜNLÜK LİMİT UYARISI</strong>
+                <p className="text-amber-500/80 text-[10px] font-medium leading-relaxed">
+                  Görselden veri okuma işlemi maliyetli bir yapay zeka işlemidir. Bu nedenle <strong>günde sadece 1 kez</strong> görsel okutabilirsiniz. Lütfen net okunabilen bir görsel seçtiğinizden emin olun.
+                </p>
+              </div>
+            </div>
+
             <div className="flex w-full gap-3">
               <button 
                 onClick={() => setStep('upload')}
@@ -368,13 +401,12 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
               <button 
                 onClick={handleExtractImage}
                 disabled={loading}
-                className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.1em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all text-xs disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.1em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all text-[11px] disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Bot className="w-4 h-4" />}
-                {loading ? 'OKUNUYOR...' : 'GÖRSELİ OKU (1 GÜNLÜK HAK)'}
+                {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin flex-shrink-0" /> : <Bot className="w-4 h-4 flex-shrink-0" />}
+                <span className="truncate">{loading ? 'OKUNUYOR...' : 'GÖRSELİ OKU (1 HAK)'}</span>
               </button>
             </div>
-            <p className="text-[10px] text-slate-500 font-bold max-w-[250px] mx-auto text-center">Görsel okuma işlemi için günlük 1 hakkınız vardır.</p>
           </div>
         );
 
@@ -392,8 +424,8 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
               <strong>Yapay Zeka Notu:</strong> Görselindeki fiyat verilerini ve anlık piyasa fiyatlarını eşleştirerek adet ve ortalama maliyet bilgilerini senin için otomatik olarak doldurmaya çalıştım. Hesaplamalarda ufak sapmalar olabilir; kendi gerçek maliyetini buradan manuel olarak da güncelleyebilirsin. Maliyetini güncellediğinde analizimiz çok daha nokta atışı olacaktır.
             </div>
 
-            <div className="w-full">
-              <table className="w-full text-left border-collapse">
+            <div className="w-full overflow-x-auto pb-4 custom-scrollbar">
+              <table className="w-full min-w-[500px] text-left border-collapse">
                 <thead>
                   <tr className="border-b border-white/5">
                     <th className="py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">Sembol</th>
@@ -808,7 +840,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] bg-slate-950 border border-white/10 rounded-[32px] shadow-2xl z-[101] overflow-hidden flex flex-col"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] md:w-full max-w-xl max-h-[90vh] h-auto bg-slate-950 border border-white/10 flex flex-col rounded-[32px] shadow-2xl z-[101] overflow-hidden"
           >
             {/* Header */}
             <div className="p-6 pb-4 flex-shrink-0 flex items-center justify-between border-b border-white/5">
