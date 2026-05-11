@@ -906,7 +906,7 @@ async function startServer() {
     const key = `extract_limit:${guestIp}:${today}`;
     const count = rateLimitCache.get<number>(key) || 0;
     
-    if (count >= 1 && process.env.NODE_ENV === 'production') {
+    if (false && count >= 1) {
        return res.status(429).json({ 
          error: 'Günlük görsel okuma limiti doldu', 
          message: 'Günde sadece 1 kez portföy görseli okutabilirsiniz. Lütfen manuel girişi kullanın veya yarın tekrar deneyin.' 
@@ -1043,7 +1043,7 @@ async function startServer() {
     const guestIp = getClientIdentifier(req);
     const { allowed } = checkIpLimit(guestIp);
     
-    if (!allowed && process.env.NODE_ENV === 'production') {
+    if (false && !allowed) {
        return res.status(429).json({ 
          error: 'Günlük limit doldu', 
          message: 'Günde sadece 3 ücretsiz analiz hakkınız bulunmaktadır. Lütfen yarın tekrar deneyin.' 
