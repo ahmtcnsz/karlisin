@@ -53,6 +53,20 @@ const checkIpLimit = (identifier: string): { allowed: boolean; remaining: number
   return { allowed: true, remaining: LIMIT - (count + 1) };
 };
 
+const decrementIpLimit = (identifier: string): void => {
+  const today = new Date().toISOString().split('T')[0];
+  const key = `limit:${identifier}:${today}`;
+  const count = rateLimitCache.get<number>(key) || 0;
+  if (count > 0) rateLimitCache.set(key, count - 1);
+};
+
+const decrementExtractLimit = (identifier: string): void => {
+  const today = new Date().toISOString().split('T')[0];
+  const key = `extract_limit:${identifier}:${today}`;
+  const count = rateLimitCache.get<number>(key) || 0;
+  if (count > 0) rateLimitCache.set(key, count - 1);
+};
+
 const getGenAI = () => {
   if (genAI) return genAI;
   
@@ -877,6 +891,10 @@ async function startServer() {
     const today = new Date().toISOString().split('T')[0];
     const key = `limit:${guestIp}:${today}`;
     const usedCount = rateLimitCache.get<number>(key) || 0;
+    
+    // Extract limit
+    const extractKey = `extract_limit:${guestIp}:${today}`;
+    const extractUsedCount = rateLimitCache.get<number>(extractKey) || 0;
 
     const raw = (process.env.USER_GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || "").trim();
     let displayRaw = raw;
@@ -885,10 +903,12 @@ async function startServer() {
     }
 
     const LIMIT = 3;
+    const EXTRACT_LIMIT = 1;
     res.json({ 
       status: aiClient ? 'authenticated' : 'missing', 
       message: aiClient ? 'AI Servisi Hazır' : 'Geçersiz veya Eksik Anahtar',
       remaining: Math.max(0, LIMIT - usedCount),
+      remainingExtract: Math.max(0, EXTRACT_LIMIT - extractUsedCount),
       ip: guestIp
     });
   });
@@ -1019,9 +1039,11 @@ async function startServer() {
 
         return res.json(enrichedSanitized);
       }
+      decrementExtractLimit(guestIp);
       res.status(422).json({ error: 'Görselden veri ayıklanamadı' });
     } catch (err: any) {
       console.error('[AI Extract Error]:', err);
+      decrementExtractLimit(guestIp);
       const errMsg = err.message || String(err) || '';
       if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key not valid') || errMsg.includes('400')) {
         return res.status(401).json({ 
@@ -1156,12 +1178,15 @@ async function startServer() {
            });
          } catch(e) {
            console.error("JSON parse error in analyze:", text);
+           decrementIpLimit(guestIp);
            return res.status(422).json({ error: 'Yapay zeka yanıtı anlaşılamadı. Lütfen tekrar deneyin.' });
          }
       }
+      decrementIpLimit(guestIp);
       res.status(422).json({ error: 'Analiz oluşturulamadı' });
     } catch (err: any) {
       console.error('[AI Analyze Error]:', err);
+      decrementIpLimit(guestIp);
       const errMsg = err.message || String(err) || '';
       if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key not valid') || errMsg.includes('400')) {
         return res.status(401).json({ 

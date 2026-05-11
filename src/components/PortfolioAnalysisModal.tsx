@@ -45,27 +45,36 @@ interface FormattedNumberInputProps {
 
 const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onChange, className, options }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const formatted = value ? new Intl.NumberFormat('tr-TR', options).format(value) : '';
+  const [localStr, setLocalStr] = useState(value ? value.toString() : '');
 
-  if (isFocused) {
-    return (
-      <input
-        type="number"
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value === '' ? 0 : parseFloat(e.target.value))}
-        onBlur={() => setIsFocused(false)}
-        autoFocus
-        className={className}
-      />
-    );
-  }
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalStr(value ? value.toString() : '');
+    }
+  }, [value, isFocused]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLocalStr(val);
+    let parsedVal = val.replace(/,/g, '.');
+    const parts = parsedVal.split('.');
+    if (parts.length > 2) {
+       parsedVal = parts.slice(0, -1).join('') + '.' + parts[parts.length - 1];
+    }
+    const num = parseFloat(parsedVal);
+    onChange(isNaN(num) ? 0 : num);
+  };
+
+  const formatted = value ? new Intl.NumberFormat('tr-TR', options).format(value) : '';
 
   return (
     <input
       type="text"
-      value={formatted}
+      inputMode="decimal"
+      value={isFocused ? localStr : formatted}
+      onChange={handleChange}
       onFocus={() => setIsFocused(true)}
-      readOnly
+      onBlur={() => setIsFocused(false)}
       className={className}
     />
   );
@@ -81,7 +90,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
   const [error, setError] = useState<string | null>(null);
   const [canAnalyze, setCanAnalyze] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
-  const [aiStatus, setAiStatus] = useState<{ status: string; message: string; remaining?: number; ip?: string } | null>(null);
+  const [aiStatus, setAiStatus] = useState<{ status: string; message: string; remaining?: number; remainingExtract?: number; ip?: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -171,6 +180,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
       const extracted = await extractPortfolioFromImage(selectedImage);
       setItems(extracted);
       setStep('edit');
+      checkAiStatus();
     } catch (err: any) {
       const errMsg = err.message || "";
       setError(errMsg || "Görsel okunamadı. Lütfen manuel giriş yapın.");
@@ -224,7 +234,7 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
       
       setStep('result');
       // Update local status
-      setAiStatus(prev => prev ? { ...prev, remaining: 0 } : null);
+      checkAiStatus();
     } catch (err: any) {
       console.error("Analysis Error:", err);
       const errMsg = err.message || "";
@@ -295,19 +305,28 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
             {aiStatus && (
               <div className="flex flex-col items-center gap-2">
                 <div className={cn(
-                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all",
+                  "inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-4 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all",
                   aiStatus.status === 'authenticated' 
                     ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" 
                     : "bg-rose-500/10 text-rose-500 border border-rose-500/20"
                 )}>
-                  <div className={cn(
-                    "w-1.5 h-1.5 rounded-full animate-pulse",
-                    aiStatus.status === 'authenticated' ? "bg-emerald-500" : "bg-rose-500"
-                  )} />
-                  {aiStatus.status === 'authenticated' 
-                    ? `AI Aktif - Kalan Hak: ${aiStatus.remaining}/3` 
-                    : "AI Bağlantı Hatası"
-                  }
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "w-1.5 h-1.5 rounded-full animate-pulse",
+                      aiStatus.status === 'authenticated' ? "bg-emerald-500" : "bg-rose-500"
+                    )} />
+                    {aiStatus.status === 'authenticated' ? 'AI AKTİF' : 'AI BAĞLANTI HATASI'}
+                  </div>
+                  {aiStatus.status === 'authenticated' && (
+                    <>
+                      <div className="hidden sm:block w-px h-3 bg-emerald-500/30"></div>
+                      <div className="flex items-center justify-center gap-3 text-[9px] opacity-90 text-center sm:text-left">
+                        <span className="flex items-center gap-1.5" title="Görsel Okuma Hakkı"><ScanLine className="w-3 h-3" /> GÖRSEL: {aiStatus.remainingExtract ?? 0}/1</span>
+                        <div className="w-px h-2 bg-emerald-500/30"></div>
+                        <span className="flex items-center gap-1.5" title="Manuel Analiz Hakkı"><TableIcon className="w-3 h-3" /> ANALİZ: {aiStatus.remaining ?? 0}/3</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -400,13 +419,18 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
               </button>
               <button 
                 onClick={handleExtractImage}
-                disabled={loading}
-                className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.1em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all text-[11px] disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={loading || (aiStatus?.remainingExtract === 0)}
+                className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.1em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all text-[11px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin flex-shrink-0" /> : <Bot className="w-4 h-4 flex-shrink-0" />}
                 <span className="truncate">{loading ? 'OKUNUYOR...' : 'GÖRSELİ OKU (1 HAK)'}</span>
               </button>
             </div>
+            {(aiStatus?.remainingExtract === 0) ? (
+              <p className="text-[11px] text-rose-400 text-center font-bold px-4 py-2 bg-rose-500/10 rounded-lg">GÜNLÜK GÖRSEL OKUMA HAKKINIZ BİTTİ. ALT TARAFTAKİ ELLE GİR BUTONU İLE İŞLEM YAPABİLİRSİNİZ VEYA YARIN TEKRAR DENEYEBİLİRSİNİZ.</p>
+            ) : (
+              <p className="text-[10px] text-slate-500 text-center font-bold">GÜNLÜK 1 GÖRSEL OKUMA HAKKINIZIN {aiStatus?.remainingExtract ?? 0} ADEDİ KALDI.</p>
+            )}
           </div>
         );
 
@@ -501,11 +525,16 @@ export const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({ 
             <div className="flex flex-col gap-3">
               <button 
                 onClick={startAnalysis}
-                className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all text-xs"
+                disabled={aiStatus?.remaining === 0}
+                className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all text-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 YORUMU OLUŞTUR (1 HAK)
               </button>
-              <p className="text-[10px] text-slate-500 text-center font-bold">GÜNLÜK 3 ANALİZ HAKKINIZ VARDIR.</p>
+              {(aiStatus?.remaining === 0) ? (
+                <p className="text-[11px] text-rose-400 text-center font-bold px-4 py-2 bg-rose-500/10 rounded-lg">GÜNLÜK ANALİZ (YORUM OLUŞTURMA) HAKKINIZ BİTTİ. YARIN TEKRAR DENEYEBİLRİSİNİZ.</p>
+              ) : (
+                <p className="text-[10px] text-slate-500 text-center font-bold">GÜNLÜK 3 ANALİZ HAKKINIZIN {aiStatus?.remaining ?? 0} ADEDİ KALDI.</p>
+              )}
             </div>
           </div>
         );
