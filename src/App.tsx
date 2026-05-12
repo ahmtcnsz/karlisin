@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './components/Home';
@@ -20,13 +20,27 @@ import FeedbackOverlay from './components/FeedbackOverlay';
 import Landing from './components/Landing';
 import Sitemap from './components/Sitemap';
 import { motion, AnimatePresence } from 'motion/react';
+import { analytics } from './lib/firebase';
+import { logEvent } from 'firebase/analytics';
 
-// Scroll to top on route change
+// Scroll to top and track page views on route change
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [pathname]);
+    
+    // Google Analytics Page View Tracking
+    if (analytics) {
+      logEvent(analytics, 'page_view', {
+        page_path: pathname,
+        page_location: window.location.href,
+        page_title: document.title
+      });
+    }
+  }, [pathname, location]);
+
   return null;
 }
 
@@ -46,6 +60,13 @@ export default function App() {
             <Routes>
               <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
               <Route path="/anasayfa" element={<PageWrapper><Landing /></PageWrapper>} />
+              
+              {/* Search Intent Redirects - Helping SEO & User Intent */}
+              <Route path="/kar-hesapla" element={<Navigate to="/pazar-kar-hesaplama" replace />} />
+              <Route path="/temettu-hesapla" element={<Navigate to="/temettu-takibi" replace />} />
+              <Route path="/maas-hesapla" element={<Navigate to="/maas-vergi-hesaplama" replace />} />
+              <Route path="/borsa-takip" element={<Navigate to="/borsa/nabiz" replace />} />
+
               <Route path="/pazar-kar-hesaplama" element={<PageWrapper><Home /></PageWrapper>} />
               <Route path="/pazar-kar" element={<PageWrapper><Home /></PageWrapper>} />
               <Route path="/maas-vergi-hesaplama" element={<PageWrapper><SalaryCalculator /></PageWrapper>} />

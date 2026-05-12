@@ -1924,8 +1924,69 @@ const DividendTracker: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* SEO Optimized Content Section - Long-Tail & Search Intent Focused */}
-      <section className="max-w-7xl mx-auto px-6 py-24 border-t border-white/5">
+      {/* SEO Optimized Content Section - High Impact & Authority focused (Style matched to Home.tsx) */}
+      <section className="max-w-7xl mx-auto px-6 py-24 border-t border-white/5 text-center">
+        <div className="flex flex-col gap-16 items-center">
+          <div className="space-y-8 max-w-4xl mx-auto">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.2] tracking-tight">
+              2026 Temettü Takvimi ve <span className="text-indigo-400 italic">Pasif Gelir Rehberi</span>
+            </h2>
+            <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
+              Karlısın olarak, finansal özgürlüğün sırrının sürdürülebilir nakit akışında yattığını biliyoruz. 
+              <strong> 2026 temettü takvimi</strong> aracımızla, Borsa İstanbul ve global piyasalardaki en güncel 
+              ödeme tarihlerini, hakediş günlerini ve kesinleşen kar paylarını saniyeler içinde takip edin.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+              {[
+                'Güncel 2026 temettü takvimi ve kesinleşen tarihler',
+                'Hisse bazlı temettü verimi ve 10 yıllık geçmiş analiz',
+                'Yapay Zeka (Gemini) destekli 2026 temettü tahminleri',
+                'Pasif gelir ve temettü emekliliği projeksiyon araçları'
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 group hover:border-indigo-500/30 transition-all">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                    <Verified size={20} />
+                  </div>
+                  <span className="text-slate-300 font-bold text-sm lg:text-base">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-full bg-white/5 rounded-[48px] p-10 md:p-16 border border-white/10 relative overflow-hidden group shadow-2xl text-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-30 group-hover:opacity-50 transition-opacity duration-700" />
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
+              <div className="lg:col-span-2 space-y-6 text-center lg:text-left">
+                <h3 className="text-3xl md:text-4xl font-black text-white leading-tight">Temettü Takibi ile Pasif Gelir İnşası</h3>
+                <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                  Karmaşık KAP bildirimleri arasında kaybolmayın. Karlısın, en güncel temettü haberlerini 
+                  otomatik olarak derler ve size sunar. <strong> "Hangi hisse ne zaman temettü verecek?" </strong> 
+                  sorusuna en hızlı cevabı burada bulun ve finansal geleceğinizi kontrol altına alın.
+                </p>
+                <div className="flex flex-wrap gap-4 pt-4 justify-center lg:justify-start">
+                  <div className="px-6 py-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-xs font-black text-indigo-400 tracking-widest uppercase shadow-lg">
+                    #TEMETTÜTAKVİMİ
+                  </div>
+                  <div className="px-6 py-3 bg-purple-500/10 rounded-2xl border border-purple-500/20 text-xs font-black text-purple-400 tracking-widest uppercase shadow-lg">
+                    #BORSANABIZI
+                  </div>
+                  <div className="px-6 py-3 bg-white/5 rounded-2xl border border-white/10 text-xs font-black text-slate-400 tracking-widest uppercase shadow-lg">
+                    #PASİFGELİR
+                  </div>
+                </div>
+              </div>
+              <div className="hidden lg:flex justify-center">
+                <div className="w-48 h-48 rounded-[40px] bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center p-8 shadow-[0_0_50px_rgba(99,102,241,0.3)] animate-pulse">
+                  <Calendar size={80} className="text-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Legacy SEO content kept for extra keyword density */}
+      <section className="max-w-7xl mx-auto px-6 py-24">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
           
           {/* Column 1: Search Intent - Calculator focus */}
