@@ -9,9 +9,32 @@ import * as dotenv from 'dotenv';
 import yahooFinanceModule from 'yahoo-finance2';
 import NodeCache from 'node-cache';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
+import { articles } from './src/constants/articles';
+
+// Deriving __dirname for ES module compatibility
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // .env dosyasını hemen yükle
 dotenv.config();
+
+// Initialize Firebase for Server-side use
+let db: any = null;
+try {
+  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+  if (fs.existsSync(configPath)) {
+    const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const firebaseApp = initializeApp(firebaseConfig);
+    db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+    console.log('[Karlısın-Firebase] Sunucu tarafı bağlantısı hazır.');
+  } else {
+    console.warn('[Karlısın-Firebase] firebase-applet-config.json bulunamadı, auto-broadcast çalışmayabilir.');
+  }
+} catch (err) {
+  console.error('[Karlısın-Firebase] Başlatma sırasında hata oluştu:', err);
+}
 
 // Initialize Gemini
 let genAI: GoogleGenerativeAI | null = null;
@@ -121,9 +144,6 @@ function getYahoo() {
   }
   return yf;
 }
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // 12-Hour Data Engine Cache (43200 seconds)
 const cache = new NodeCache({ stdTTL: 43200 });
@@ -1833,7 +1853,97 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
     console.log(`Test API: http://localhost:${PORT}/api/mail?email=test@example.com`);
+    
+    // Server startup automatic broadcast check
+    initAutoBroadcast();
   });
+}
+
+async function initAutoBroadcast() {
+  if (!db) {
+    console.warn('[Karlısın-AUTO] Veritabanı (db) hazır değil, broadcast kontrolü atlanıyor.');
+    return;
+  }
+  try {
+    const lastArticle = articles[articles.length - 1];
+    if (!lastArticle) return;
+
+    const currentId = String(lastArticle.id);
+    const systemRef = doc(db, 'system_config', 'broadcast_status');
+    const systemSnap = await getDoc(systemRef);
+    
+    const lastBroadcastedId = systemSnap.exists() ? systemSnap.data().last_broadcasted_article_id : null;
+
+    if (lastBroadcastedId !== currentId) {
+      console.log(`[Karlısın-AUTO] Yeni yazı tespit edildi (${lastArticle.title}). 3 dakika içinde gönderilecek...`);
+      
+      // Wait 3 minutes (180,000 ms) as requested
+      setTimeout(async () => {
+        try {
+          // Double check if another process handled it
+          const reCheckSnap = await getDoc(systemRef);
+          if (reCheckSnap.exists() && reCheckSnap.data().last_broadcasted_article_id === currentId) {
+            console.log('[Karlısın-AUTO] Broadcast zaten başka bir işlem tarafından tamamlandı.');
+            return;
+          }
+
+          console.log('[Karlısın-AUTO] Broadcast başlatılıyor...');
+          const querySnapshot = await getDocs(collection(db, 'newsletter_subscribers'));
+          const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e);
+
+          if (subscribers.length === 0) {
+            console.log('[Karlısın-AUTO] Abone bulunamadı, işlem iptal.');
+            return;
+          }
+
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <merhaba@karlisin.com>';
+          const articleUrl = `https://www.karlisin.com/blog/${lastArticle.slug || currentId}`;
+
+          let successCount = 0;
+          for (const email of subscribers) {
+            try {
+              await resend.emails.send({
+                from: sender,
+                to: [email],
+                subject: `Yeni Blog Yazısı: ${lastArticle.title} 📚`,
+                html: `
+                  <div style="font-family:sans-serif;padding:20px;color:#1e293b;max-width:600px;margin:0 auto;">
+                    <h2 style="color:#4f46e5;">Yeni Bir Yazımız Var!</h2>
+                    <p>Merhaba, Karlısın Blog'da yeni bir içerik paylaştık:</p>
+                    <div style="background:#f8fafc;padding:24px;border-radius:20px;border:1px solid #e2e8f0;margin:20px 0;">
+                      <h3 style="margin-top:0;">${lastArticle.title}</h3>
+                      <p style="color:#64748b;">${lastArticle.excerpt}</p>
+                      <a href="${articleUrl}" style="display:inline-block;background:#4f46e5;color:white;padding:12px 24px;text-decoration:none;border-radius:12px;font-weight:bold;">Şimdi Oku</a>
+                    </div>
+                    <p style="font-size:12px;color:#94a3b8;">Haftalık bültenimize abone olduğunuz için bu maili aldınız.</p>
+                  </div>
+                `
+              });
+              successCount++;
+            } catch (err) {
+              console.error(`[Karlısın-AUTO] Mail gönderim hatası (${email}):`, err);
+            }
+          }
+
+          // Update status in Firestore
+          await setDoc(systemRef, { 
+            last_broadcasted_article_id: currentId,
+            updated_at: new Date().toISOString(),
+            total_sent: successCount
+          });
+
+          console.log(`[Karlısın-AUTO] Broadcast tamamlandı. ${successCount} mail gönderildi.`);
+        } catch (err) {
+          console.error('[Karlısın-AUTO] Broadcast işlemi sırasında hata:', err);
+        }
+      }, 180000); 
+    } else {
+      console.log('[Karlısın-AUTO] Son yazı zaten duyurulmuş. Beklemede.');
+    }
+  } catch (err) {
+    console.error('[Karlısın-AUTO] Başlatma hatası:', err);
+  }
 }
 
 startServer().catch(err => {

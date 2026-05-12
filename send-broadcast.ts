@@ -7,11 +7,20 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function runBroadcast() {
-  const article = {
-    title: "Pazaryeri Satıcıları İçin Kâr Rehberi: Trendyol, Hepsiburada ve Amazon’da Zarar Etmekten Nasıl Kurtulursunuz?",
-    excerpt: "E-ticarette 'kaça satmalıyım?' sorusuna profesyonel bir cevap. 2026 kâr marjı yönetimi, komisyon ve kargo baremleri rehberi.",
-    url: "https://www.karlisin.com/blog?id=17"
-  };
+  const articlesToSend = [
+    {
+      id: 18,
+      title: "Temettü Verimi Nedir ve Neden Önemlidir?",
+      excerpt: "Bir şirketin ne kadar temettü dağıttığı kadar, bu temettünün hisse fiyatına oranının ne olduğu da yatırımcılar için kritik bir metrik olan temettü verimini oluşturur.",
+      url: "https://www.karlisin.com/blog?id=18"
+    },
+    {
+      id: 19,
+      title: "Temettü Nedir? Borsada Temettü Dağıtımı ve Pasif Gelir Rehberi",
+      excerpt: "Borsada yatırım yaparken sadece hisse senedinin fiyat artışından değil, aynı zamanda şirketin elde ettiği karlardan pay alabileceğinizi biliyor muydunuz?",
+      url: "https://www.karlisin.com/blog?id=19"
+    }
+  ];
 
   console.log("Aboneler çekiliyor...");
   const querySnapshot = await getDocs(collection(db, "newsletter_subscribers"));
@@ -22,25 +31,27 @@ async function runBroadcast() {
     return;
   }
 
-  console.log(`${subscribers.length} aboneye mail gönderiliyor...`);
+  console.log(`${subscribers.length} aboneye ${articlesToSend.length} yazı için mail gönderiliyor...`);
 
-  // Localhost üzerindeki API'ye istek at (Server ayakta olmalı)
-  try {
-    const response = await fetch('http://localhost:3000/api/broadcast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        subscribers,
-        articleTitle: article.title,
-        articleExcerpt: article.excerpt,
-        articleUrl: article.url
-      })
-    });
-    
-    const result = await response.json();
-    console.log("Bitti!", result);
-  } catch (err) {
-    console.error("Hata:", err);
+  for (const article of articlesToSend) {
+    console.log(`Gönderiliyor: ${article.title}`);
+    try {
+      const response = await fetch('http://localhost:3000/api/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscribers,
+          articleTitle: article.title,
+          articleExcerpt: article.excerpt,
+          articleUrl: article.url
+        })
+      });
+      
+      const result = await response.json();
+      console.log(`Bitti (${article.id})!`, result);
+    } catch (err) {
+      console.error(`Hata (${article.id}):`, err);
+    }
   }
 }
 
