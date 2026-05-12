@@ -832,6 +832,42 @@ async function startServer() {
   });
 
   // ---------------------------------------------------------
+  // 0. SEO VE DİĞER KRİTİK DOSYALAR (EN BAŞTA OLMALI)
+  // ---------------------------------------------------------
+  const serveSEOFile = (fileName: string, contentType: string, fallbackContent?: string) => {
+    return (req: express.Request, res: express.Response) => {
+      const paths = [
+        path.join(__dirname, 'public', fileName),
+        path.join(__dirname, 'dist', fileName),
+        path.join(__dirname, fileName)
+      ];
+
+      for (const p of paths) {
+        if (fs.existsSync(p)) {
+          console.log(`[Karlısın-SEO] Serving ${fileName} from path: ${p}`);
+          res.setHeader('Content-Type', contentType);
+          res.setHeader('Cache-Control', 'public, max-age=3600'); 
+          return res.sendFile(p);
+        }
+      }
+
+      if (fallbackContent) {
+        console.log(`[Karlısın-SEO] Serving ${fileName} from fallback content`);
+        res.setHeader('Content-Type', contentType);
+        return res.send(fallbackContent);
+      }
+
+      console.warn(`[Karlısın-SEO] Dosya bulunamadı: ${fileName}`);
+      res.status(404).send('File not found');
+    };
+  };
+
+  app.get('/sitemap.xml', serveSEOFile('sitemap.xml', 'application/xml'));
+  app.get('/robots.txt', serveSEOFile('robots.txt', 'text/plain'));
+  app.get('/ads.txt', serveSEOFile('ads.txt', 'text/plain', 'google.com, pub-6525616618289921, DIRECT, f08c47fec0942fa0'));
+  app.get('/Ads.txt', (req, res) => res.redirect(301, '/ads.txt'));
+
+  // ---------------------------------------------------------
   // 1. API ROTLARI (KESİN OLARAK ÜSTTE)
   // ---------------------------------------------------------
 
@@ -1725,21 +1761,6 @@ async function startServer() {
   // API CATCH-ALL - MUST BE AT THE END OF ALL API ROUTES
   app.all('/api/*', (req, res) => {
     res.status(404).json({ error: 'API rotası bulunamadı', path: req.path });
-  });
-
-  // ---------------------------------------------------------
-  // 2. SEO VE DİĞER DOSYALAR
-  // ---------------------------------------------------------
-  
-  app.get('/sitemap.xml', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
-  });
-  app.get('/robots.txt', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
-  });
-  app.get('/ads.txt', (req, res) => {
-    res.setHeader('Content-Type', 'text/plain');
-    res.sendFile(path.join(__dirname, 'public', 'ads.txt'));
   });
 
   // ---------------------------------------------------------
