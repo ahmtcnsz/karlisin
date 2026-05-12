@@ -10,8 +10,11 @@ import yahooFinanceModule from 'yahoo-finance2';
 import NodeCache from 'node-cache';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
+import { initializeFirestore, collection, getDocsFromServer, doc, getDocFromServer, setDoc, setLogLevel } from 'firebase/firestore';
 import { articles } from './src/constants/articles';
+
+// Silence Firestore logs to avoid noisey gRPC cancellation messages
+setLogLevel('error');
 
 // Deriving __dirname for ES module compatibility
 const __filename = fileURLToPath(import.meta.url);
@@ -20,21 +23,27 @@ const __dirname = path.dirname(__filename);
 // .env dosyasını hemen yükle
 dotenv.config();
 
-// Initialize Firebase for Server-side use
+// Initialize Firebase lazily
 let db: any = null;
-try {
-  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
-  if (fs.existsSync(configPath)) {
-    const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    const firebaseApp = initializeApp(firebaseConfig);
-    db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
-    console.log('[Karlısın-Firebase] Sunucu tarafı bağlantısı hazır.');
-  } else {
-    console.warn('[Karlısın-Firebase] firebase-applet-config.json bulunamadı, auto-broadcast çalışmayabilir.');
+const getDb = () => {
+  if (db) return db;
+  try {
+    const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const firebaseApp = initializeApp(firebaseConfig);
+      db = initializeFirestore(firebaseApp, {
+        experimentalForceLongPolling: true,
+      }, firebaseConfig.firestoreDatabaseId);
+      console.log('[Karlısın-Firebase] Sunucu tarafı bağlantısı hazır (Long Polling aktif).');
+      return db;
+    }
+    console.warn('[Karlısın-Firebase] firebase-applet-config.json bulunamadı.');
+  } catch (err) {
+    console.error('[Karlısın-Firebase] Başlatma sırasında hata oluştu:', err);
   }
-} catch (err) {
-  console.error('[Karlısın-Firebase] Başlatma sırasında hata oluştu:', err);
-}
+  return null;
+};
 
 // Initialize Gemini
 let genAI: GoogleGenerativeAI | null = null;
@@ -1850,6 +1859,7 @@ async function startServer() {
     res.status(500).send('Internal Server Error');
   });
 
+  console.log('[Karlısın-Boot] Sunucu dinlemeye hazırlanıyor...');
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
     console.log(`Test API: http://localhost:${PORT}/api/mail?email=test@example.com`);
@@ -1860,7 +1870,8 @@ async function startServer() {
 }
 
 async function initAutoBroadcast() {
-  if (!db) {
+  const firestoreDb = getDb();
+  if (!firestoreDb) {
     console.warn('[Karlısın-AUTO] Veritabanı (db) hazır değil, broadcast kontrolü atlanıyor.');
     return;
   }
@@ -1869,8 +1880,8 @@ async function initAutoBroadcast() {
     if (!lastArticle) return;
 
     const currentId = String(lastArticle.id);
-    const systemRef = doc(db, 'system_config', 'broadcast_status');
-    const systemSnap = await getDoc(systemRef);
+    const systemRef = doc(firestoreDb, 'system_config', 'broadcast_status');
+    const systemSnap = await getDocFromServer(systemRef);
     
     const lastBroadcastedId = systemSnap.exists() ? systemSnap.data().last_broadcasted_article_id : null;
 
@@ -1881,14 +1892,14 @@ async function initAutoBroadcast() {
       setTimeout(async () => {
         try {
           // Double check if another process handled it
-          const reCheckSnap = await getDoc(systemRef);
+          const reCheckSnap = await getDocFromServer(systemRef);
           if (reCheckSnap.exists() && reCheckSnap.data().last_broadcasted_article_id === currentId) {
             console.log('[Karlısın-AUTO] Broadcast zaten başka bir işlem tarafından tamamlandı.');
             return;
           }
 
           console.log('[Karlısın-AUTO] Broadcast başlatılıyor...');
-          const querySnapshot = await getDocs(collection(db, 'newsletter_subscribers'));
+          const querySnapshot = await getDocsFromServer(collection(firestoreDb, 'newsletter_subscribers'));
           const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e);
 
           if (subscribers.length === 0) {

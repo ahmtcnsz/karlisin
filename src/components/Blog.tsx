@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle, ArrowLeft, Share2 } from 'lucide-react';
 import { getApiUrl } from '../lib/utils';
 import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocsFromServer } from 'firebase/firestore';
 
 import { articles } from '../constants/articles';
 
@@ -113,7 +113,7 @@ export default function Blog() {
       setStatus('loading');
       console.log(`[Karlısın] Manuel duyuru başlatılıyor: ${article.title}`);
       
-      const querySnapshot = await getDocs(collection(db, 'newsletter_subscribers'));
+      const querySnapshot = await getDocsFromServer(collection(db, 'newsletter_subscribers'));
       const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e);
 
       if (subscribers.length === 0) {
@@ -137,7 +137,6 @@ export default function Blog() {
       if (res.ok) {
         alert('Duyuru başarıyla gönderildi!');
         localStorage.setItem('last_broadcast_article_id', String(article.id));
-        setBroadcastSent(true);
       } else {
         alert('Duyuru gönderilirken bir hata oluştu.');
       }

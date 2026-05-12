@@ -19,6 +19,9 @@ import Policy from './components/Policy';
 import FeedbackOverlay from './components/FeedbackOverlay';
 import Landing from './components/Landing';
 import Sitemap from './components/Sitemap';
+import Presentation from './components/Presentation';
+import AIStory from './components/AIStory';
+import NotFound from './components/NotFound';
 import { motion, AnimatePresence } from 'motion/react';
 import { initAnalytics } from './lib/firebase';
 import { logEvent } from 'firebase/analytics';
@@ -52,61 +55,77 @@ export default function App() {
   return (
     <Router>
       <ScrollToTop />
-      <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200">
-        <div className="fixed inset-0 z-0 opacity-40 frosted-bg pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col min-h-screen">
-          <Navbar isLoggedIn={isLoggedIn} />
-          
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
-              <Route path="/anasayfa" element={<PageWrapper><Landing /></PageWrapper>} />
-              
-              {/* Search Intent Redirects - Helping SEO & User Intent */}
-              <Route path="/kar-hesapla" element={<Navigate to="/pazar-kar-hesaplama" replace />} />
-              <Route path="/temettu-hesapla" element={<Navigate to="/temettu-takibi" replace />} />
-              <Route path="/maas-hesapla" element={<Navigate to="/maas-vergi-hesaplama" replace />} />
-              <Route path="/borsa-takip" element={<Navigate to="/borsa/nabiz" replace />} />
-
-              <Route path="/pazar-kar-hesaplama" element={<PageWrapper><Home /></PageWrapper>} />
-              <Route path="/pazar-kar" element={<PageWrapper><Home /></PageWrapper>} />
-              <Route path="/maas-vergi-hesaplama" element={<PageWrapper><SalaryCalculator /></PageWrapper>} />
-              <Route path="/temettu-takibi" element={<PageWrapper><DividendTracker /></PageWrapper>} />
-              <Route path="/borsa/nabiz" element={<PageWrapper><MarketPulse /></PageWrapper>} />
-              <Route path="/dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
-              <Route path="/blog" element={<PageWrapper><Blog /></PageWrapper>} />
-              <Route path="/blog/:id" element={<PageWrapper><Blog /></PageWrapper>} />
-              <Route path="/hakkimizda" element={<PageWrapper><About /></PageWrapper>} />
-              <Route path="/gizlilik-politikasi" element={<PageWrapper><Policy type="privacy" /></PageWrapper>} />
-              <Route path="/kullanim-kosullari" element={<PageWrapper><Policy type="terms" /></PageWrapper>} />
-              <Route path="/site-haritasi" element={<PageWrapper><Sitemap /></PageWrapper>} />
-              {/* Fallback to landing */}
-              <Route path="*" element={<PageWrapper><Landing /></PageWrapper>} />
-            </Routes>
-          </main>
-
-          <Footer />
-          <FeedbackOverlay />
-        </div>
-      </div>
+      <AppContent isLoggedIn={isLoggedIn} />
     </Router>
   );
 }
 
-function PageWrapper({ children }: { children: React.ReactNode }) {
+function AppContent({ isLoggedIn }: { isLoggedIn: boolean }) {
   const location = useLocation();
+  
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 1.02 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200">
+      <div className="fixed inset-0 z-0 opacity-40 frosted-bg pointer-events-none" />
+      
+      <div className="relative z-10 flex flex-col min-h-screen">
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Landing /></Layout>} />
+            <Route path="/anasayfa" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Landing /></Layout>} />
+            
+            {/* Search Intent Redirects */}
+            <Route path="/kar-hesapla" element={<Navigate to="/pazar-kar-hesaplama" replace />} />
+            <Route path="/temettu-hesapla" element={<Navigate to="/temettu-takibi" replace />} />
+            <Route path="/maas-hesapla" element={<Navigate to="/maas-vergi-hesaplama" replace />} />
+            <Route path="/borsa-takip" element={<Navigate to="/borsa/nabiz" replace />} />
+
+            <Route path="/pazar-kar-hesaplama" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Home /></Layout>} />
+            <Route path="/pazar-kar" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Home /></Layout>} />
+            <Route path="/maas-vergi-hesaplama" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><SalaryCalculator /></Layout>} />
+            <Route path="/temettu-takibi" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><DividendTracker /></Layout>} />
+            <Route path="/borsa/nabiz" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><MarketPulse /></Layout>} />
+            <Route path="/dashboard" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Dashboard /></Layout>} />
+            <Route path="/blog" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Blog /></Layout>} />
+            <Route path="/blog/:id" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Blog /></Layout>} />
+            <Route path="/hakkimizda" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><About /></Layout>} />
+            <Route path="/gizlilik-politikasi" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Policy type="privacy" /></Layout>} />
+            <Route path="/kullanim-kosullari" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Policy type="terms" /></Layout>} />
+            <Route path="/site-haritasi" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Sitemap /></Layout>} />
+            
+            <Route path="/hikayemiz" element={<Layout isLoggedIn={isLoggedIn} hideNav={true}><AIStory /></Layout>} />
+            <Route path="/sunum" element={<Layout isLoggedIn={isLoggedIn} hideNav={true}><Presentation /></Layout>} />
+
+            {/* Final Catch-all for unknown routes */}
+            <Route path="*" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><NotFound /></Layout>} />
+          </Routes>
+        </AnimatePresence>
+        <FeedbackOverlay />
+      </div>
+    </div>
+  );
+}
+
+function Layout({ children, isLoggedIn, hideNav }: { children: React.ReactNode, isLoggedIn: boolean, hideNav: boolean }) {
+  return (
+    <div className="flex flex-col min-h-screen">
+      {!hideNav && <Navbar isLoggedIn={isLoggedIn} />}
+      <main className="flex-grow">
+        <PageWrapper>{children}</PageWrapper>
+      </main>
+      {!hideNav && <Footer />}
+    </div>
+  );
+}
+
+function PageWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.02 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
   );
 }
