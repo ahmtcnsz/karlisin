@@ -20,7 +20,7 @@ import FeedbackOverlay from './components/FeedbackOverlay';
 import Landing from './components/Landing';
 import Sitemap from './components/Sitemap';
 import { motion, AnimatePresence } from 'motion/react';
-import { analytics } from './lib/firebase';
+import { initAnalytics } from './lib/firebase';
 import { logEvent } from 'firebase/analytics';
 
 // Scroll to top and track page views on route change
@@ -32,13 +32,15 @@ function ScrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     // Google Analytics Page View Tracking
-    if (analytics) {
-      logEvent(analytics, 'page_view', {
-        page_path: pathname,
-        page_location: window.location.href,
-        page_title: document.title
-      });
-    }
+    initAnalytics().then(analytics => {
+      if (analytics) {
+        logEvent(analytics, 'page_view', {
+          page_path: pathname,
+          page_location: window.location.href,
+          page_title: document.title
+        });
+      }
+    });
   }, [pathname, location]);
 
   return null;

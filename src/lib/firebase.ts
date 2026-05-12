@@ -8,10 +8,13 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
-// Simple initialization for Analytics
-export let analytics: Analytics | null = null;
-if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
-  isSupported().then(yes => {
-    if (yes) analytics = getAnalytics(app);
-  }).catch(() => {});
-}
+// Analytics is initialized only on the client
+export const initAnalytics = async () => {
+  if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
+    const supported = await isSupported();
+    if (supported) {
+      return getAnalytics(app);
+    }
+  }
+  return null;
+};
