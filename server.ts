@@ -23,10 +23,10 @@ import { articles } from './src/constants/articles';
 let xClient: TwitterApi | null = null;
 
 async function postToX(text: string) {
-    const xApiKey = process.env.X_API_KEY;
-    const xApiSecret = process.env.X_API_SECRET;
-    const xAccessToken = process.env.X_ACCESS_TOKEN;
-    const xAccessSecret = process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET;
+    const xApiKey = process.env.X_API_KEY?.trim();
+    const xApiSecret = process.env.X_API_SECRET?.trim();
+    const xAccessToken = process.env.X_ACCESS_TOKEN?.trim();
+    const xAccessSecret = (process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET)?.trim();
 
     if (!xApiKey || !xApiSecret || !xAccessToken || !xAccessSecret) {
       const missing = [];
@@ -50,15 +50,16 @@ async function postToX(text: string) {
 
     // Use readWrite client for posting
     const rwClient = xClient.readWrite;
-    const { data: createdTweet } = await rwClient.v2.tweet(text.slice(0, 275));
+    const { data: createdTweet } = await rwClient.v2.tweet({ text: text.slice(0, 275) });
     console.log(`[Karlısın-X] Tweet başarıyla paylaşıldı: ${createdTweet.id}`);
     lastXError = null;
     return createdTweet;
   } catch (err: any) {
     lastXError = {
       message: err.message,
-      data: err.data,
-      code: err.code,
+      status: err.data?.status || err.code,
+      errorDetail: err.data?.detail || err.data?.message || 'Detay yok',
+      fullData: err.data,
       timestamp: new Date().toISOString()
     };
     console.error('[Karlısın-X] Tweet paylaşım hatası!');

@@ -637,5 +637,18 @@ export const articles = [
         <li>OAuth 1.0a User Context doğrulaması.</li>
       </ul>
     `
+  },
+  {
+    id: 27,
+    slug: 'karlisin-X-entegrasyon-nihai-dogrulama',
+    title: 'Karlısın: X Entegrasyonu Nihai Doğrulama',
+    excerpt: 'X API v2 için geliştirilmiş kimlik doğrulama ve veri temizleme mekanizmalarını test ediyoruz.',
+    category: 'Sistem',
+    date: '13 Mayıs 2026',
+    readTime: '1 dk',
+    image: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Bu yazı, X (Twitter) servisimizdeki son bağlantı iyileştirmelerini doğrulamak için sistem tarafından otomatik olarak oluşturulmuştur.</p>
+    `
   }
 ];
