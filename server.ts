@@ -101,35 +101,40 @@ try {
     databaseId = firebaseConfig.firestoreDatabaseId || '';
   }
 
-  const adminApp = getApps().length === 0 
-    ? initializeAdminApp({
-        projectId: projectId,
-        databaseURL: `https://${projectId}.firebaseio.com` 
-      })
-    : getApps()[0];
-  
   try {
-    if (databaseId && databaseId !== '(default)' && databaseId !== 'default') {
-      console.log(`[Karlısın-Firebase] Instance database deneniyor: ${databaseId}`);
-      adminDb = getAdminFirestore(adminApp, databaseId);
+    const adminApp = getApps().length === 0 
+      ? initializeAdminApp({
+          projectId: projectId,
+        })
+      : getApps()[0];
+    
+    // Attempt 1: Specific Database ID
+    if (databaseId && !['', 'default', '(default)'].includes(databaseId)) {
+      console.log(`[Karlısın-Firebase] Named database checking: ${databaseId}`);
+      try {
+        const namedDb = getAdminFirestore(adminApp, databaseId);
+        await namedDb.collection('newsletter_subscribers').limit(1).get();
+        adminDb = namedDb;
+        console.log(`[Karlısın-Firebase] Found and connected to: ${databaseId}`);
+      } catch (err: any) {
+        console.warn(`[Karlısın-Firebase] Named database (${databaseId}) failed: ${err.message}. Falling back to default.`);
+        adminDb = getAdminFirestore(adminApp);
+      }
     } else {
+      console.log('[Karlısın-Firebase] Using default database.');
       adminDb = getAdminFirestore(adminApp);
     }
     
-    // Test connection immediately
-    const testSnap = await adminDb.collection('newsletter_subscribers').limit(1).get();
-    console.log(`[Karlısın-Firebase] Admin SDK bağlantısı onaylandı. Abone koleksiyonu erişilebilir. (Database: ${databaseId || 'default'})`);
-  } catch (dbErr: any) {
-    console.warn(`[Karlısın-Firebase] KRİTİK: Veritabanına (${databaseId}) bağlanılamadı!`, dbErr.message);
-    try {
-      console.log('[Karlısın-Firebase] Varsayılan (default) veritabanı deneniyor...');
-      adminDb = getAdminFirestore(adminApp);
-    } catch (fallbackErr: any) {
-      console.error('[Karlısın-Firebase] FİREBASE ADMİN TAMAMEN BAŞARISIZ!', fallbackErr.message);
+    // Final health check
+    if (adminDb) {
+      await adminDb.collection('newsletter_subscribers').limit(1).get();
+      console.log(`[Karlısın-Firebase] Admin SDK health check PASSED.`);
     }
+  } catch (err: any) {
+    console.error('[Karlısın-Firebase] Critical Admin SDK failure:', err.message);
   }
 } catch (err) {
-  console.error('[Karlısın-Firebase] Admin SDK kritik başlatma hatası:', err);
+  console.error('[Karlısın-Firebase] Global init error:', err);
 }
 
 // Initialize Firebase lazily
@@ -1045,10 +1050,10 @@ async function startServer() {
 
     try {
       if (adminDb) {
+        diagnostics.active_database = adminDb.databaseId || 'default?';
         try {
           const testSnap = await adminDb.collection('newsletter_subscribers').limit(1).get();
           diagnostics.step2_firestore_test = `success (found ${testSnap.size} docs)`;
-          diagnostics.active_database = adminDb.databaseId;
           
           const systemRef = adminDb.collection('system_config').doc('broadcast_status');
           await systemRef.set({ status: 'IDLE', last_broadcasted_article_id: '0' }, { merge: true });
@@ -1058,6 +1063,9 @@ async function startServer() {
           console.error('[Karlısın-DEBUG] Firestore Test Error:', fErr);
         }
       }
+
+      // X Client'ı sıfırla ki yeni anahtarlarla başlasın
+      xClient = null;
 
       await initAutoBroadcast(true); 
 
