@@ -286,7 +286,7 @@ export default function Blog() {
           initial={{ opacity: 0, y: 30 }} 
           animate={{ opacity: 1, y: 0 }} 
           onClick={() => navigate(`/blog/${articles[articles.length - 1].slug || articles[articles.length - 1].id}`)} 
-          className="bg-white/5 backdrop-blur-md rounded-[48px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer shadow-2xl max-w-5xl"
+          className="bg-white/5 backdrop-blur-md rounded-3xl md:rounded-[48px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer shadow-2xl max-w-5xl"
         >
           <div className="aspect-video overflow-hidden relative">
             <img src={articles[articles.length - 1].image} alt={articles[articles.length - 1].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />

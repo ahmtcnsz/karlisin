@@ -71,23 +71,21 @@ try {
         projectId: projectId,
         databaseURL: `https://${projectId}.firebaseio.com` 
       })
-    : getApp();
+    : getApps()[0];
   
-  if (databaseId) {
-    adminDb = getAdminFirestore(adminApp, databaseId);
-  } else {
+  try {
+    if (databaseId && databaseId !== '(default)') {
+      adminDb = getAdminFirestore(adminApp, databaseId);
+    } else {
+      adminDb = getAdminFirestore(adminApp);
+    }
+    console.log(`[Karlısın-Firebase] Firebase Admin SDK başlatıldı (Project: ${projectId}, Database: ${databaseId || 'default'}).`);
+  } catch (dbErr) {
+    console.warn(`[Karlısın-Firebase] Belirtilen database (${databaseId}) ile başlatılamadı, default deneniyor:`, dbErr.message);
     adminDb = getAdminFirestore(adminApp);
   }
-  
-  console.log(`[Karlısın-Firebase] Firebase Admin SDK başlatıldı (Project: ${projectId}, Database: ${databaseId || 'default'}).`);
 } catch (err) {
-  console.error('[Karlısın-Firebase] Admin SDK başlatılamadı:', err);
-  // On error, try to get default firestore if app was initialized
-  try {
-    adminDb = getAdminFirestore();
-  } catch (e) {
-    console.error('[Karlısın-Firebase] Fallback Firestore da başarısız:', e);
-  }
+  console.error('[Karlısın-Firebase] Admin SDK kritik başlatma hatası:', err);
 }
 
 // Initialize Firebase lazily

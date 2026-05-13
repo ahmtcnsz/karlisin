@@ -10,7 +10,7 @@ export const articles = [
     readTime: '8 dk',
     image: 'https://images.unsplash.com/photo-1611974717528-58730d385ad2?auto=format&fit=crop&q=80&w=800',
     content: `
-      <p>Bugün, 23 Nisan 2026 itibarıyla piyasalarda temettü odaklı bir hareketlilik gözlemliyoruz. Karlısın ekibi olarak hazırladığımız bu haftalık analizde, portföyünüzü koruyacak ve büyütecek stratejilere odaklandık.</p>
+      <p>Bugün, 23 Nisan 2026 itibarıyla piyasalarda temettü odaklı bir movement gözlemliyoruz. Karlısın ekibi olarak hazırladığımız bu haftalık analizde, portföyünüzü koruyacak ve büyütecek stratejilere odaklandık.</p>
       <h3 style="color: white; margin-top: 24px;">Piyasa Özeti</h3>
       <p>Borsa İstanbul'da işlem hacmi bugün rekor seviyelere yaklaştı. Özellikle enerji ve teknoloji hisselerindeki temettü projeksiyonları, uzun vadeli yatırımcılar için yeşil ışık yakıyor.</p>
       <h3 style="color: white; margin-top: 24px;">Pasif Gelir Odak Noktası</h3>
@@ -233,7 +233,7 @@ export const articles = [
       <h3 style="color: white; margin-top: 24px;">Doğru Kar Hesaplama Formülü</h3>
       <p>Sadece alış ve satış fiyatı arasındaki farka odaklanmak büyük bir yanılgıdır. Gerçek karı görmek için şu giderleri mutlaka hesaba katmalısınız:</p>
       <ul>
-        <li>Paryer komisyon oranları (Trendyol, Hepsiburada vb.)</li>
+        <li>Pazaryeri komisyon oranları (Trendyol, Hepsiburada vb.)</li>
         <li>Kargo ve paketleme maliyetleri</li>
         <li>İade oranları ve operasyonel giderler</li>
         <li>Reklam ve pazarlama bütçesi</li>
@@ -420,7 +420,7 @@ export const articles = [
         <ul style="space-y-4;">
           <li style="margin-bottom: 16px;"><strong>Sürdürülebilirlik:</strong> Sadece bir yıl yüksek temettü veren değil, geçmiş yıllarda düzenli temettü ödeme alışkanlığı olan şirketleri tercih edin.</li>
           <li style="margin-bottom: 16px;"><strong>Büyüme Potansiyeli:</strong> Şirketin karları büyümeli ki, gelecekte dağıtacağı temettü miktarı da enflasyona karşı erimesin ve artsın.</li>
-          <li style="margin-bottom: 16px;"><strong>Sektörel Çeşitlilik:</strong> Tüm bütçenizi tek bir temettü hissesine yatırmak yerine, riski bölmek için farklı sektörlerden (örneğin; sanayi, enerji, otomotiv) oluşan bir temettü sepeti yapın.</li>
+          <li style="margin-bottom: 16px;"><strong>Sektörel Çeşitlilik:</strong> Tüm bütçenizi tek bir temettü hissesine yatırmak yerine, riski bölmek için farklı sektörlerden (örneğin; sanayi, energy, otomotiv) oluşan bir temettü sepeti yapın.</li>
         </ul>
       </div>
 
@@ -447,7 +447,7 @@ export const articles = [
       <p>Borsada işlem gören bir şirketin hisse senedini aldığınızda, o şirkete yasal olarak ortak olursunuz. Şirket kar ettiğinde, yönetim kurulu bu karın bir kısmını yatırımlara ayırırken, geri kalan kısmını yatırımcılarını ödüllendirmek amacıyla nakit olarak hesaplarına yatırabilir. Başarılı ve istikrarlı büyüyen şirketler, yatırımcıların güvenini tazelemek için düzenli olarak temettü ödemesi yapmayı tercih eder.</p>
 
       <h3 style="color: white; margin-top: 32px; font-weight: 900;">Temettü Dağıtımı Nasıl Yapılır?</h3>
-      <p>Şirketlerin temettü dağıtma süreci belirli yasal adımlara ve kurallara bağlıdır. Borsa İstanbul'da (BIST) temettü dağıtımı genellikle şu aşamalardan geçer:</p>
+      <p>Şirkelerin temettü dağıtma süreci belirli yasal adımlara ve kurallara bağlıdır. Borsa İstanbul'da (BIST) temettü dağıtımı genellikle şu aşamalardan geçer:</p>
       <ul style="space-y-4;">
         <li style="margin-bottom: 12px;"><strong>Kararın Alınması:</strong> Şirketin Yönetim Kurulu, yıl sonu bilançoları açıklandıktan sonra elde edilen kardan ne kadarının dağıtılacağını teklif eder.</li>
         <li style="margin-bottom: 12px;"><strong>Genel Kurul Onayı:</strong> Yönetim Kurulunun bu teklifi, şirketin Olağan Genel Kurul toplantısında hissedarların onayına sunulur. Onaylanması halinde temettü dağıtımı kesinleşir.</li>
@@ -464,6 +464,37 @@ export const articles = [
       </ul>
 
       <p style="margin-top: 32px; color: #94a3b8; font-size: 14px; font-weight: 700;">Borsada bilinçli adımlar atarak yatırımlarınızı büyütmek, pasif gelir elde etmek ve finansal özgürlüğünüze kavuşmak için ihtiyacınız olan tüm rehber içerikler Karlisin.com'da! Yatırımlarınıza yön verecek güncel analizler, borsa terimleri ve daha fazlası için bizi takip etmeye devam edin. Bol kazançlar!</p>
+    `
+  },
+  {
+    id: 20,
+    slug: 'karlisin-ile-finansal-ozgurluge-adim-atin-yapay-zeka-destekli-temettu-takibi-ve-finansal-analiz',
+    title: 'Karlısın ile Finansal Özgürlüğe Adım Atın: Yapay Zeka Destekli Temettü Takibi ve Finansal Analiz',
+    excerpt: 'Finansal piyasalarda başarılı olmanın sırrı, sadece doğru hisseleri seçmekte değil, aynı zamanda sahip olduğunuz portföyü doğru verilerle yönetmekte yatar.',
+    category: 'Finans',
+    date: '13 Mayıs 2026',
+    readTime: '6 dk',
+    image: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Finansal piyasalarda başarılı olmanın sırrı, sadece doğru hisseleri seçmekte değil, aynı zamanda sahip olduğunuz portföyü doğru verilerle yönetmekte yatar. Karlısın, yatırım yolculuğunuzda size eşlik eden, %100 yapay zeka ile geliştirilmiş yeni nesil bir finansal analiz ve temettü takibi platformudur. Karmaşık hesaplamaları, gizli maliyetleri ve vergi süreçlerini şeffaflaştırarak, odağınızı sadece "kârlılığa" vermenizi sağlıyoruz.</p>
+
+      <h3 style="color: white; margin-top: 24px;">Geleneksel Yöntemleri Geride Bırakın</h3>
+      <p>Geleneksel yöntemlerle temettü takibi yapmak, çoğu zaman Excel tabloları arasında kaybolmanıza, güncel verileri kaçırmanıza ve saatlerinizi harcamanıza neden olabilir. Karlısın, bu hantal süreçleri ortadan kaldırarak temettü takibi işlemlerinizi tamamen otonom, hızlı ve şeffaf bir hale getiriyor. Tasarım ve yazılım geliştirme aşamalarındaki o uzun "köprüleri" yapay zekanın gücüyle yıktığımız için, platformumuz piyasadaki en güncel ihtiyaçlara anında yanıt verebilen dinamik bir yapıya sahiptir.</p>
+      <p>Bu teknolojik altyapı sayesinde, temettü takibi modülümüz saniyeler içinde en güncel verileri işleyerek size pürüzsüz bir deneyim sunar.</p>
+
+      <h3 style="color: white; margin-top: 24px;">Karlısın.com'un Sunduğu Eishiz Avantajlar</h3>
+      <p>Platformumuz üzerinden sadece sayılara bakmakla kalmaz, finansal verilerinizin ardındaki gerçek hikayeyi okursunuz. İşte sunduğumuz bazı temel özellikler:</p>
+      <ul>
+        <li><strong>Kusursuz Temettü Takibi:</strong> Portföyünüzdeki hisselerin verimini, yaklaşan ödeme tarihlerini ve şirketlerin tarihsel büyüme oranlarını tek bir modern ekrandan yönetin.</li>
+        <li><strong>Gizli Maliyet Analizi:</strong> Başarılı bir temettü takibi, sadece hisse fiyatlarına ve brüt ödemelere bakmak değil; vergileri, komisyonları ve enflasyon etkisini düşerek gerçek kârlılığı ölçmektir.</li>
+        <li><strong>Yapay Zeka Destekli Hız:</strong> Klasik yazılım süreçlerini bypass eden altyapımız, sayfalar arası geçişlerde ve hesaplama motorlarında sıfır gecikme ile çalışır.</li>
+      </ul>
+
+      <h3 style="color: white; margin-top: 24px;">Finansal Özgürlük İçin Doğru Araç</h3>
+      <p>Bilinçli yatırımcılar için doğru bir temettü takibi aracı kullanmak, finansal özgürlüğün en önemli anahtarlarından biridir. Gelir akışınızı vizyoner bir şekilde planlamak, geleceğe güvenle bakmanızı sağlar. Karlısın ile temettü takibi yaparken, arka planda otonom olarak çalışan akıllı sistemlerimiz sayesinde verilerin doğruluğundan her zaman emin olursunuz.</p>
+      <p>Karlısın anasayfasına giderek platformumuzun tüm finansal hesaplama motorlarını hemen keşfedebilirsiniz. Eğer yatırımlarınızın pasif getirisini maksimize etmek istiyorsanız, ücretsiz temettü takibi sayfamıza (karlisin.com/temettu-takibi) giriş yapabilir ve kendi portföyünüzü saniyeler içinde oluşturmaya başlayabilirsiniz.</p>
+
+      <p>Unutmayın, piyasalarda sürdürülebilir bir büyüme ve bileşik getirinin gücünden faydalanmak için düzenli temettü takibi şarttır. Hedeflerinize giden bu uzun yolda güçlü bir temettü takibi altyapısıyla birlikte yürüyelim. Daha fazla detay, şeffaf analizler ve profesyonel temettü takibi özellikleri için Karlısın her zaman yanınızda.</p>
     `
   }
 ];
