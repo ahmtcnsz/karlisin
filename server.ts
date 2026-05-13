@@ -80,9 +80,13 @@ try {
       adminDb = getAdminFirestore(adminApp);
     }
     console.log(`[Karlısın-Firebase] Firebase Admin SDK başlatıldı (Project: ${projectId}, Database: ${databaseId || 'default'}).`);
-  } catch (dbErr) {
+  } catch (dbErr: any) {
     console.warn(`[Karlısın-Firebase] Belirtilen database (${databaseId}) ile başlatılamadı, default deneniyor:`, dbErr.message);
-    adminDb = getAdminFirestore(adminApp);
+    try {
+      adminDb = getAdminFirestore(adminApp);
+    } catch (fallbackErr) {
+      console.error('[Karlısın-Firebase] Fallback Admin Firestore da başarısız!', fallbackErr);
+    }
   }
 } catch (err) {
   console.error('[Karlısın-Firebase] Admin SDK kritik başlatma hatası:', err);
@@ -2092,7 +2096,12 @@ async function initAutoBroadcast() {
             return;
           }
 
-          const resend = new Resend(process.env.RESEND_API_KEY);
+          const resendFromEnv = process.env.RESEND_API_KEY;
+          if (!resendFromEnv || resendFromEnv === 're_123') {
+            console.warn('[Karlısın-AUTO] RESEND_API_KEY eksik veya placeholder. Mailler gönderilemiyor.');
+          }
+
+          const resend = new Resend(resendFromEnv || 're_123');
           const sender = getSenderEmail();
           const articleUrl = `https://www.karlisin.com/blog/${lastArticle.slug || currentId}`;
 
