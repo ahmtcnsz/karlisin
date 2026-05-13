@@ -102,48 +102,60 @@ try {
   }
 
   // Override with env if available (often more accurate in Cloud Run)
-  projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || projectId;
+  const envProjectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT;
+  projectId = envProjectId || projectId;
+
+  // CRITICAL: In AI Studio, if we have a databaseId like "ai-studio-...", 
+  // it is often the REAL projectId for Admin SDK purposes.
+  const isAiStudioDb = databaseId.startsWith('ai-studio-');
 
   try {
-    const adminApp = getApps().length === 0 
-      ? initializeAdminApp({
-          projectId: projectId,
-        })
-      : getApps()[0];
-    
-    console.log(`[Karlısın-Firebase] Project ID at init: ${projectId}`);
-
-    // We'll keep multiple instances if needed, but adminDb is the main one
-    const defaultDb = getAdminFirestore(adminApp);
-    
-    if (databaseId && !['', 'default', '(default)'].includes(databaseId)) {
-      console.log(`[Karlısın-Firebase] Named database checking: ${databaseId}`);
-      try {
-        const namedDb = getAdminFirestore(adminApp, databaseId);
-        adminDb = namedDb; // Default to named if provided
-        console.log(`[Karlısın-Firebase] Attached to named database: ${databaseId}`);
-      } catch (err: any) {
-        console.warn(`[Karlısın-Firebase] Failed to attach to ${databaseId}: ${err.message}`);
-        adminDb = defaultDb;
+    const getAdminDb = async (pId: string, dId: string, label: string) => {
+      console.log(`[Karlısın-Firebase] Attempting ${label}: Project=${pId}, Db=${dId || 'default'}`);
+      const appName = `app-${pId}-${dId || 'default'}`;
+      let app = getApps().find(a => a.name === appName);
+      if (!app) {
+        app = initializeAdminApp({ projectId: pId }, appName);
       }
-    } else {
-      adminDb = defaultDb;
-      console.log('[Karlısın-Firebase] Using default database.');
+      const db = dId && dId !== '(default)' ? getAdminFirestore(app, dId) : getAdminFirestore(app);
+      // Verify
+      await db.collection('newsletter_subscribers').limit(1).get();
+      return db;
+    };
+
+    // Attempt 1: databaseId as ProjectId (common in AIS)
+    if (isAiStudioDb) {
+      try {
+        adminDb = await getAdminDb(databaseId, '', 'AIS-Standard-Pattern');
+      } catch (e) {
+        console.warn(`[Karlısın-Firebase] AIS-Standard-Pattern failed: ${e.message}`);
+      }
     }
-    
-    // Proactive heartbeats (background)
-    adminDb.collection('newsletter_subscribers').limit(1).get()
-      .then((s: any) => console.log(`[Karlısın-Firebase] Admin SDK health check (Active): SUCCESS (found ${s.size} docs)`))
-      .catch((e: any) => console.error(`[Karlısın-Firebase] Admin SDK health check (Active): FAILED: ${e.message}`));
-    
-    if (adminDb !== defaultDb) {
-      defaultDb.collection('newsletter_subscribers').limit(1).get()
-        .then((s: any) => console.log(`[Karlısın-Firebase] Admin SDK health check (Default): SUCCESS (found ${s.size} docs)`))
-        .catch((e: any) => console.error(`[Karlısın-Firebase] Admin SDK health check (Default): FAILED: ${e.message}`));
+
+    // Attempt 2: config values as provided
+    if (!adminDb) {
+      try {
+        adminDb = await getAdminDb(projectId, databaseId, 'Config-Pattern');
+      } catch (e) {
+        console.warn(`[Karlısın-Firebase] Config-Pattern failed: ${e.message}`);
+      }
+    }
+
+    // Attempt 3: Local environment fallback
+    if (!adminDb) {
+      try {
+        adminDb = await getAdminDb(projectId, '', 'Fallback-Pattern');
+      } catch (e) {
+        console.error(`[Karlısın-Firebase] ALL ATTEMPTS FAILED. Use debug endpoint to diagnose.`);
+      }
+    }
+
+    if (adminDb) {
+      console.log(`[Karlısın-Firebase] Final Active Database: ${adminDb.databaseId} in Project: ${adminDb.projectId}`);
     }
 
   } catch (err: any) {
-    console.error('[Karlısın-Firebase] Critical Admin SDK failure:', err.message);
+    console.error('[Karlısın-Firebase] Admin SDK Init failure:', err.message);
   }
 } catch (err) {
   console.error('[Karlısın-Firebase] Global init error:', err);
@@ -1100,14 +1112,19 @@ async function startServer() {
       // X Client'ı sıfırla ki yeni anahtarlarla başlasın
       xClient = null;
 
-      await initAutoBroadcast(true); 
+      // SYNC BROADCAST if possible or just wait longer
+      const broadcastPromise = initAutoBroadcast(true); 
 
-      // Biraz bekle ki async başlayan broadcast lastXError'ı güncelleyebilsin (eğer hata verirse)
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Biraz daha bekle ki async başlayan broadcast lastXError'ı güncelleyebilsin (eğer hata verirse)
+      // Veya direkt promise'i bekleyelim (initAutoBroadcast bir timer başlatıyor ama biz içindeki broadcastArticle'ı beklemek istiyoruz)
+      // Aslında broadcastArticle'ı export etmedik, o yüzden bekleyemiyoruz.
+      // Ama broadcastArticle içindeki isLocalBroadcastPending flag'ini izleyebiliriz.
+      
+      await new Promise(resolve => setTimeout(resolve, 8000)); // 8 saniye bekle
 
       res.json({ 
         success: true, 
-        message: 'Manuel tetikleme adımları icra edildi. (3sn beklendi)',
+        message: 'Manuel tetikleme adımları icra edildi. (8sn beklendi)',
         diagnostics,
         keys: {
           RESEND: mask(process.env.RESEND_API_KEY),

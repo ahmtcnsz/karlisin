@@ -557,144 +557,24 @@ export const articles = [
   },
   {
     id: 23,
-    slug: 'son-sistem-kontrolu-karlisin-otomasyon-dogrulama',
-    title: 'Son Sistem Kontrolü: Karlısın Otomasyon Doğrulama',
-    excerpt: 'Otomasyon sistemlerimizin (X ve E-Bülten) son kontrolünü gerçekleştiriyoruz. Bu yazı yayına girdikten kısa süre sonra bildirimler tetiklenecektir.',
+    slug: 'karlisin-x-ve-bulten-entegrasyonu-tamamlandi',
+    title: 'Karlısın: X ve E-Bülten Entegrasyonu Tamamlandı',
+    excerpt: 'Karlısın platformunun otomatik duyuru sistemleri başarıyla devreye alındı. Artık her yeni içerik anında tüm kanallarımızda!',
     category: 'Sistem',
     date: '13 Mayıs 2026',
-    readTime: '1 dk',
+    readTime: '2 dk',
     image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200',
     content: `
-      <p>Karlısın altyapısında yaptığımız iyileştirmelerin ardından <strong>X (Twitter)</strong> ve <strong>Resend (E-Bülten)</strong> entegrasyonlarımızı son kez test ediyoruz.</p>
-      <h3 style="color: white; margin-top: 24px;">Beklenen Akış</h3>
-      <p>Sistem şu adımları otomatik olarak işleyecektir:</p>
-      <ul>
-        <li>Yeni yazı sisteme tanımlandığında sunucu tarafında algılanacak.</li>
-        <li>X API üzerinden @KarlisinTR hesabına bir duyuru tweeti gönderilecek.</li>
-        <li>Resend API aracılığıyla newsletter abonelerine şık bir e-posta iletilecek.</li>
-      </ul>
-      <p>Bu süreç, sunucu optimizasyonları gereği 10-20 saniye içerisinde tamamlanacaktır.</p>
-    `
-  },
-  {
-    id: 24,
-    slug: 'karlisin-otomasyon-final-test-senaryosu',
-    title: 'Karlısın Otomasyon: Final Test Senaryosu',
-    excerpt: 'Sistemlerimizde yaptığımız hata giderme ve güvenilirlik iyileştirmelerini test etmek üzere bu yazıyı paylaşıyoruz. 3 dakika içinde bildirimler gönderilecektir.',
-    category: 'Sistem',
-    date: '13 Mayıs 2026',
-    readTime: '1 dk',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200',
-    content: `
-      <p>Bu yazı, Karlısın'ın <strong>X (Twitter)</strong> ve <strong>Resend</strong> otomasyon sistemleri için yapılan "Kritik Güvenilirlik" güncellemesini doğrulamak amacıyla oluşturulmuştur.</p>
+      <p>Karlısın ekibi olarak, platformumuzun teknolojik altyapısını güçlendirmeye devam ediyoruz. Bugün itibarıyla, içerik yönetim sistemimiz ile tam entegre çalışan <strong>X (Twitter)</strong> ve <strong>E-Bülten (Newsletter)</strong> otomasyonlarımız başarıyla yayına alındı.</p>
       
-      <h3 style="color: white; margin-top: 24px;">Yapılan İyileştirmeler</h3>
+      <h3 style="color: white; margin-top: 24px;">Yeni Dönemde Neler Var?</h3>
+      <p>Artık Karlısın'da yayınlanan her yeni analiz, rehber veya maaş hesaplama güncellemesi:</p>
       <ul>
-        <li><strong>Çift Gönderim Koruması:</strong> Firestore tabanlı "Lock" mekanizması ile maillerin mükerrer gitmesi engellendi.</li>
-        <li><strong>Zamanlama Optimizasyonu:</strong> Gönderim süresi 3 dakikaya çıkarılarak sistemin oturması için süre tanındı.</li>
-        <li><strong>Gelişmiş Loglama:</strong> X API hataları artık daha detaylı takip ediliyor.</li>
-        <li><strong>Abone Filtreleme:</strong> Geçersiz veya test amaçlı e-postalar temizlendi.</li>
+        <li><strong>Anlık X Duyurusu:</strong> @KarlisinTR resmi hesabımız üzerinden takipçilerimize anında ulaştırılacak.</li>
+        <li><strong>E-Posta Bildirimi:</strong> Haftalık veya anlık bülten abonelerimize özel tasarlanmış e-postalar gönderilecek.</li>
       </ul>
       
-      <p>Sistem şu andan itibaren belirlenen bekleme süresinin ardından duyuruları otomatik olarak gerçekleştirecektir.</p>
-    `
-  },
-  {
-    id: 25,
-    slug: 'karlisin-otomasyon-guvenilirlik-dogrulamasi-v2',
-    title: 'Karlısın Otomasyon: Güvenilirlik Doğrulaması v2',
-    excerpt: 'Sistem altyapımızdaki PENDING kilidi ve env fallback iyileştirmelerini test ediyoruz. Bu yazı ile birlikte tüm kanalların (X & Resend) tetiklenmesi beklenmektedir.',
-    category: 'Sistem',
-    date: '13 Mayıs 2026',
-    readTime: '1 dk',
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=1200',
-    content: `
-      <p>Bu yazı, Karlısın'ın otomatik duyuru sistemlerindeki son güncellemeleri doğrulamak için oluşturulmuştur.</p>
-      <h3 style="color: white; margin-top: 24px;">Kontrol Edilen Özellikler</h3>
-      <ul>
-        <li><strong>X Entegrasyonu:</strong> "X_ACCESS_SECRET" fallback mekanizması eklendi.</li>
-        <li><strong>Mükerrer Gönderim Engeli:</strong> Firestore status kontrolü iyileştirildi.</li>
-        <li><strong>Hata Logları:</strong> X API hataları için daha detaylı veri loglama aktif edildi.</li>
-      </ul>
-      <p>Gönderimler 3 dakikalık güvenli bekleme süresinin ardından başlayacaktır.</p>
-    `
-  },
-  {
-    id: 26,
-    slug: 'karlisin-X-paylasim-sorun-giderme-adimi',
-    title: 'Karlısın: X Paylaşım Sorun Giderme Adımı',
-    excerpt: 'X API v2 entegrasyonu için geliştirilmiş hata yakalama ve metin optimizasyonlarını test ediyoruz.',
-    category: 'Sistem',
-    date: '13 Mayıs 2026',
-    readTime: '1 dk',
-    image: 'https://images.unsplash.com/photo-1611605698335-8b1c460d3d52?auto=format&fit=crop&q=80&w=1200',
-    content: `
-      <p>Bu test yazısı, özellikle <strong>X (Twitter)</strong> paylaşımındaki aksaklıkları gidermek üzere eklenen hata loglama ve karakter sınırlama mekanizmalarını doğrulamak için paylaşılmıştır.</p>
-      <h3 style="color: white; margin-top: 24px;">Gözlem Noktaları</h3>
-      <ul>
-        <li>Karakter sayısının 280 limitine kesin uyumu.</li>
-        <li>API yanıtındaki detaylı hata kodlarının debug paneline yansıtılması.</li>
-        <li>OAuth 1.0a User Context doğrulaması.</li>
-      </ul>
-    `
-  },
-  {
-    id: 27,
-    slug: 'karlisin-X-entegrasyon-nihai-dogrulama',
-    title: 'Karlısın: X Entegrasyonu Nihai Doğrulama',
-    excerpt: 'X API v2 için geliştirilmiş kimlik doğrulama ve veri temizleme mekanizmalarını test ediyoruz.',
-    category: 'Sistem',
-    date: '13 Mayıs 2026',
-    readTime: '1 dk',
-    image: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1200',
-    content: `
-      <p>Bu yazı, X (Twitter) servisimizdeki son bağlantı iyileştirmelerini doğrulamak için sistem tarafından otomatik olarak oluşturulmuştur.</p>
-    `
-  },
-  {
-    id: 28,
-    slug: 'karlisin-otomasyon-ve-X-dogrulama-v3',
-    title: 'Karlısın: Otomasyon ve X Doğrulama v3',
-    excerpt: 'Sistem altyapımızdaki Firestore bağlantı sorunlarını ve X API v2 payload yapısını doğrulamak için son bir deneme yapıyoruz.',
-    category: 'Sistem',
-    date: '13 Mayıs 2026',
-    readTime: '1 dk',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1200',
-    content: `
-      <p>Bu yazı, Karlısın'ın otomatik duyuru sistemlerindeki Firestore "NOT_FOUND" hatasını gidermek ve X (Twitter) paylaşımını doğrulamak için paylaşılmıştır.</p>
-      <h3 style="color: white; margin-top: 24px;">Güncelleme Notları</h3>
-      <ul>
-        <li><strong>Firestore:</strong> Bağlantı ve koleksiyon erişim testleri debug paneline eklendi.</li>
-        <li><strong>X API v2:</strong> Tweet objesi gönderim formatı <code>{ text: '...' }</code> olarak güncellendi.</li>
-        <li><strong>Hata Yakalama:</strong> gRPC hataları için daha detaylı loglama sağlandı.</li>
-      </ul>
-    `
-  },
-  {
-    id: 29,
-    slug: 'karlisin-x-entegrasyon-test-v4',
-    title: 'Karlısın: X Entegrasyon v4 Doğrulama',
-    excerpt: 'X API v2 yetkilendirme ve hata ayıklama mesajlarını test etmek için son bir adım.',
-    category: 'Sistem',
-    date: '13 Mayıs 2026',
-    readTime: '1 dk',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1200',
-    content: `
-      <p>Bu yazı, X API entegrasyonu ve hata ayıklama sistemindeki son düzeltmeleri (401/403 yetki kontrolü) doğrulamak için paylaşılmıştır.</p>
-    `
-  },
-  {
-    id: 30,
-    slug: 'karlisin-X-nihai-dogrulama-basarili',
-    title: 'Karlısın: X Entegrasyonu Nihai Doğrulama',
-    excerpt: 'X API v2 Read/Write izinleri ve Access Token güncellemeleri sonrası sistem doğrulaması.',
-    category: 'Sistem',
-    date: '13 Mayıs 2026',
-    readTime: '1 dk',
-    image: 'https://images.unsplash.com/photo-1611605698335-8b1c460d3d52?auto=format&fit=crop&q=80&w=1200',
-    content: `
-      <p>Bu yazı, X (Twitter) entegrasyonundaki Read/Write izinleri ve yeni Access Token'ların doğruluğunu test etmek için oluşturulmuştur.</p>
-      <p>Eğer bu yazıyı X hesabınızda görüyorsanız, entegrasyon başarıyla tamamlanmış demektir.</p>
+      <p>Bu otomasyonlar, finansal okuryazarlık yolculuğunuzda en güncel bilgiye, en hızlı şekilde ulaşmanızı sağlamak için tasarlandı. Karlısın ile kârlı kalmaya devam edin!</p>
     `
   }
 ];
