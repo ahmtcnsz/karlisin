@@ -85,9 +85,6 @@ async function postToX(text: string) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// .env dosyasını hemen yükle
-dotenv.config();
-
 // Silence Firestore logs to avoid noisey gRPC cancellation messages
 setLogLevel('error');
 
@@ -1051,6 +1048,7 @@ async function startServer() {
         try {
           const testSnap = await adminDb.collection('newsletter_subscribers').limit(1).get();
           diagnostics.step2_firestore_test = `success (found ${testSnap.size} docs)`;
+          diagnostics.active_database = adminDb.databaseId;
           
           const systemRef = adminDb.collection('system_config').doc('broadcast_status');
           await systemRef.set({ status: 'IDLE', last_broadcasted_article_id: '0' }, { merge: true });

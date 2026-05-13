@@ -682,5 +682,19 @@ export const articles = [
     content: `
       <p>Bu yazı, X API entegrasyonu ve hata ayıklama sistemindeki son düzeltmeleri (401/403 yetki kontrolü) doğrulamak için paylaşılmıştır.</p>
     `
+  },
+  {
+    id: 30,
+    slug: 'karlisin-X-nihai-dogrulama-basarili',
+    title: 'Karlısın: X Entegrasyonu Nihai Doğrulama',
+    excerpt: 'X API v2 Read/Write izinleri ve Access Token güncellemeleri sonrası sistem doğrulaması.',
+    category: 'Sistem',
+    date: '13 Mayıs 2026',
+    readTime: '1 dk',
+    image: 'https://images.unsplash.com/photo-1611605698335-8b1c460d3d52?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Bu yazı, X (Twitter) entegrasyonundaki Read/Write izinleri ve yeni Access Token'ların doğruluğunu test etmek için oluşturulmuştur.</p>
+      <p>Eğer bu yazıyı X hesabınızda görüyorsanız, entegrasyon başarıyla tamamlanmış demektir.</p>
+    `
   }
 ];
