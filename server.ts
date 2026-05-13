@@ -108,16 +108,18 @@ try {
         })
       : getApps()[0];
     
+    console.log(`[Karlısın-Firebase] Project ID: ${projectId}`);
+
     // Attempt 1: Specific Database ID
     if (databaseId && !['', 'default', '(default)'].includes(databaseId)) {
       console.log(`[Karlısın-Firebase] Named database checking: ${databaseId}`);
       try {
         const namedDb = getAdminFirestore(adminApp, databaseId);
-        await namedDb.collection('newsletter_subscribers').limit(1).get();
+        // Do not block init with an await that might fail, we'll check it later
         adminDb = namedDb;
-        console.log(`[Karlısın-Firebase] Found and connected to: ${databaseId}`);
+        console.log(`[Karlısın-Firebase] Attached to database: ${databaseId}`);
       } catch (err: any) {
-        console.warn(`[Karlısın-Firebase] Named database (${databaseId}) failed: ${err.message}. Falling back to default.`);
+        console.warn(`[Karlısın-Firebase] Failed to attach to named database (${databaseId}): ${err.message}`);
         adminDb = getAdminFirestore(adminApp);
       }
     } else {
@@ -125,10 +127,11 @@ try {
       adminDb = getAdminFirestore(adminApp);
     }
     
-    // Final health check
+    // Final health check (optional, but good for logs)
     if (adminDb) {
-      await adminDb.collection('newsletter_subscribers').limit(1).get();
-      console.log(`[Karlısın-Firebase] Admin SDK health check PASSED.`);
+      adminDb.collection('newsletter_subscribers').limit(1).get()
+        .then((s: any) => console.log(`[Karlısın-Firebase] Admin SDK health check: SUCCESS (found ${s.size} docs)`))
+        .catch((e: any) => console.error(`[Karlısın-Firebase] Admin SDK health check: FAILED: ${e.message}`));
     }
   } catch (err: any) {
     console.error('[Karlısın-Firebase] Critical Admin SDK failure:', err.message);
@@ -1051,6 +1054,8 @@ async function startServer() {
     try {
       if (adminDb) {
         diagnostics.active_database = adminDb.databaseId || 'default?';
+        diagnostics.project_id = adminDb.projectId || 'missing?';
+        
         try {
           const testSnap = await adminDb.collection('newsletter_subscribers').limit(1).get();
           diagnostics.step2_firestore_test = `success (found ${testSnap.size} docs)`;
@@ -1059,8 +1064,16 @@ async function startServer() {
           await systemRef.set({ status: 'IDLE', last_broadcasted_article_id: '0' }, { merge: true });
           diagnostics.step3_reset_status = 'success';
         } catch (fErr: any) {
-          diagnostics.step2_firestore_test = `error: ${fErr.message}`;
+          diagnostics.step2_firestore_test = `error: ${fErr.message} (code: ${fErr.code})`;
           console.error('[Karlısın-DEBUG] Firestore Test Error:', fErr);
+          
+          // If 5 NOT_FOUND, maybe try a listCollections to see what's there
+          try {
+             const collections = await adminDb.listCollections();
+             diagnostics.collections_found = collections.map((c: any) => c.id);
+          } catch (listErr: any) {
+             diagnostics.collections_list_error = listErr.message;
+          }
         }
       }
 
