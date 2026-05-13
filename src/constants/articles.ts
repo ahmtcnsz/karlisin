@@ -618,5 +618,24 @@ export const articles = [
       </ul>
       <p>Gönderimler 3 dakikalık güvenli bekleme süresinin ardından başlayacaktır.</p>
     `
+  },
+  {
+    id: 26,
+    slug: 'karlisin-X-paylasim-sorun-giderme-adimi',
+    title: 'Karlısın: X Paylaşım Sorun Giderme Adımı',
+    excerpt: 'X API v2 entegrasyonu için geliştirilmiş hata yakalama ve metin optimizasyonlarını test ediyoruz.',
+    category: 'Sistem',
+    date: '13 Mayıs 2026',
+    readTime: '1 dk',
+    image: 'https://images.unsplash.com/photo-1611605698335-8b1c460d3d52?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Bu test yazısı, özellikle <strong>X (Twitter)</strong> paylaşımındaki aksaklıkları gidermek üzere eklenen hata loglama ve karakter sınırlama mekanizmalarını doğrulamak için paylaşılmıştır.</p>
+      <h3 style="color: white; margin-top: 24px;">Gözlem Noktaları</h3>
+      <ul>
+        <li>Karakter sayısının 280 limitine kesin uyumu.</li>
+        <li>API yanıtındaki detaylı hata kodlarının debug paneline yansıtılması.</li>
+        <li>OAuth 1.0a User Context doğrulaması.</li>
+      </ul>
+    `
   }
 ];

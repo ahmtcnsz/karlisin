@@ -50,10 +50,17 @@ async function postToX(text: string) {
 
     // Use readWrite client for posting
     const rwClient = xClient.readWrite;
-    const { data: createdTweet } = await rwClient.v2.tweet(text);
+    const { data: createdTweet } = await rwClient.v2.tweet(text.slice(0, 275));
     console.log(`[Karlısın-X] Tweet başarıyla paylaşıldı: ${createdTweet.id}`);
+    lastXError = null;
     return createdTweet;
   } catch (err: any) {
+    lastXError = {
+      message: err.message,
+      data: err.data,
+      code: err.code,
+      timestamp: new Date().toISOString()
+    };
     console.error('[Karlısın-X] Tweet paylaşım hatası!');
     if (err.data) {
       console.error(`[Karlısın-X] Veri: ${JSON.stringify(err.data, null, 2)}`);
@@ -195,6 +202,7 @@ const getClientIdentifier = (req: any): string => {
 
 // Global in-memory lock for broadcast
 let isLocalBroadcastPending = false;
+let lastXError: any = null;
 
 // Rate limit helper
 const checkIpLimit = (identifier: string): { allowed: boolean; remaining: number } => {
@@ -1058,7 +1066,8 @@ async function startServer() {
             apiKey: !!process.env.X_API_KEY,
             apiSecret: !!process.env.X_API_SECRET,
             accessToken: !!process.env.X_ACCESS_TOKEN,
-            accessTokenSecret: !!(process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET)
+            accessTokenSecret: !!(process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET),
+            lastError: lastXError
           },
           adminDb: !!adminDb,
           envKeys: envKeys.filter(k => k.startsWith('X_') || k.startsWith('RESEND_'))
