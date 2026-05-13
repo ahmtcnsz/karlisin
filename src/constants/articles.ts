@@ -598,5 +598,25 @@ export const articles = [
       
       <p>Sistem şu andan itibaren belirlenen bekleme süresinin ardından duyuruları otomatik olarak gerçekleştirecektir.</p>
     `
+  },
+  {
+    id: 25,
+    slug: 'karlisin-otomasyon-guvenilirlik-dogrulamasi-v2',
+    title: 'Karlısın Otomasyon: Güvenilirlik Doğrulaması v2',
+    excerpt: 'Sistem altyapımızdaki PENDING kilidi ve env fallback iyileştirmelerini test ediyoruz. Bu yazı ile birlikte tüm kanalların (X & Resend) tetiklenmesi beklenmektedir.',
+    category: 'Sistem',
+    date: '13 Mayıs 2026',
+    readTime: '1 dk',
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Bu yazı, Karlısın'ın otomatik duyuru sistemlerindeki son güncellemeleri doğrulamak için oluşturulmuştur.</p>
+      <h3 style="color: white; margin-top: 24px;">Kontrol Edilen Özellikler</h3>
+      <ul>
+        <li><strong>X Entegrasyonu:</strong> "X_ACCESS_SECRET" fallback mekanizması eklendi.</li>
+        <li><strong>Mükerrer Gönderim Engeli:</strong> Firestore status kontrolü iyileştirildi.</li>
+        <li><strong>Hata Logları:</strong> X API hataları için daha detaylı veri loglama aktif edildi.</li>
+      </ul>
+      <p>Gönderimler 3 dakikalık güvenli bekleme süresinin ardından başlayacaktır.</p>
+    `
   }
 ];

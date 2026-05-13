@@ -1,4 +1,7 @@
 import express from 'express';
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { createServer as createViteServer } from 'vite';
 import { Resend } from 'resend';
 import path from 'path';
@@ -20,18 +23,28 @@ import { articles } from './src/constants/articles';
 let xClient: TwitterApi | null = null;
 
 async function postToX(text: string) {
-  if (!process.env.X_API_KEY || !process.env.X_API_SECRET || !process.env.X_ACCESS_TOKEN || !process.env.X_ACCESS_TOKEN_SECRET) {
-    console.warn('[Karlısın-X] X API anahtarları eksik. Tweet paylaşılamadı. (X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET kontrol edin)');
-    return;
-  }
+    const xApiKey = process.env.X_API_KEY;
+    const xApiSecret = process.env.X_API_SECRET;
+    const xAccessToken = process.env.X_ACCESS_TOKEN;
+    const xAccessSecret = process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET;
+
+    if (!xApiKey || !xApiSecret || !xAccessToken || !xAccessSecret) {
+      const missing = [];
+      if (!xApiKey) missing.push('X_API_KEY');
+      if (!xApiSecret) missing.push('X_API_SECRET');
+      if (!xAccessToken) missing.push('X_ACCESS_TOKEN');
+      if (!xAccessSecret) missing.push('X_ACCESS_TOKEN_SECRET/X_ACCESS_SECRET');
+      console.warn(`[Karlısın-X] X API anahtarları EKSİK: ${missing.join(', ')}. Tweet paylaşılamadı.`);
+      return;
+    }
 
   try {
     if (!xClient) {
       xClient = new TwitterApi({
-        appKey: process.env.X_API_KEY,
-        appSecret: process.env.X_API_SECRET,
-        accessToken: process.env.X_ACCESS_TOKEN,
-        accessSecret: process.env.X_ACCESS_TOKEN_SECRET,
+        appKey: xApiKey,
+        appSecret: xApiSecret,
+        accessToken: xAccessToken,
+        accessSecret: xAccessSecret,
       });
     }
 
@@ -179,6 +192,9 @@ const getClientIdentifier = (req: any): string => {
 
   return req.ip || 'unknown';
 };
+
+// Global in-memory lock for broadcast
+let isLocalBroadcastPending = false;
 
 // Rate limit helper
 const checkIpLimit = (identifier: string): { allowed: boolean; remaining: number } => {
@@ -1009,22 +1025,43 @@ async function startServer() {
   app.get('/api/debug/broadcast', async (req, res) => {
     console.log('[Karlısın-DEBUG] Manuel broadcast tetiklendi.');
     
-    // Safety masked log
     const mask = (s: string | undefined) => s ? `${s.substring(0, 4)}...${s.substring(s.length - 4)}` : 'MISSING';
-    console.log('[Karlısın-DEBUG] Anahtar Durumu:', {
+    const envKeys = Object.keys(process.env);
+    
+    console.log('[Karlısın-DEBUG] Mevcut Env Anahtarları:', envKeys.filter(k => !k.includes('SESSION') && !k.includes('COOKIE')));
+    
+    const status = {
       RESEND: mask(process.env.RESEND_API_KEY),
       X_API_KEY: mask(process.env.X_API_KEY),
-    });
+      X_API_SECRET: mask(process.env.X_API_SECRET),
+      X_ACCESS_TOKEN: mask(process.env.X_ACCESS_TOKEN),
+      X_ACCESS_TOKEN_SECRET: mask(process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET),
+    };
+
+    console.log('[Karlısın-DEBUG] Anahtar Durumu:', status);
 
     try {
-      await initAutoBroadcast(true); // Force run
+      // Force status reset for debugging
+      const systemRef = adminDb?.collection('system_config').doc('broadcast_status');
+      if (systemRef) {
+        await systemRef.set({ status: 'IDLE', last_broadcasted_article_id: '0' }, { merge: true });
+        console.log('[Karlısın-DEBUG] Firestore status IDLE ve ID 0 olarak resetlendi.');
+      }
+
+      await initAutoBroadcast(true); 
       res.json({ 
         success: true, 
-        message: 'Broadcast işlemi manuel olarak tetiklendi. Konsol loglarını kontrol edin.',
+        message: 'Manuel tetikleme başarılı. Konsol loglarını izleyin.',
         debugInfo: {
           resend: !!process.env.RESEND_API_KEY,
-          x: !!process.env.X_API_KEY,
-          adminDb: !!adminDb
+          x: {
+            apiKey: !!process.env.X_API_KEY,
+            apiSecret: !!process.env.X_API_SECRET,
+            accessToken: !!process.env.X_ACCESS_TOKEN,
+            accessTokenSecret: !!(process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET)
+          },
+          adminDb: !!adminDb,
+          envKeys: envKeys.filter(k => k.startsWith('X_') || k.startsWith('RESEND_'))
         }
       });
     } catch (err: any) {
@@ -2108,12 +2145,17 @@ async function startServer() {
 }
 
 async function initAutoBroadcast(force = false) {
-  console.log('[Karlısın-AUTO] Otomatik bülten kontrolü başlatıldı.');
   if (!adminDb) {
     console.warn('[Karlısın-AUTO] adminDb henüz hazır değil. 10 saniye sonra tekrar denenecek...');
     setTimeout(() => initAutoBroadcast(force), 10000);
     return;
   }
+
+  if (isLocalBroadcastPending && !force) {
+    console.log('[Karlısın-AUTO] Bir broadcast bekleme aşamasında (In-Memory Lock).');
+    return;
+  }
+
   try {
     const lastArticle = articles[articles.length - 1];
     if (!lastArticle) {
@@ -2126,9 +2168,14 @@ async function initAutoBroadcast(force = false) {
     const systemSnap = await systemRef.get();
     
     const lastBroadcastedId = systemSnap.exists ? systemSnap.data()?.last_broadcasted_article_id : null;
-    const isPending = systemSnap.exists ? systemSnap.data()?.status === 'PENDING' : false;
+    const dbStatus = systemSnap.exists ? systemSnap.data()?.status : 'IDLE';
+    const pendingAt = systemSnap.exists ? systemSnap.data()?.pending_at : null;
 
-    if ((lastBroadcastedId !== currentId || force) && !isPending) {
+    // Check if "PENDING" is stuck (older than 10 mins)
+    const isStuck = dbStatus === 'PENDING' && pendingAt && (Date.now() - new Date(pendingAt).getTime() > 600000);
+
+    if ((lastBroadcastedId !== currentId || force) && (dbStatus !== 'PENDING' || isStuck)) {
+      isLocalBroadcastPending = true;
       // Mark as PENDING immediately to prevent other processes from starting
       await systemRef.set({ 
         status: 'PENDING', 
@@ -2149,6 +2196,7 @@ async function initAutoBroadcast(force = false) {
           if (finalCheckId === currentId && !force) {
             console.log('[Karlısın-AUTO] Atlanıyor: Bu yazı zaten gönderilmiş.');
             await systemRef.set({ status: 'IDLE' }, { merge: true });
+            isLocalBroadcastPending = false;
             return;
           }
 
@@ -2176,6 +2224,7 @@ async function initAutoBroadcast(force = false) {
               updated_at: new Date().toISOString(),
               total_sent: 0
             }, { merge: true });
+            isLocalBroadcastPending = false;
             return;
           }
 
@@ -2233,19 +2282,22 @@ async function initAutoBroadcast(force = false) {
             last_article_title: lastArticle.title
           }, { merge: true });
 
+          isLocalBroadcastPending = false;
           console.log(`[Karlısın-AUTO] Broadcast tamamlandı. Gönderilen: ${successCount}`);
         } catch (err: any) {
           console.error('[Karlısın-AUTO] İşlem hatası:', err.message);
           await systemRef.set({ status: 'IDLE' }, { merge: true });
+          isLocalBroadcastPending = false;
         }
       }, delayMs); 
-    } else if (isPending) {
+    } else if (isDbPending) {
       console.log('[Karlısın-AUTO] Bir broadcast işlemi zaten beklemede (PENDING).');
     } else {
       console.log(`[Karlısın-AUTO] Sistem güncel. (Son ID: ${currentId})`);
     }
   } catch (err: any) {
     console.error('[Karlısın-AUTO] Kontrol hatası:', err.message);
+    isLocalBroadcastPending = false;
   }
 }
 
