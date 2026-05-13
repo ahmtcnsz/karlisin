@@ -575,5 +575,28 @@ export const articles = [
       </ul>
       <p>Bu süreç, sunucu optimizasyonları gereği 10-20 saniye içerisinde tamamlanacaktır.</p>
     `
+  },
+  {
+    id: 24,
+    slug: 'karlisin-otomasyon-final-test-senaryosu',
+    title: 'Karlısın Otomasyon: Final Test Senaryosu',
+    excerpt: 'Sistemlerimizde yaptığımız hata giderme ve güvenilirlik iyileştirmelerini test etmek üzere bu yazıyı paylaşıyoruz. 3 dakika içinde bildirimler gönderilecektir.',
+    category: 'Sistem',
+    date: '13 Mayıs 2026',
+    readTime: '1 dk',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Bu yazı, Karlısın'ın <strong>X (Twitter)</strong> ve <strong>Resend</strong> otomasyon sistemleri için yapılan "Kritik Güvenilirlik" güncellemesini doğrulamak amacıyla oluşturulmuştur.</p>
+      
+      <h3 style="color: white; margin-top: 24px;">Yapılan İyileştirmeler</h3>
+      <ul>
+        <li><strong>Çift Gönderim Koruması:</strong> Firestore tabanlı "Lock" mekanizması ile maillerin mükerrer gitmesi engellendi.</li>
+        <li><strong>Zamanlama Optimizasyonu:</strong> Gönderim süresi 3 dakikaya çıkarılarak sistemin oturması için süre tanındı.</li>
+        <li><strong>Gelişmiş Loglama:</strong> X API hataları artık daha detaylı takip ediliyor.</li>
+        <li><strong>Abone Filtreleme:</strong> Geçersiz veya test amaçlı e-postalar temizlendi.</li>
+      </ul>
+      
+      <p>Sistem şu andan itibaren belirlenen bekleme süresinin ardından duyuruları otomatik olarak gerçekleştirecektir.</p>
+    `
   }
 ];

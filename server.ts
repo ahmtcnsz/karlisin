@@ -41,9 +41,16 @@ async function postToX(text: string) {
     console.log(`[Karlısın-X] Tweet başarıyla paylaşıldı: ${createdTweet.id}`);
     return createdTweet;
   } catch (err: any) {
-    console.error('[Karlısın-X] Tweet paylaşım hatası:', err.message || err);
+    console.error('[Karlısın-X] Tweet paylaşım hatası!');
+    if (err.data) {
+      console.error(`[Karlısın-X] Veri: ${JSON.stringify(err.data, null, 2)}`);
+    } else {
+      console.error(`[Karlısın-X] Mesaj: ${err.message || err}`);
+    }
+    
     // On 401/403 errors, maybe clear client to force re-init
-    if (err.data?.status === 401 || err.data?.status === 403) {
+    if (err.data?.status === 401 || err.data?.status === 403 || err.code === 401 || err.code === 403) {
+      console.warn('[Karlısın-X] Yetkilendirme hatası (401/403). Anahtarları ve izinleri kontrol edin.');
       xClient = null;
     }
   }
@@ -2119,40 +2126,55 @@ async function initAutoBroadcast(force = false) {
     const systemSnap = await systemRef.get();
     
     const lastBroadcastedId = systemSnap.exists ? systemSnap.data()?.last_broadcasted_article_id : null;
+    const isPending = systemSnap.exists ? systemSnap.data()?.status === 'PENDING' : false;
 
-    if (lastBroadcastedId !== currentId || force) {
-      const delayMs = force ? 0 : 10000; // Dev mode: only 10 seconds delay instead of 3 mins
-      console.log(`[Karlısın-AUTO] Broadcast gerekebilir (${lastArticle.title}, ID: ${currentId}). ${delayMs/1000} saniye içinde işlenecek...`);
+    if ((lastBroadcastedId !== currentId || force) && !isPending) {
+      // Mark as PENDING immediately to prevent other processes from starting
+      await systemRef.set({ 
+        status: 'PENDING', 
+        pending_article_id: currentId,
+        pending_at: new Date().toISOString() 
+      }, { merge: true });
+
+      const delayMs = force ? 0 : 180000; // 3 minutes delay
+      console.log(`[Karlısın-AUTO] Broadcast BAŞLATILDI (${lastArticle.title}, ID: ${currentId}). ${delayMs/1000} saniye bekleme süresi başladı...`);
       
       setTimeout(async () => {
         try {
-          // Double check if another process handled it (only if not forced)
-          if (!force) {
-            const reCheckSnap = await systemRef.get();
-            if (reCheckSnap.exists && reCheckSnap.data()?.last_broadcasted_article_id === currentId) {
-              console.log('[Karlısın-AUTO] Broadcast zaten tamamlanmış.');
-              return;
-            }
+          console.log('[Karlısın-AUTO] Broadcast işlemi yürütülüyor...');
+          
+          // Re-verify it still needs to be sent
+          const reCheckSnap = await systemRef.get();
+          const finalCheckId = reCheckSnap.data()?.last_broadcasted_article_id;
+          if (finalCheckId === currentId && !force) {
+            console.log('[Karlısın-AUTO] Atlanıyor: Bu yazı zaten gönderilmiş.');
+            await systemRef.set({ status: 'IDLE' }, { merge: true });
+            return;
           }
 
-          console.log('[Karlısın-AUTO] Veritabanından aboneler çekiliyor...');
           const querySnapshot = await adminDb.collection('newsletter_subscribers').get();
-          const subscribers = querySnapshot.docs.map((doc: any) => doc.data().email).filter((e: any) => !!e && e.includes('@'));
+          const subscribers = querySnapshot.docs
+            .map((doc: any) => doc.data().email)
+            .filter((e: any) => !!e && e.includes('@') && !e.includes('example.com') && e.length > 5);
 
-          console.log(`[Karlısın-AUTO] Abone listesi çekildi. Toplam geçerli mail: ${subscribers.length}`);
+          console.log(`[Karlısın-AUTO] ${subscribers.length} geçerli abone bulundu.`);
 
-          // X (Twitter) Otomatik Paylaşım
+          // 1. X (Twitter) Otomatik Paylaşım
           const tweetText = `📢 Yeni Yazı: ${lastArticle.title}\n\n${lastArticle.excerpt.slice(0, 110)}...\n\n🔗 Okumak için: https://www.karlisin.com/blog/${lastArticle.slug || currentId}\n\n#Karlısın #Borsa #FinansalOzgurluk @KarlisinTR`;
-          console.log('[Karlısın-AUTO] X (Twitter) paylaşımı yapılıyor...');
-          await postToX(tweetText);
+          console.log('[Karlısın-AUTO] X Paylaşımı başlatılıyor...');
+          try {
+            await postToX(tweetText);
+          } catch (xErr: any) {
+            console.error('[Karlısın-AUTO] X Paylaşım hatası:', xErr.message);
+          }
 
           if (subscribers.length === 0) {
-            console.log('[Karlısın-AUTO] Hiç abone bulunamadı. Sadece X paylaşımı yapıldı.');
+            console.log('[Karlısın-AUTO] Abone yok, sadece durum güncelleniyor.');
             await systemRef.set({ 
               last_broadcasted_article_id: currentId,
+              status: 'IDLE',
               updated_at: new Date().toISOString(),
-              total_sent: 0,
-              note: 'Sadece X paylaşıldı, abone yoktu.'
+              total_sent: 0
             }, { merge: true });
             return;
           }
@@ -2162,9 +2184,9 @@ async function initAutoBroadcast(force = false) {
           const sender = getSenderEmail();
           const articleUrl = `https://www.karlisin.com/blog/${lastArticle.slug || currentId}`;
 
-          console.log(`[Karlısın-AUTO] ${subscribers.length} aboneye Resend üzerinden mail gönderimi başlıyor... (Gönderici: ${sender})`);
-
           let successCount = 0;
+          console.log(`[Karlısın-AUTO] ${subscribers.length} mail gönderimi başlıyor... (From: ${sender})`);
+
           for (const email of subscribers) {
             try {
               const res = await resendInstance.emails.send({
@@ -2193,30 +2215,34 @@ async function initAutoBroadcast(force = false) {
               });
               
               if (res.error) {
-                console.error(`[Karlısın-AUTO] Resend hatası (${email}):`, res.error);
+                console.error(`[Karlısın-AUTO] Resend Hatası (${email}):`, res.error);
               } else {
                 successCount++;
               }
             } catch (err: any) {
-              console.error(`[Karlısın-AUTO] Mail gönderim istisnası (${email}):`, err.message);
+              console.error(`[Karlısın-AUTO] Mail İstisnası (${email}):`, err.message);
             }
           }
 
-          // Update status in Firestore
+          // Final update
           await systemRef.set({ 
             last_broadcasted_article_id: currentId,
+            status: 'IDLE',
             updated_at: new Date().toISOString(),
             total_sent: successCount,
             last_article_title: lastArticle.title
           }, { merge: true });
 
-          console.log(`[Karlısın-AUTO] Gönlerim tamamlandı. Başarılı: ${successCount}/${subscribers.length}`);
+          console.log(`[Karlısın-AUTO] Broadcast tamamlandı. Gönderilen: ${successCount}`);
         } catch (err: any) {
-          console.error('[Karlısın-AUTO] Broadcast işlemi sırasında kritik hata:', err.message);
+          console.error('[Karlısın-AUTO] İşlem hatası:', err.message);
+          await systemRef.set({ status: 'IDLE' }, { merge: true });
         }
       }, delayMs); 
+    } else if (isPending) {
+      console.log('[Karlısın-AUTO] Bir broadcast işlemi zaten beklemede (PENDING).');
     } else {
-      console.log(`[Karlısın-AUTO] Durum: Güncel. Son yazı (${lastArticle.title}) zaten gönderildi.`);
+      console.log(`[Karlısın-AUTO] Sistem güncel. (Son ID: ${currentId})`);
     }
   } catch (err: any) {
     console.error('[Karlısın-AUTO] Kontrol hatası:', err.message);
