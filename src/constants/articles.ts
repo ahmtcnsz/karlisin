@@ -529,5 +529,30 @@ export const articles = [
 
       <p>Hedeflerinize doğru sağlam, güvenli ve sakin adımlarla ilerlerken bu yolculukta birlikte yürümeye devam edelim.</p>
     `
+  },
+  {
+    id: 22,
+    slug: 'karlisin-ile-seffaf-gelecek-yeni-nesil-finansal-okuryazarlik-ve-yapay-zeka',
+    title: 'Karlısın ile Şeffaf Gelecek: Yeni Nesil Finansal Okuryazarlık ve Yapay Zeka',
+    excerpt: 'Finansal dünyayı anlamak ve yatırımları büyütmek, tıpkı verimli bir bahçe yetiştirmek gibi zaman, sabır ve doğru adımlar gerektirir. Karlısın, herkes için erişilebilir, modern ve şeffaf bir finansal okuryazarlık deneyimi sunmak üzere %100 yapay zeka ile tasarlandı.',
+    category: 'Strateji',
+    date: '13 Mayıs 2026',
+    readTime: '6 dk',
+    image: 'https://images.unsplash.com/photo-1434626881859-194d67b2b86f?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Finansal dünyayı anlamak ve yatırımları büyütmek, tıpkı verimli bir bahçe yetiştirmek gibi zaman, sabır ve doğru adımlar gerektirir. Bu noktada hedeflerinize ulaşmanızı sağlayacak en büyük destekçiniz güçlü bir finansal okuryazarlık temelidir. Karlısın, karmaşık sayıları ve yorucu tabloları tamamen sadeleştirerek, herkes için erişilebilir, modern ve şeffaf bir finansal okuryazarlık deneyimi sunmak üzere %100 yapay zeka ile tasarlandı.</p>
+
+      <h3 style="color: white; margin-top: 24px;">Hız, Teknoloji ve Şeffaflık Bir Arada</h3>
+      <p>Geleneksel yazılım dünyasının o uzun ve yorucu süreçlerini, tasarım ve geliştirme köprüsünü otonom sistemlerle aşarak geride bıraktık. Çünkü güncel ve etkili bir finansal okuryazarlık vizyonunun, hantallıktan uzak ve anında tepki veren bir hıza ihtiyacı vardır. Gerçek finansal okuryazarlık, sadece finansal terimleri ezberlemek değil; yatırımlarınızdaki gizli maliyetleri, vergileri ve net kârlılığı hiçbir sürpriz yaşamadan anında görebilmektir.</p>
+
+      <p>Karlısın.com'un sunduğu bu şeffaf ve yapay zeka destekli araçlar sayesinde, kendi finansal okuryazarlık seviyenizi her geçen gün bir adım ileriye taşıyarak portföyünüzü çok daha huzurlu ve güvenli bir şekilde yönetebilirsiniz.</p>
+
+      <h3 style="color: white; margin-top: 24px;">Günlük Hayata Entegre Olan Çözümler</h3>
+      <p>İster düzenli bir temettü yatırımcısı olun, ister e-ticaret dünyasında pazaryeri kârınızı hesaplayan bir satıcı; arkaplanda çalışan yapay zeka algoritmalarımız sizin yerinize tüm hesaplama detaylarını düşünür ve finansal okuryazarlık pratiğinizi kusursuzlaştırır. Günlük hayatın yoğun temposu içinde, doğru ticari kararlar alabilmek için elinizin altında pratik, güvenilir ve hızlı bir finansal okuryazarlık aracına sahip olmak artık bir lüks değil, şarttır.</p>
+
+      <p>Karlısın, karmaşadan uzak, tamamen doğal ve akıcı arayüzüyle finansal okuryazarlık yolculuğunuzda size daima pürüzsüz bir alan açar. İster bu dünyaya yeni adım atıyor olun, ister deneyimli bir profesyonel; sağlam bir finansal okuryazarlık vizyonu her zaman hedeflerinize ulaşmanızı kolaylaştıracaktır.</p>
+
+      <p>Geleceğinizi güvenle inşa ederken, iyi bir finansal okuryazarlık altyapısıyla desteklenen kararlar almak en sağlam yöntemdir. Finansal hedeflerinize giden bu keyifli yolda, finansal okuryazarlık adımlarınızı büyütürken her zaman yanınızdayız. Bu uzun soluklu yürüyüşte, güzel bir yol arkadaşlığı yapmaya ve sizlere en net verileri sunmaya devam edeceğiz.</p>
+    `
   }
 ];
