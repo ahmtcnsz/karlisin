@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ArrowRight, Home, Calculator, ShoppingBag, PieChart, BookOpen, Shield, FileText, Info, TrendingUp } from 'lucide-react';
+import { ChevronRight, ArrowRight, Home, Calculator, ShoppingBag, PieChart, BookOpen, Shield, FileText, Info, TrendingUp, Mail } from 'lucide-react';
 
 const blogSlugs = [
   'temettu-nedir-borsada-temettu-dagitimi-ve-pasif-gelir-rehberi',
@@ -50,7 +50,7 @@ export default function Sitemap() {
           icon: <ChevronRight size={14} className="text-slate-500" />
         })),
         { name: 'Hakkımızda', path: '/hakkimizda', icon: <Info size={16} /> },
-        { name: 'Geri Bildirim', path: '#', onClick: () => (window as any).toggleFeedback?.(), icon: <FileText size={16} /> },
+        { name: 'İletişim', path: '/iletisim', icon: <Mail size={16} /> },
       ]
     },
     {
@@ -93,7 +93,6 @@ export default function Sitemap() {
                 <Link
                   key={lIdx}
                   to={link.path}
-                  onClick={(e) => link.onClick && link.onClick()}
                   className="flex flex-col p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 hover:border-white/10 transition-all group"
                 >
                   <div className="flex items-center justify-between w-full">

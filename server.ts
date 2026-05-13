@@ -10,11 +10,38 @@ import yahooFinanceModule from 'yahoo-finance2';
 import NodeCache from 'node-cache';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { initializeApp } from 'firebase/app';
-import { initializeFirestore, collection, getDocsFromServer, doc, getDocFromServer, setDoc, setLogLevel } from 'firebase/firestore';
+import { initializeFirestore, collection as clientCollection, getDocsFromServer as clientGetDocs, doc as clientDoc, getDocFromServer as clientGetDoc, setDoc as clientSetDoc, setLogLevel } from 'firebase/firestore';
+import { getApp, getApps, initializeApp as initializeAdminApp } from 'firebase-admin/app';
+import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
+import { TwitterApi } from 'twitter-api-v2';
 import { articles } from './src/constants/articles';
 
-// Silence Firestore logs to avoid noisey gRPC cancellation messages
-setLogLevel('error');
+// Lazy initialization of Twitter client
+let xClient: TwitterApi | null = null;
+
+async function postToX(text: string) {
+  if (!process.env.X_API_KEY || !process.env.X_API_SECRET || !process.env.X_ACCESS_TOKEN || !process.env.X_ACCESS_SECRET) {
+    console.warn('[Karlısın-X] X API anahtarları eksik. Tweet paylaşılamadı.');
+    return;
+  }
+
+  try {
+    if (!xClient) {
+      xClient = new TwitterApi({
+        appKey: process.env.X_API_KEY,
+        appSecret: process.env.X_API_SECRET,
+        accessToken: process.env.X_ACCESS_TOKEN,
+        accessSecret: process.env.X_ACCESS_SECRET,
+      });
+    }
+
+    const { data: createdTweet } = await xClient.v2.tweet(text);
+    console.log(`[Karlısın-X] Tweet başarıyla paylaşıldı: ${createdTweet.id}`);
+    return createdTweet;
+  } catch (err: any) {
+    console.error('[Karlısın-X] Tweet paylaşım hatası:', err.message || err);
+  }
+}
 
 // Deriving __dirname for ES module compatibility
 const __filename = fileURLToPath(import.meta.url);
@@ -22,6 +49,46 @@ const __dirname = path.dirname(__filename);
 
 // .env dosyasını hemen yükle
 dotenv.config();
+
+// Silence Firestore logs to avoid noisey gRPC cancellation messages
+setLogLevel('error');
+
+// Initialize Firebase Admin (Server-side privileged access)
+let adminDb: any;
+try {
+  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+  let projectId = 'gen-lang-client-0551179549';
+  let databaseId = '';
+
+  if (fs.existsSync(configPath)) {
+    const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    projectId = firebaseConfig.projectId || projectId;
+    databaseId = firebaseConfig.firestoreDatabaseId || '';
+  }
+
+  const adminApp = getApps().length === 0 
+    ? initializeAdminApp({
+        projectId: projectId,
+        databaseURL: `https://${projectId}.firebaseio.com` 
+      })
+    : getApp();
+  
+  if (databaseId) {
+    adminDb = getAdminFirestore(adminApp, databaseId);
+  } else {
+    adminDb = getAdminFirestore(adminApp);
+  }
+  
+  console.log(`[Karlısın-Firebase] Firebase Admin SDK başlatıldı (Project: ${projectId}, Database: ${databaseId || 'default'}).`);
+} catch (err) {
+  console.error('[Karlısın-Firebase] Admin SDK başlatılamadı:', err);
+  // On error, try to get default firestore if app was initialized
+  try {
+    adminDb = getAdminFirestore();
+  } catch (e) {
+    console.error('[Karlısın-Firebase] Fallback Firestore da başarısız:', e);
+  }
+}
 
 // Initialize Firebase lazily
 let db: any = null;
@@ -43,6 +110,26 @@ const getDb = () => {
     console.error('[Karlısın-Firebase] Başlatma sırasında hata oluştu:', err);
   }
   return null;
+};
+
+// Helper to get clean sender email
+const getSenderEmail = () => {
+  let envFrom = process.env.RESEND_FROM_EMAIL || 'merhaba@karlisin.com';
+  
+  // Remove ANY type of quotes and trim
+  envFrom = envFrom.replace(/['"“”]/g, '').trim();
+  
+  // CRITICAL SECURITY & VALIDATION: 
+  // 1. If empty or too short
+  // 2. If it contains 're_' (Resend API Key prefix)
+  // 3. If it doesn't contain '@'
+  // 4. Default fallback to verified domain email
+  if (!envFrom || envFrom.length < 5 || envFrom.includes('re_') || !envFrom.includes('@')) {
+    console.error(`[Karlısın-Resend] GEÇERSİZ GÖNDERİCİ TESPİT EDİLDİ: "${envFrom}". Varsayılana dönülüyor.`);
+    return 'merhaba@karlisin.com';
+  }
+  
+  return envFrom;
 };
 
 // Initialize Gemini
@@ -1663,7 +1750,8 @@ async function startServer() {
     }
 
     try {
-      const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <merhaba@karlisin.com>';
+      const sender = getSenderEmail();
+      const notificationReceiver = 'ahmet@karlisin.com';
       
       let subject = 'Karlısın Temettü Takibi - Aramıza Hoş Geldin! 🚀';
       let content = `
@@ -1734,6 +1822,18 @@ async function startServer() {
         return res.status(400).json({ error: error.message });
       }
 
+      // Ayrıca Admin'e bildir
+      try {
+        await resend.emails.send({
+          from: sender,
+          to: [notificationReceiver],
+          subject: `Yeni Kayıt: ${email} 🔔`,
+          html: `<p>Yeni bir kullanıcı (${email}) <strong>${type}</strong> listesine katıldı.</p>`
+        });
+      } catch (e) {
+        console.warn('[Karlısın-API] Admin bildirimi gönderilemedi:', e);
+      }
+
       console.log('[Karlısın-API] Mail başarıyla kuyruğa alındı:', data?.id);
       return res.status(200).json({ success: true, id: data?.id });
     } catch (err: any) {
@@ -1743,6 +1843,90 @@ async function startServer() {
   };
 
   app.all('/api/mail', mailHandler);
+
+  // İLETİŞİM FORMU API
+  app.post('/api/contact', async (req, res) => {
+    const { email, type, message, source, _hp_name, _hp_time, recaptchaToken } = req.body;
+    
+    // 0. reCAPTCHA VERIFICATION
+    if (process.env.RECAPTCHA_SECRET_KEY) {
+      try {
+        const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
+        const verifyRes = await fetch(verifyUrl, { method: 'POST' });
+        const verifyData: any = await verifyRes.json();
+        
+        if (!verifyData.success) {
+          return res.status(400).json({ error: 'reCAPTCHA doğrulaması başarısız. Lütfen tekrar deneyin.' });
+        }
+      } catch (err) {
+        console.error('[Karlısın-Güvenlik] reCAPTCHA Kritik Hata:', err);
+        // Hata durumunda güvenli tarafta kalıp devam edebiliriz veya engelleyebiliriz.
+      }
+    }
+
+    // 1. HONEYPOT KONTROLÜ
+    if (_hp_name) {
+      console.warn('[Karlısın-Güvenlik] Honeypot tetiklendi, bot engellendi.');
+      return res.status(200).json({ success: true, message: 'Bot detected but handled silently' });
+    }
+
+    // 2. ZAMAN KONTROLÜ (2 saniyeden hızlı gönderen bot olabilir)
+    const now = Date.now();
+    const submissionTime = parseInt(_hp_time || '0');
+    if (now - submissionTime < 2000) {
+      console.warn('[Karlısın-Güvenlik] Çok hızlı gönderim, bot şüphesi.');
+      return res.status(400).json({ error: 'Lütfen formu doldurmak için biraz daha zaman ayırın.' });
+    }
+
+    if (!email || !message) {
+      return res.status(400).json({ error: 'E-posta ve mesaj alanları zorunludur' });
+    }
+
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.warn('[Karlısın-API] RESEND_API_KEY bulunamadı.');
+      return res.status(200).json({ success: true, message: 'Saved to DB (Key Missing)' });
+    }
+
+    try {
+      // Admin adresi
+      const receiver = 'ahmet@karlisin.com';
+      const sender = getSenderEmail();
+      
+      const { data, error } = await resend.emails.send({
+        from: sender,
+        to: [receiver],
+        replyTo: email,
+        subject: `Karlısın İletişim: ${type || 'Genel Mesaj'} 📩`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; padding: 20px;">
+            <h2 style="color: #4f46e5;">Yeni İletişim Formu Mesajı</h2>
+            <div style="background-color: #f8fafc; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-top: 20px;">
+              <p><strong>Gönderen:</strong> ${email}</p>
+              <p><strong>Konu:</strong> ${type}</p>
+              <p><strong>Kaynak:</strong> ${source || 'contact_page'}</p>
+              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+              <p><strong>Mesaj:</strong></p>
+              <p style="white-space: pre-wrap;">${message}</p>
+            </div>
+            <p style="font-size: 12px; color: #94a3b8; margin-top: 24px;">
+              Bu mail Karlısın.com iletişim formu üzerinden otomatik olarak gönderilmiştir.
+            </p>
+          </div>
+        `
+      });
+
+      if (error) {
+        console.error('[Karlısın-API] İletişim Mail Hatası:', error);
+        return res.status(400).json({ error: error.message });
+      }
+
+      res.json({ success: true, id: data?.id });
+    } catch (err: any) {
+      console.error('[Karlısın-API] İletişim Kritik Hata:', err);
+      res.status(500).json({ error: 'Mail gönderilemedi', message: err.message });
+    }
+  });
 
   // TOPLU MAİL GÖNDERİMİ (Yeni Blog Yazısı Haber Ver)
   app.post('/api/broadcast', async (req, res) => {
@@ -1754,6 +1938,10 @@ async function startServer() {
 
     console.log(`[Karlısın-API] Broadcast başlatılıyor: ${subscribers.length} kişi`);
     
+    // X (Twitter) Paylaşımı
+    const tweetText = `🚀 Yeni Blog Yazısı: ${articleTitle}\n\n${articleExcerpt.slice(0, 100)}...\n\nDevamını oku: ${articleUrl || 'https://karlisin.com/blog'}\n\n#Karlısın #Finans #Bist100`;
+    await postToX(tweetText);
+
     const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <merhaba@karlisin.com>';
     const results = { success: 0, fail: 0 };
 
@@ -1870,9 +2058,8 @@ async function startServer() {
 }
 
 async function initAutoBroadcast() {
-  const firestoreDb = getDb();
-  if (!firestoreDb) {
-    console.warn('[Karlısın-AUTO] Veritabanı (db) hazır değil, broadcast kontrolü atlanıyor.');
+  if (!adminDb) {
+    console.error('[Karlısın-AUTO] adminDb hazır değil, otomatik kontrol atlanıyor.');
     return;
   }
   try {
@@ -1880,10 +2067,10 @@ async function initAutoBroadcast() {
     if (!lastArticle) return;
 
     const currentId = String(lastArticle.id);
-    const systemRef = doc(firestoreDb, 'system_config', 'broadcast_status');
-    const systemSnap = await getDocFromServer(systemRef);
+    const systemRef = adminDb.collection('system_config').doc('broadcast_status');
+    const systemSnap = await systemRef.get();
     
-    const lastBroadcastedId = systemSnap.exists() ? systemSnap.data().last_broadcasted_article_id : null;
+    const lastBroadcastedId = systemSnap.exists ? systemSnap.data()?.last_broadcasted_article_id : null;
 
     if (lastBroadcastedId !== currentId) {
       console.log(`[Karlısın-AUTO] Yeni yazı tespit edildi (${lastArticle.title}). 3 dakika içinde gönderilecek...`);
@@ -1892,14 +2079,14 @@ async function initAutoBroadcast() {
       setTimeout(async () => {
         try {
           // Double check if another process handled it
-          const reCheckSnap = await getDocFromServer(systemRef);
-          if (reCheckSnap.exists() && reCheckSnap.data().last_broadcasted_article_id === currentId) {
+          const reCheckSnap = await systemRef.get();
+          if (reCheckSnap.exists && reCheckSnap.data()?.last_broadcasted_article_id === currentId) {
             console.log('[Karlısın-AUTO] Broadcast zaten başka bir işlem tarafından tamamlandı.');
             return;
           }
 
           console.log('[Karlısın-AUTO] Broadcast başlatılıyor...');
-          const querySnapshot = await getDocsFromServer(collection(firestoreDb, 'newsletter_subscribers'));
+          const querySnapshot = await adminDb.collection('newsletter_subscribers').get();
           const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e);
 
           if (subscribers.length === 0) {
@@ -1908,10 +2095,15 @@ async function initAutoBroadcast() {
           }
 
           const resend = new Resend(process.env.RESEND_API_KEY);
-          const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <merhaba@karlisin.com>';
+          const sender = getSenderEmail();
           const articleUrl = `https://www.karlisin.com/blog/${lastArticle.slug || currentId}`;
 
           let successCount = 0;
+          
+          // X (Twitter) Otomatik Paylaşım
+          const tweetText = `📢 Yeni Blog Yazımız Yayında: ${lastArticle.title}\n\n${lastArticle.excerpt.slice(0, 120)}...\n\nOkumak için: ${articleUrl}\n\n#Karlısın #Yatırım #Borsa`;
+          await postToX(tweetText);
+
           for (const email of subscribers) {
             try {
               await resend.emails.send({
@@ -1938,7 +2130,7 @@ async function initAutoBroadcast() {
           }
 
           // Update status in Firestore
-          await setDoc(systemRef, { 
+          await systemRef.set({ 
             last_broadcasted_article_id: currentId,
             updated_at: new Date().toISOString(),
             total_sent: successCount
@@ -1953,7 +2145,12 @@ async function initAutoBroadcast() {
       console.log('[Karlısın-AUTO] Son yazı zaten duyurulmuş. Beklemede.');
     }
   } catch (err) {
-    console.error('[Karlısın-AUTO] Başlatma hatası:', err);
+  console.error('[Karlısın-AUTO] Başlatma hatası:', {
+    message: err.message,
+    code: err.code,
+    details: err.details,
+    stack: err.stack
+  });
   }
 }
 

@@ -41,9 +41,28 @@ service cloud.firestore {
              data.createdAt == request.time;
     }
 
+    function isValidContactRequest(data) {
+      return data.keys().hasAll(['email', 'type', 'message', 'source', 'createdAt']) &&
+             data.keys().size() == 5 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.type is string && data.type.size() <= 50 &&
+             data.message is string && data.message.size() <= 2000 &&
+             data.source is string && data.source.size() <= 50 &&
+             data.createdAt == request.time;
+    }
+
     match /waitlist/{entryId} {
       allow create: if isValidWaitlistEntry(incoming());
       allow read, update, delete: if isAdmin();
+    }
+
+    match /contact_requests/{requestId} {
+      allow create: if isValidContactRequest(incoming());
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /system_config/broadcast_status {
+      allow read, write: if isAdmin();
     }
 
     match /newsletter_subscribers/{entryId} {

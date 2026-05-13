@@ -40,6 +40,8 @@ export default function About() {
         <title>Hakkımızda - Karlısın | Şeffaf Finansal Gelecek</title>
         <meta name="description" content="Karlısın, e-ticaret satıcıları ve yatırımcılar için geliştirilmiş yeni nesil SaaS çözümüdür. Misyonumuz finansal şeffaflık sağlamaktır." />
       </Helmet>
+      
+      {/* Hero Section */}
       <div className="text-center mb-20">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
@@ -68,7 +70,8 @@ export default function About() {
         </motion.p>
       </div>
 
-      <div className="flex flex-col gap-12 items-center">
+      {/* Values Grid */}
+      <div className="flex flex-col gap-12 items-center mb-32">
         {sections.map((section, i) => (
           <motion.div 
             key={i}
@@ -98,7 +101,7 @@ export default function About() {
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
-        className="mt-20 p-12 md:p-20 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-[60px] border border-white/10 text-center relative overflow-hidden"
+        className="mb-32 p-12 md:p-20 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-[60px] border border-white/10 text-center relative overflow-hidden"
       >
         <div className="relative z-10 max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-black text-white mb-12 italic uppercase tracking-tighter italic">Unified Data Engine</h2>

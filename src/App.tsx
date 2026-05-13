@@ -12,11 +12,11 @@ import Mortgage from './components/Mortgage';
 import Dashboard from './components/Dashboard';
 import About from './components/About';
 import Blog from './components/Blog';
+import Contact from './components/Contact';
 import SalaryCalculator from './components/SalaryCalculator';
 import DividendTracker from './components/DividendTracker';
 import { MarketPulse } from './components/PiyasaninNabzi';
 import Policy from './components/Policy';
-import FeedbackOverlay from './components/FeedbackOverlay';
 import Landing from './components/Landing';
 import Sitemap from './components/Sitemap';
 import Presentation from './components/Presentation';
@@ -88,6 +88,7 @@ function AppContent({ isLoggedIn }: { isLoggedIn: boolean }) {
             <Route path="/blog" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Blog /></Layout>} />
             <Route path="/blog/:id" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Blog /></Layout>} />
             <Route path="/hakkimizda" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><About /></Layout>} />
+            <Route path="/iletisim" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Contact /></Layout>} />
             <Route path="/gizlilik-politikasi" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Policy type="privacy" /></Layout>} />
             <Route path="/kullanim-kosullari" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Policy type="terms" /></Layout>} />
             <Route path="/site-haritasi" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Sitemap /></Layout>} />
@@ -99,7 +100,6 @@ function AppContent({ isLoggedIn }: { isLoggedIn: boolean }) {
             <Route path="*" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><NotFound /></Layout>} />
           </Routes>
         </AnimatePresence>
-        <FeedbackOverlay />
       </div>
     </div>
   );

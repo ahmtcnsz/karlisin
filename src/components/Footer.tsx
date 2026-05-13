@@ -164,6 +164,7 @@ export default function Footer() {
             <h4 className="text-sm font-black text-slate-500 uppercase tracking-widest">KURUMSAL</h4>
             <nav className="flex flex-col gap-2">
               <Link to="/hakkimizda" className="text-sm text-slate-400 font-medium hover:text-white transition-colors">Hakkımızda</Link>
+              <Link to="/iletisim" className="text-sm text-slate-400 font-medium hover:text-white transition-colors">İletişim</Link>
               <Link to="/gizlilik-politikasi" className="text-sm text-slate-400 font-medium hover:text-white transition-colors">Gizlilik Politikası</Link>
               <Link to="/kullanim-kosullari" className="text-sm text-slate-400 font-medium hover:text-white transition-colors">Kullanım Şartları</Link>
               <Link to="/site-haritasi" className="text-sm text-slate-400 font-medium hover:text-white transition-colors">Site Haritası</Link>
@@ -182,7 +183,7 @@ export default function Footer() {
                 <Globe size={18} />
               </a>
               <a 
-                href="mailto:ahmtcnsz@gmail.com"
+                href="mailto:ahmet@karlisin.com"
                 className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-white/10 hover:text-white transition-all shadow-sm"
               >
                 <Mail size={18} />

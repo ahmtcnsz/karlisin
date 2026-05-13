@@ -362,18 +362,7 @@ export default function Presentation() {
         </div>
       </div>
 
-      {/* Footer Branding */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-12 z-50">
-        <div className="px-6 py-3 bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-2xl flex items-center gap-4 shadow-2xl">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
-            <Rocket className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase text-indigo-400 tracking-[0.2em] leading-none mb-1">AI-POWERED PROTOTYPE</span>
-            <span className="text-sm font-bold text-white leading-none">Karlısın HQ Presentation</span>
-          </div>
-        </div>
-      </div>
+      {/* Footer Branding Removed */}
     </div>
   );
 }

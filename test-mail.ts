@@ -13,7 +13,7 @@ async function testEmail() {
   try {
     const { data, error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-      to: ['ahmtcnsz@gmail.com'],
+      to: ['ahmet@karlisin.com'],
       subject: 'Karlısın - Manuel Test',
       html: '<p>Bu manuel bir sunucu testidir.</p>'
     });

@@ -68,6 +68,37 @@
       },
       "required": ["userId", "portfolio", "score", "distribution", "technicalNote", "createdAt"]
     },
+    "ContactRequest": {
+      "title": "Contact Request",
+      "description": "Represents a message sent through the contact form or feedback overlay.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Öneri", "Hata Bildirimi", "Yeni Özellik", "Soru", "İş Birliği", "Diğer"],
+          "description": "The category of the message."
+        },
+        "message": {
+          "type": "string",
+          "description": "The message content."
+        },
+        "source": {
+          "type": "string",
+          "description": "Where the message was sent from (e.g., 'contact_page', 'feedback_overlay')."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the request was sent."
+        }
+      },
+      "required": ["email", "type", "message", "source", "createdAt"]
+    },
     "UserStat": {
       "title": "User Statistics",
       "description": "Tracks usage limits and metadata for a user.",
@@ -94,6 +125,10 @@
     "/user_stats/{userId}": {
       "schema": "UserStat",
       "description": "User limits and stats."
+    },
+    "/contact_requests/{requestId}": {
+      "schema": "ContactRequest",
+      "description": "Messages from users via contact form and feedback."
     }
   }
 }

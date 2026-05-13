@@ -184,6 +184,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
             <div className="absolute right-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300">
               <div className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 min-w-[200px] shadow-2xl overflow-hidden">
                 <Link to="/hakkimizda" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">Hakkımızda</Link>
+                <Link to="/iletisim" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">İletişim</Link>
                 <Link to="/gizlilik-politikasi" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">Gizlilik Politikası</Link>
                 <Link to="/kullanim-kosullari" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">Kullanım Şartları</Link>
                 <Link to="/site-haritasi" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest border-t border-white/5 mt-1 pt-4">Site Haritası</Link>
@@ -242,6 +243,11 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
               
               <div className="mx-4 my-2 h-px bg-white/5" />
               <Link to="/blog" className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", location.pathname.startsWith('/blog') ? "bg-white/10 text-white" : "text-slate-400")} onClick={() => setIsMobileMenuOpen(false)}>BLOG</Link>
+              
+              <div className="mx-4 my-2 h-px bg-white/5" />
+              <p className="px-4 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-2">KURUMSAL</p>
+              <Link to="/hakkimizda" className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", isActive('/hakkimizda') ? "bg-white/10 text-white" : "text-slate-400")} onClick={() => setIsMobileMenuOpen(false)}>Hakkımızda</Link>
+              <Link to="/iletisim" className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", isActive('/iletisim') ? "bg-white/10 text-white" : "text-slate-400")} onClick={() => setIsMobileMenuOpen(false)}>İletişim</Link>
             </div>
           </motion.div>
         )}
