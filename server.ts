@@ -101,6 +101,9 @@ try {
     databaseId = firebaseConfig.firestoreDatabaseId || '';
   }
 
+  // Override with env if available (often more accurate in Cloud Run)
+  projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || projectId;
+
   try {
     const adminApp = getApps().length === 0 
       ? initializeAdminApp({
@@ -108,31 +111,37 @@ try {
         })
       : getApps()[0];
     
-    console.log(`[Karlısın-Firebase] Project ID: ${projectId}`);
+    console.log(`[Karlısın-Firebase] Project ID at init: ${projectId}`);
 
-    // Attempt 1: Specific Database ID
+    // We'll keep multiple instances if needed, but adminDb is the main one
+    const defaultDb = getAdminFirestore(adminApp);
+    
     if (databaseId && !['', 'default', '(default)'].includes(databaseId)) {
       console.log(`[Karlısın-Firebase] Named database checking: ${databaseId}`);
       try {
         const namedDb = getAdminFirestore(adminApp, databaseId);
-        // Do not block init with an await that might fail, we'll check it later
-        adminDb = namedDb;
-        console.log(`[Karlısın-Firebase] Attached to database: ${databaseId}`);
+        adminDb = namedDb; // Default to named if provided
+        console.log(`[Karlısın-Firebase] Attached to named database: ${databaseId}`);
       } catch (err: any) {
-        console.warn(`[Karlısın-Firebase] Failed to attach to named database (${databaseId}): ${err.message}`);
-        adminDb = getAdminFirestore(adminApp);
+        console.warn(`[Karlısın-Firebase] Failed to attach to ${databaseId}: ${err.message}`);
+        adminDb = defaultDb;
       }
     } else {
+      adminDb = defaultDb;
       console.log('[Karlısın-Firebase] Using default database.');
-      adminDb = getAdminFirestore(adminApp);
     }
     
-    // Final health check (optional, but good for logs)
-    if (adminDb) {
-      adminDb.collection('newsletter_subscribers').limit(1).get()
-        .then((s: any) => console.log(`[Karlısın-Firebase] Admin SDK health check: SUCCESS (found ${s.size} docs)`))
-        .catch((e: any) => console.error(`[Karlısın-Firebase] Admin SDK health check: FAILED: ${e.message}`));
+    // Proactive heartbeats (background)
+    adminDb.collection('newsletter_subscribers').limit(1).get()
+      .then((s: any) => console.log(`[Karlısın-Firebase] Admin SDK health check (Active): SUCCESS (found ${s.size} docs)`))
+      .catch((e: any) => console.error(`[Karlısın-Firebase] Admin SDK health check (Active): FAILED: ${e.message}`));
+    
+    if (adminDb !== defaultDb) {
+      defaultDb.collection('newsletter_subscribers').limit(1).get()
+        .then((s: any) => console.log(`[Karlısın-Firebase] Admin SDK health check (Default): SUCCESS (found ${s.size} docs)`))
+        .catch((e: any) => console.error(`[Karlısın-Firebase] Admin SDK health check (Default): FAILED: ${e.message}`));
     }
+
   } catch (err: any) {
     console.error('[Karlısın-Firebase] Critical Admin SDK failure:', err.message);
   }
@@ -1047,6 +1056,7 @@ async function startServer() {
     const envKeys = Object.keys(process.env).filter(k => k.startsWith('X_') || k.startsWith('RESEND_'));
     
     const diagnostics: any = {
+      version: 'v4.1-diagnostics-expanded',
       step1_adminDb_initialized: !!adminDb,
       step2_firestore_test: 'pending'
     };
@@ -1058,15 +1068,25 @@ async function startServer() {
         
         try {
           const testSnap = await adminDb.collection('newsletter_subscribers').limit(1).get();
-          diagnostics.step2_firestore_test = `success (found ${testSnap.size} docs)`;
+          diagnostics.step2_firestore_active_test = `success (found ${testSnap.size} docs)`;
           
           const systemRef = adminDb.collection('system_config').doc('broadcast_status');
           await systemRef.set({ status: 'IDLE', last_broadcasted_article_id: '0' }, { merge: true });
           diagnostics.step3_reset_status = 'success';
         } catch (fErr: any) {
-          diagnostics.step2_firestore_test = `error: ${fErr.message} (code: ${fErr.code})`;
-          console.error('[Karlısın-DEBUG] Firestore Test Error:', fErr);
+          diagnostics.step2_firestore_active_test = `error: ${fErr.message} (code: ${fErr.code})`;
+          console.error('[Karlısın-DEBUG] Firestore Active Test Error:', fErr);
           
+          // Try default database as well
+          try {
+             const { getFirestore } = await import('firebase-admin/firestore');
+             const defaultDb = getFirestore();
+             const dSnap = await defaultDb.collection('newsletter_subscribers').limit(1).get();
+             diagnostics.step2_firestore_default_test = `success (found ${dSnap.size} docs)`;
+          } catch (dErr: any) {
+             diagnostics.step2_firestore_default_test = `error: ${dErr.message}`;
+          }
+
           // If 5 NOT_FOUND, maybe try a listCollections to see what's there
           try {
              const collections = await adminDb.listCollections();
