@@ -81,85 +81,9 @@ async function postToX(text: string) {
   }
 }
 
-// Deriving __dirname for ES module compatibility
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Silence Firestore logs to avoid noisey gRPC cancellation messages
-setLogLevel('error');
-
-// Initialize Firebase Admin (Server-side privileged access)
+// global handles
 let adminDb: any;
-try {
-  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
-  let projectId = 'gen-lang-client-0551179549';
-  let databaseId = '';
-
-  if (fs.existsSync(configPath)) {
-    const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    projectId = firebaseConfig.projectId || projectId;
-    databaseId = firebaseConfig.firestoreDatabaseId || '';
-  }
-
-  // Override with env if available (often more accurate in Cloud Run)
-  const envProjectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT;
-  projectId = envProjectId || projectId;
-
-  // CRITICAL: In AI Studio, if we have a databaseId like "ai-studio-...", 
-  // it is often the REAL projectId for Admin SDK purposes.
-  const isAiStudioDb = databaseId.startsWith('ai-studio-');
-
-  try {
-    const getAdminDb = async (pId: string, dId: string, label: string) => {
-      console.log(`[Karlısın-Firebase] Attempting ${label}: Project=${pId}, Db=${dId || 'default'}`);
-      const appName = `app-${pId}-${dId || 'default'}`;
-      let app = getApps().find(a => a.name === appName);
-      if (!app) {
-        app = initializeAdminApp({ projectId: pId }, appName);
-      }
-      const db = dId && dId !== '(default)' ? getAdminFirestore(app, dId) : getAdminFirestore(app);
-      // Verify
-      await db.collection('newsletter_subscribers').limit(1).get();
-      return db;
-    };
-
-    // Attempt 1: databaseId as ProjectId (common in AIS)
-    if (isAiStudioDb) {
-      try {
-        adminDb = await getAdminDb(databaseId, '', 'AIS-Standard-Pattern');
-      } catch (e) {
-        console.warn(`[Karlısın-Firebase] AIS-Standard-Pattern failed: ${e.message}`);
-      }
-    }
-
-    // Attempt 2: config values as provided
-    if (!adminDb) {
-      try {
-        adminDb = await getAdminDb(projectId, databaseId, 'Config-Pattern');
-      } catch (e) {
-        console.warn(`[Karlısın-Firebase] Config-Pattern failed: ${e.message}`);
-      }
-    }
-
-    // Attempt 3: Local environment fallback
-    if (!adminDb) {
-      try {
-        adminDb = await getAdminDb(projectId, '', 'Fallback-Pattern');
-      } catch (e) {
-        console.error(`[Karlısın-Firebase] ALL ATTEMPTS FAILED. Use debug endpoint to diagnose.`);
-      }
-    }
-
-    if (adminDb) {
-      console.log(`[Karlısın-Firebase] Final Active Database: ${adminDb.databaseId} in Project: ${adminDb.projectId}`);
-    }
-
-  } catch (err: any) {
-    console.error('[Karlısın-Firebase] Admin SDK Init failure:', err.message);
-  }
-} catch (err) {
-  console.error('[Karlısın-Firebase] Global init error:', err);
-}
+let __dirname = '';
 
 // Initialize Firebase lazily
 let db: any = null;
@@ -285,8 +209,10 @@ const getGenAI = () => {
   return null;
 };
 
-// İlk başta dene
-getGenAI();
+// Initial attempt
+try {
+  getGenAI();
+} catch (e) {}
 
 // yahoo-finance2 v3+ robust instantiation logic
 // This fixes the "Call new YahooFinance() first" error
@@ -996,6 +922,87 @@ class UnifiedDataService {
 }
 
 async function startServer() {
+  // Deriving __dirname for ES module compatibility/CommonJS
+  try {
+    const { fileURLToPath } = await import('url');
+    // @ts-ignore
+    const __filename = fileURLToPath(import.meta.url);
+    __dirname = path.dirname(__filename);
+  } catch (e) {
+    __dirname = process.cwd();
+  }
+
+  // Silence Firestore logs to avoid noisey gRPC cancellation messages
+  setLogLevel('error');
+
+  // Initialize Firebase Admin (Server-side privileged access)
+  try {
+    const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+    let projectId = 'gen-lang-client-0551179549';
+    let databaseId = '';
+
+    if (fs.existsSync(configPath)) {
+      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      projectId = firebaseConfig.projectId || projectId;
+      databaseId = firebaseConfig.firestoreDatabaseId || '';
+    }
+
+    // Override with env if available (often more accurate in Cloud Run)
+    const envProjectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT;
+    projectId = envProjectId || projectId;
+
+    // CRITICAL: In AI Studio, if we have a databaseId like "ai-studio-...", 
+    // it is often the REAL projectId for Admin SDK purposes.
+    const isAiStudioDb = databaseId.startsWith('ai-studio-');
+
+    const getAdminDb = async (pId: string, dId: string, label: string) => {
+      console.log(`[Karlısın-Firebase] Attempting ${label}: Project=${pId}, Db=${dId || 'default'}`);
+      const appName = `app-${pId}-${dId || 'default'}`;
+      let app = getApps().find(a => a.name === appName);
+      if (!app) {
+        app = initializeAdminApp({ projectId: pId }, appName);
+      }
+      const db = dId && dId !== '(default)' ? getAdminFirestore(app, dId) : getAdminFirestore(app);
+      // Verify
+      await db.collection('newsletter_subscribers').limit(1).get();
+      return db;
+    };
+
+    // Attempt 1: databaseId as ProjectId (common in AIS)
+    if (isAiStudioDb) {
+      try {
+        adminDb = await getAdminDb(databaseId, '', 'AIS-Standard-Pattern');
+      } catch (e: any) {
+        console.warn(`[Karlısın-Firebase] AIS-Standard-Pattern failed: ${e.message}`);
+      }
+    }
+
+    // Attempt 2: config values as provided
+    if (!adminDb) {
+      try {
+        adminDb = await getAdminDb(projectId, databaseId, 'Config-Pattern');
+      } catch (e: any) {
+        console.warn(`[Karlısın-Firebase] Config-Pattern failed: ${e.message}`);
+      }
+    }
+
+    // Attempt 3: Local environment fallback
+    if (!adminDb) {
+      try {
+        adminDb = await getAdminDb(projectId, '', 'Fallback-Pattern');
+      } catch (e: any) {
+        console.error(`[Karlısın-Firebase] ALL ATTEMPTS FAILED. Use debug endpoint to diagnose.`);
+      }
+    }
+
+    if (adminDb) {
+      console.log(`[Karlısın-Firebase] Final Active Database: ${adminDb.databaseId} in Project: ${adminDb.projectId}`);
+    }
+
+  } catch (err: any) {
+    console.error('[Karlısın-Firebase] Admin SDK Init failure:', err.message);
+  }
+
   const app = express();
   app.set('trust proxy', true);
   const PORT = Number(process.env.PORT) || 3000;
