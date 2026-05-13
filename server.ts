@@ -20,8 +20,8 @@ import { articles } from './src/constants/articles';
 let xClient: TwitterApi | null = null;
 
 async function postToX(text: string) {
-  if (!process.env.X_API_KEY || !process.env.X_API_SECRET || !process.env.X_ACCESS_TOKEN || !process.env.X_ACCESS_SECRET) {
-    console.warn('[Karlısın-X] X API anahtarları eksik. Tweet paylaşılamadı.');
+  if (!process.env.X_API_KEY || !process.env.X_API_SECRET || !process.env.X_ACCESS_TOKEN || !process.env.X_ACCESS_TOKEN_SECRET) {
+    console.warn('[Karlısın-X] X API anahtarları eksik. Tweet paylaşılamadı. (X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET kontrol edin)');
     return;
   }
 
@@ -31,15 +31,21 @@ async function postToX(text: string) {
         appKey: process.env.X_API_KEY,
         appSecret: process.env.X_API_SECRET,
         accessToken: process.env.X_ACCESS_TOKEN,
-        accessSecret: process.env.X_ACCESS_SECRET,
+        accessSecret: process.env.X_ACCESS_TOKEN_SECRET,
       });
     }
 
-    const { data: createdTweet } = await xClient.v2.tweet(text);
+    // Use readWrite client for posting
+    const rwClient = xClient.readWrite;
+    const { data: createdTweet } = await rwClient.v2.tweet(text);
     console.log(`[Karlısın-X] Tweet başarıyla paylaşıldı: ${createdTweet.id}`);
     return createdTweet;
   } catch (err: any) {
     console.error('[Karlısın-X] Tweet paylaşım hatası:', err.message || err);
+    // On 401/403 errors, maybe clear client to force re-init
+    if (err.data?.status === 401 || err.data?.status === 403) {
+      xClient = null;
+    }
   }
 }
 
@@ -2060,13 +2066,18 @@ async function startServer() {
 }
 
 async function initAutoBroadcast() {
+  console.log('[Karlısın-AUTO] Otomatik bülten kontrolü başlatıldı.');
   if (!adminDb) {
-    console.error('[Karlısın-AUTO] adminDb hazır değil, otomatik kontrol atlanıyor.');
+    console.warn('[Karlısın-AUTO] adminDb henüz hazır değil. 10 saniye sonra tekrar denenecek...');
+    setTimeout(initAutoBroadcast, 10000);
     return;
   }
   try {
     const lastArticle = articles[articles.length - 1];
-    if (!lastArticle) return;
+    if (!lastArticle) {
+      console.log('[Karlısın-AUTO] Yayınlanmış yazı bulunamadı.');
+      return;
+    }
 
     const currentId = String(lastArticle.id);
     const systemRef = adminDb.collection('system_config').doc('broadcast_status');
@@ -2075,9 +2086,9 @@ async function initAutoBroadcast() {
     const lastBroadcastedId = systemSnap.exists ? systemSnap.data()?.last_broadcasted_article_id : null;
 
     if (lastBroadcastedId !== currentId) {
-      console.log(`[Karlısın-AUTO] Yeni yazı tespit edildi (${lastArticle.title}). 3 dakika içinde gönderilecek...`);
+      console.log(`[Karlısın-AUTO] Yeni yazı tespit edildi (${lastArticle.title}, ID: ${currentId}). 3 dakika içinde gönderilecek...`);
       
-      // Wait 3 minutes (180,000 ms) as requested
+      // Wait 3 minutes (180,000 ms)
       setTimeout(async () => {
         try {
           // Double check if another process handled it
@@ -2087,12 +2098,24 @@ async function initAutoBroadcast() {
             return;
           }
 
-          console.log('[Karlısın-AUTO] Broadcast başlatılıyor...');
+          console.log('[Karlısın-AUTO] Broadcast işlemi başlatılıyor...');
           const querySnapshot = await adminDb.collection('newsletter_subscribers').get();
-          const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e);
+          const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e && e.includes('@'));
+
+          console.log(`[Karlısın-AUTO] Toplam abone sayısı: ${subscribers.length}`);
 
           if (subscribers.length === 0) {
-            console.log('[Karlısın-AUTO] Abone bulunamadı, işlem iptal.');
+            console.log('[Karlısın-AUTO] Abone bulunamadı, sisteme kayıtlı olanlara mesaj gönderilemiyor.');
+            // Still post to X even if no subscribers
+            const tweetText = `📢 Yeni Yazı: ${lastArticle.title}\n\n${lastArticle.excerpt.slice(0, 110)}...\n\n🔗 Okumak için: https://www.karlisin.com/blog/${lastArticle.slug || currentId}\n\n#Karlısın #Borsa #FinansalOzgurluk @KarlisinTR`;
+            await postToX(tweetText);
+            
+            await systemRef.set({ 
+              last_broadcasted_article_id: currentId,
+              updated_at: new Date().toISOString(),
+              total_sent: 0,
+              note: 'Abone yoktu ama X paylaşıldı'
+            }, { merge: true });
             return;
           }
 
@@ -2101,7 +2124,7 @@ async function initAutoBroadcast() {
             console.warn('[Karlısın-AUTO] RESEND_API_KEY eksik veya placeholder. Mailler gönderilemiyor.');
           }
 
-          const resend = new Resend(resendFromEnv || 're_123');
+          const resendInstance = new Resend(resendFromEnv || 're_123');
           const sender = getSenderEmail();
           const articleUrl = `https://www.karlisin.com/blog/${lastArticle.slug || currentId}`;
 
@@ -2109,30 +2132,44 @@ async function initAutoBroadcast() {
           
           // X (Twitter) Otomatik Paylaşım
           const tweetText = `📢 Yeni Yazı: ${lastArticle.title}\n\n${lastArticle.excerpt.slice(0, 110)}...\n\n🔗 Okumak için: ${articleUrl}\n\n#Karlısın #Borsa #FinansalOzgurluk @KarlisinTR`;
+          console.log('[Karlısın-AUTO] X Paylaşımı yapılıyor...');
           await postToX(tweetText);
+
+          console.log(`[Karlısın-AUTO] ${subscribers.length} aboneye mail gönderimi başlıyor... (From: ${sender})`);
 
           for (const email of subscribers) {
             try {
-              await resend.emails.send({
+              const res = await resendInstance.emails.send({
                 from: sender,
                 to: [email],
-                subject: `Yeni Blog Yazısı: ${lastArticle.title} 📚`,
+                subject: `Karlısın'dan Yeni İçerik: ${lastArticle.title} 📚`,
                 html: `
                   <div style="font-family:sans-serif;padding:20px;color:#1e293b;max-width:600px;margin:0 auto;">
-                    <h2 style="color:#4f46e5;">Yeni Bir Yazımız Var!</h2>
-                    <p>Merhaba, Karlısın Blog'da yeni bir içerik paylaştık:</p>
-                    <div style="background:#f8fafc;padding:24px;border-radius:20px;border:1px solid #e2e8f0;margin:20px 0;">
-                      <h3 style="margin-top:0;">${lastArticle.title}</h3>
-                      <p style="color:#64748b;">${lastArticle.excerpt}</p>
-                      <a href="${articleUrl}" style="display:inline-block;background:#4f46e5;color:white;padding:12px 24px;text-decoration:none;border-radius:12px;font-weight:bold;">Şimdi Oku</a>
+                    <div style="text-align:center;margin-bottom:30px;">
+                      <h1 style="color:#4f46e5;margin:0;">Karlısın.com</h1>
+                      <p style="color:#64748b;margin:5px 0 0 0;">Finansal Özgürlük Analizleri</p>
                     </div>
-                    <p style="font-size:12px;color:#94a3b8;">Haftalık bültenimize abone olduğunuz için bu maili aldınız.</p>
+                    <div style="background:#f8fafc;padding:30px;border-radius:24px;border:1px solid #e2e8f0;margin-bottom:20px;">
+                      <h2 style="margin-top:0;color:#1e293b;font-size:20px;">${lastArticle.title}</h2>
+                      <p style="color:#475569;line-height:1.6;">${lastArticle.excerpt}</p>
+                      <div style="margin-top:25px;text-align:center;">
+                        <a href="${articleUrl}" style="display:inline-block;background:#4f46e5;color:white;padding:14px 28px;text-decoration:none;border-radius:12px;font-weight:bold;font-size:16px;">Yazının Tamamını Oku</a>
+                      </div>
+                    </div>
+                    <div style="text-align:center;color:#94a3b8;font-size:12px;">
+                      <p>© 2026 Karlısın. Tüm hakları saklıdır.</p>
+                      <p>Haftalık bülten aboneliğiniz kapsamında gönderilmiştir.</p>
+                    </div>
                   </div>
                 `
               });
-              successCount++;
+              if (res.error) {
+                console.error(`[Karlısın-AUTO] Resend hatası (${email}):`, res.error);
+              } else {
+                successCount++;
+              }
             } catch (err) {
-              console.error(`[Karlısın-AUTO] Mail gönderim hatası (${email}):`, err);
+              console.error(`[Karlısın-AUTO] Mail gönderim istisnası (${email}):`, err);
             }
           }
 
@@ -2143,21 +2180,16 @@ async function initAutoBroadcast() {
             total_sent: successCount
           });
 
-          console.log(`[Karlısın-AUTO] Broadcast tamamlandı. ${successCount} mail gönderildi.`);
+          console.log(`[Karlısın-AUTO] Broadcast tamamlandı. ${successCount} mail başarıyla gönderildi.`);
         } catch (err) {
-          console.error('[Karlısın-AUTO] Broadcast işlemi sırasında hata:', err);
+          console.error('[Karlısın-AUTO] Broadcast işlemi sırasında kritik hata:', err);
         }
       }, 180000); 
     } else {
-      console.log('[Karlısın-AUTO] Son yazı zaten duyurulmuş. Beklemede.');
+      console.log(`[Karlısın-AUTO] Son yazı (${lastArticle.title}, ID: ${currentId}) zaten duyurulmuş. Kontrol tamam.`);
     }
-  } catch (err) {
-  console.error('[Karlısın-AUTO] Başlatma hatası:', {
-    message: err.message,
-    code: err.code,
-    details: err.details,
-    stack: err.stack
-  });
+  } catch (err: any) {
+  console.error('[Karlısın-AUTO] Kontrol hatası:', err.message);
   }
 }
 
