@@ -1937,7 +1937,7 @@ async function startServer() {
     console.log(`[Karlısın-API] Broadcast başlatılıyor: ${subscribers.length} kişi`);
     
     // X (Twitter) Paylaşımı
-    const tweetText = `🚀 Yeni Blog Yazısı: ${articleTitle}\n\n${articleExcerpt.slice(0, 100)}...\n\nDevamını oku: ${articleUrl || 'https://karlisin.com/blog'}\n\n#Karlısın #Finans #Bist100`;
+    const tweetText = `🚀 Yeni Blog Yazımız Yayında! 🚀\n\n"${articleTitle}"\n\n${articleExcerpt.slice(0, 100)}...\n\nDetaylı analiz için tıklayın: ${articleUrl || 'https://karlisin.com/blog'}\n\n#Karlısın #Bist100 #Temettü #Yatırım @KarlisinTR`;
     await postToX(tweetText);
 
     const sender = process.env.RESEND_FROM_EMAIL || 'Karlısın <merhaba@karlisin.com>';
@@ -2099,7 +2099,7 @@ async function initAutoBroadcast() {
           let successCount = 0;
           
           // X (Twitter) Otomatik Paylaşım
-          const tweetText = `📢 Yeni Blog Yazımız Yayında: ${lastArticle.title}\n\n${lastArticle.excerpt.slice(0, 120)}...\n\nOkumak için: ${articleUrl}\n\n#Karlısın #Yatırım #Borsa`;
+          const tweetText = `📢 Yeni Yazı: ${lastArticle.title}\n\n${lastArticle.excerpt.slice(0, 110)}...\n\n🔗 Okumak için: ${articleUrl}\n\n#Karlısın #Borsa #FinansalOzgurluk @KarlisinTR`;
           await postToX(tweetText);
 
           for (const email of subscribers) {
