@@ -650,5 +650,37 @@ export const articles = [
     content: `
       <p>Bu yazı, X (Twitter) servisimizdeki son bağlantı iyileştirmelerini doğrulamak için sistem tarafından otomatik olarak oluşturulmuştur.</p>
     `
+  },
+  {
+    id: 28,
+    slug: 'karlisin-otomasyon-ve-X-dogrulama-v3',
+    title: 'Karlısın: Otomasyon ve X Doğrulama v3',
+    excerpt: 'Sistem altyapımızdaki Firestore bağlantı sorunlarını ve X API v2 payload yapısını doğrulamak için son bir deneme yapıyoruz.',
+    category: 'Sistem',
+    date: '13 Mayıs 2026',
+    readTime: '1 dk',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Bu yazı, Karlısın'ın otomatik duyuru sistemlerindeki Firestore "NOT_FOUND" hatasını gidermek ve X (Twitter) paylaşımını doğrulamak için paylaşılmıştır.</p>
+      <h3 style="color: white; margin-top: 24px;">Güncelleme Notları</h3>
+      <ul>
+        <li><strong>Firestore:</strong> Bağlantı ve koleksiyon erişim testleri debug paneline eklendi.</li>
+        <li><strong>X API v2:</strong> Tweet objesi gönderim formatı <code>{ text: '...' }</code> olarak güncellendi.</li>
+        <li><strong>Hata Yakalama:</strong> gRPC hataları için daha detaylı loglama sağlandı.</li>
+      </ul>
+    `
+  },
+  {
+    id: 29,
+    slug: 'karlisin-x-entegrasyon-test-v4',
+    title: 'Karlısın: X Entegrasyon v4 Doğrulama',
+    excerpt: 'X API v2 yetkilendirme ve hata ayıklama mesajlarını test etmek için son bir adım.',
+    category: 'Sistem',
+    date: '13 Mayıs 2026',
+    readTime: '1 dk',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Bu yazı, X API entegrasyonu ve hata ayıklama sistemindeki son düzeltmeleri (401/403 yetki kontrolü) doğrulamak için paylaşılmıştır.</p>
+    `
   }
 ];

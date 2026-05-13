@@ -8,7 +8,6 @@ import path from 'path';
 import fs from 'fs';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
-import * as dotenv from 'dotenv';
 import yahooFinanceModule from 'yahoo-finance2';
 import NodeCache from 'node-cache';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -50,28 +49,33 @@ async function postToX(text: string) {
 
     // Use readWrite client for posting
     const rwClient = xClient.readWrite;
-    const { data: createdTweet } = await rwClient.v2.tweet({ text: text.slice(0, 275) });
-    console.log(`[Karlısın-X] Tweet başarıyla paylaşıldı: ${createdTweet.id}`);
+    console.log('[Karlısın-X] Tweet gönderiliyor...');
+    const result = await rwClient.v2.tweet({ text: text.slice(0, 275) });
+    const tweetId = result.data?.id || (result as any).id;
+    console.log(`[Karlısın-X] Tweet başarıyla paylaşıldı: ${tweetId}`);
     lastXError = null;
-    return createdTweet;
+    return result;
   } catch (err: any) {
     lastXError = {
       message: err.message,
-      status: err.data?.status || err.code,
-      errorDetail: err.data?.detail || err.data?.message || 'Detay yok',
-      fullData: err.data,
+      code: err.code,
+      status: err.data?.status || err.statusCode || err.code,
+      errorDetail: err.data?.detail || err.data?.message || err.message || 'Detay yok',
+      fullData: err.data || err,
       timestamp: new Date().toISOString()
     };
     console.error('[Karlısın-X] Tweet paylaşım hatası!');
     if (err.data) {
       console.error(`[Karlısın-X] Veri: ${JSON.stringify(err.data, null, 2)}`);
     } else {
-      console.error(`[Karlısın-X] Mesaj: ${err.message || err}`);
+      console.error(`[Karlısın-X] Hata:`, err);
     }
     
     // On 401/403 errors, maybe clear client to force re-init
-    if (err.data?.status === 401 || err.data?.status === 403 || err.code === 401 || err.code === 403) {
-      console.warn('[Karlısın-X] Yetkilendirme hatası (401/403). Anahtarları ve izinleri kontrol edin.');
+    if (err.status === 401 || err.status === 403 || err.code === 401 || err.code === 403 || err.statusCode === 401 || err.statusCode === 403) {
+      console.warn('[Karlısın-X] YETKİLENDİRME HATASI (401/403). LÜTFEN ŞUNLARI KONTROL EDİN:');
+      console.warn('1. X Dev Portal -> User authentication settings -> App permissions: "Read and write" seçili mi?');
+      console.warn('2. Bu ayar yapıldıktan sonra Access Token ve Secret YENİDEN OLUŞTURULDU MU?');
       xClient = null;
     }
   }
@@ -1035,48 +1039,53 @@ async function startServer() {
     console.log('[Karlısın-DEBUG] Manuel broadcast tetiklendi.');
     
     const mask = (s: string | undefined) => s ? `${s.substring(0, 4)}...${s.substring(s.length - 4)}` : 'MISSING';
-    const envKeys = Object.keys(process.env);
+    const envKeys = Object.keys(process.env).filter(k => k.startsWith('X_') || k.startsWith('RESEND_'));
     
-    console.log('[Karlısın-DEBUG] Mevcut Env Anahtarları:', envKeys.filter(k => !k.includes('SESSION') && !k.includes('COOKIE')));
-    
-    const status = {
-      RESEND: mask(process.env.RESEND_API_KEY),
-      X_API_KEY: mask(process.env.X_API_KEY),
-      X_API_SECRET: mask(process.env.X_API_SECRET),
-      X_ACCESS_TOKEN: mask(process.env.X_ACCESS_TOKEN),
-      X_ACCESS_TOKEN_SECRET: mask(process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET),
+    const diagnostics: any = {
+      step1_adminDb_initialized: !!adminDb,
+      step2_firestore_test: 'pending'
     };
 
-    console.log('[Karlısın-DEBUG] Anahtar Durumu:', status);
-
     try {
-      // Force status reset for debugging
-      const systemRef = adminDb?.collection('system_config').doc('broadcast_status');
-      if (systemRef) {
-        await systemRef.set({ status: 'IDLE', last_broadcasted_article_id: '0' }, { merge: true });
-        console.log('[Karlısın-DEBUG] Firestore status IDLE ve ID 0 olarak resetlendi.');
+      if (adminDb) {
+        try {
+          const testSnap = await adminDb.collection('newsletter_subscribers').limit(1).get();
+          diagnostics.step2_firestore_test = `success (found ${testSnap.size} docs)`;
+          
+          const systemRef = adminDb.collection('system_config').doc('broadcast_status');
+          await systemRef.set({ status: 'IDLE', last_broadcasted_article_id: '0' }, { merge: true });
+          diagnostics.step3_reset_status = 'success';
+        } catch (fErr: any) {
+          diagnostics.step2_firestore_test = `error: ${fErr.message}`;
+          console.error('[Karlısın-DEBUG] Firestore Test Error:', fErr);
+        }
       }
 
       await initAutoBroadcast(true); 
+
+      // Biraz bekle ki async başlayan broadcast lastXError'ı güncelleyebilsin (eğer hata verirse)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
       res.json({ 
         success: true, 
-        message: 'Manuel tetikleme başarılı. Konsol loglarını izleyin.',
-        debugInfo: {
-          resend: !!process.env.RESEND_API_KEY,
-          x: {
-            apiKey: !!process.env.X_API_KEY,
-            apiSecret: !!process.env.X_API_SECRET,
-            accessToken: !!process.env.X_ACCESS_TOKEN,
-            accessTokenSecret: !!(process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET),
-            lastError: lastXError
-          },
-          adminDb: !!adminDb,
-          envKeys: envKeys.filter(k => k.startsWith('X_') || k.startsWith('RESEND_'))
-        }
+        message: 'Manuel tetikleme adımları icra edildi. (3sn beklendi)',
+        diagnostics,
+        keys: {
+          RESEND: mask(process.env.RESEND_API_KEY),
+          X_API_KEY: mask(process.env.X_API_KEY),
+          X_API_SECRET: mask(process.env.X_API_SECRET),
+          X_ACCESS_TOKEN: mask(process.env.X_ACCESS_TOKEN),
+          X_ACCESS_TOKEN_SECRET: mask(process.env.X_ACCESS_TOKEN_SECRET || process.env.X_ACCESS_SECRET),
+        },
+        lastXError: lastXError || 'Hata yok (Henüz)'
       });
     } catch (err: any) {
-      console.error('[Karlısın-DEBUG] Hata:', err.message);
-      res.status(500).json({ error: err.message });
+      console.error('[Karlısın-DEBUG] Kritik Hata:', err.message);
+      res.status(500).json({ 
+        error: err.message,
+        diagnostics,
+        lastXError: lastXError || 'Hata yok'
+      });
     }
   });
 
@@ -2300,7 +2309,7 @@ async function initAutoBroadcast(force = false) {
           isLocalBroadcastPending = false;
         }
       }, delayMs); 
-    } else if (isDbPending) {
+    } else if (dbStatus === 'PENDING') {
       console.log('[Karlısın-AUTO] Bir broadcast işlemi zaten beklemede (PENDING).');
     } else {
       console.log(`[Karlısın-AUTO] Sistem güncel. (Son ID: ${currentId})`);
