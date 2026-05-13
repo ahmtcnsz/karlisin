@@ -557,22 +557,23 @@ export const articles = [
   },
   {
     id: 23,
-    slug: 'sistem-test-yazisi-karlisin-otomasyon-denemesi',
-    title: 'Sistem Test Yazısı: Karlısın Otomasyon Denemesi',
-    excerpt: 'Bu bir sistem test yazısıdır. Karlısın otomasyon sistemlerinin (X Paylaşımı ve Bülten Gönderimi) doğru çalışıp çalışmadığını kontrol etmek amacıyla oluşturulmuştur.',
-    category: 'Test',
+    slug: 'son-sistem-kontrolu-karlisin-otomasyon-dogrulama',
+    title: 'Son Sistem Kontrolü: Karlısın Otomasyon Doğrulama',
+    excerpt: 'Otomasyon sistemlerimizin (X ve E-Bülten) son kontrolünü gerçekleştiriyoruz. Bu yazı yayına girdikten kısa süre sonra bildirimler tetiklenecektir.',
+    category: 'Sistem',
     date: '13 Mayıs 2026',
     readTime: '1 dk',
-    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=1200',
+    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200',
     content: `
-      <p>Merhaba! Bu yazı, <strong>Karlısın</strong> platformunun otomatik duyuru sistemlerini test etmek için yayına alınmıştır.</p>
-      <h3 style="color: white; margin-top: 24px;">Test Detayları</h3>
-      <p>Bu içerik yayına girdikten yaklaşık 3 dakika sonra:</p>
+      <p>Karlısın altyapısında yaptığımız iyileştirmelerin ardından <strong>X (Twitter)</strong> ve <strong>Resend (E-Bülten)</strong> entegrasyonlarımızı son kez test ediyoruz.</p>
+      <h3 style="color: white; margin-top: 24px;">Beklenen Akış</h3>
+      <p>Sistem şu adımları otomatik olarak işleyecektir:</p>
       <ul>
-        <li>X (Twitter) @KarlisinTR hesabında otomatik paylaşım yapılması,</li>
-        <li>Bülten abonelerine bilgilendirme e-postası gitmesi beklenmektedir.</li>
+        <li>Yeni yazı sisteme tanımlandığında sunucu tarafında algılanacak.</li>
+        <li>X API üzerinden @KarlisinTR hesabına bir duyuru tweeti gönderilecek.</li>
+        <li>Resend API aracılığıyla newsletter abonelerine şık bir e-posta iletilecek.</li>
       </ul>
-      <p>Eğer bu sistemlerden birinde aksaklık yaşıyorsanız, lütfen .env anahtarlarınızı (RESEND_API_KEY, X_API_KEY vb.) ve uygulama izinlerini kontrol edin.</p>
+      <p>Bu süreç, sunucu optimizasyonları gereği 10-20 saniye içerisinde tamamlanacaktır.</p>
     `
   }
 ];

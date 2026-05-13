@@ -80,18 +80,23 @@ try {
     : getApps()[0];
   
   try {
-    if (databaseId && databaseId !== '(default)') {
+    if (databaseId && databaseId !== '(default)' && databaseId !== 'default') {
+      console.log(`[Karlısın-Firebase] Instance database deneniyor: ${databaseId}`);
       adminDb = getAdminFirestore(adminApp, databaseId);
     } else {
       adminDb = getAdminFirestore(adminApp);
     }
-    console.log(`[Karlısın-Firebase] Firebase Admin SDK başlatıldı (Project: ${projectId}, Database: ${databaseId || 'default'}).`);
+    
+    // Test connection immediately
+    const testSnap = await adminDb.collection('newsletter_subscribers').limit(1).get();
+    console.log(`[Karlısın-Firebase] Admin SDK bağlantısı onaylandı. Abone koleksiyonu erişilebilir. (Database: ${databaseId || 'default'})`);
   } catch (dbErr: any) {
-    console.warn(`[Karlısın-Firebase] Belirtilen database (${databaseId}) ile başlatılamadı, default deneniyor:`, dbErr.message);
+    console.warn(`[Karlısın-Firebase] KRİTİK: Veritabanına (${databaseId}) bağlanılamadı!`, dbErr.message);
     try {
+      console.log('[Karlısın-Firebase] Varsayılan (default) veritabanı deneniyor...');
       adminDb = getAdminFirestore(adminApp);
-    } catch (fallbackErr) {
-      console.error('[Karlısın-Firebase] Fallback Admin Firestore da başarısız!', fallbackErr);
+    } catch (fallbackErr: any) {
+      console.error('[Karlısın-Firebase] FİREBASE ADMİN TAMAMEN BAŞARISIZ!', fallbackErr.message);
     }
   }
 } catch (err) {
@@ -990,6 +995,36 @@ async function startServer() {
   app.get('/robots.txt', serveSEOFile('robots.txt', 'text/plain'));
   app.get('/ads.txt', serveSEOFile('ads.txt', 'text/plain', 'google.com, pub-6525616618289921, DIRECT, f08c47fec0942fa0'));
   app.get('/Ads.txt', (req, res) => res.redirect(301, '/ads.txt'));
+
+  // ---------------------------------------------------------
+  // DEBUG & MANUAL TRIGGER
+  // ---------------------------------------------------------
+  app.get('/api/debug/broadcast', async (req, res) => {
+    console.log('[Karlısın-DEBUG] Manuel broadcast tetiklendi.');
+    
+    // Safety masked log
+    const mask = (s: string | undefined) => s ? `${s.substring(0, 4)}...${s.substring(s.length - 4)}` : 'MISSING';
+    console.log('[Karlısın-DEBUG] Anahtar Durumu:', {
+      RESEND: mask(process.env.RESEND_API_KEY),
+      X_API_KEY: mask(process.env.X_API_KEY),
+    });
+
+    try {
+      await initAutoBroadcast(true); // Force run
+      res.json({ 
+        success: true, 
+        message: 'Broadcast işlemi manuel olarak tetiklendi. Konsol loglarını kontrol edin.',
+        debugInfo: {
+          resend: !!process.env.RESEND_API_KEY,
+          x: !!process.env.X_API_KEY,
+          adminDb: !!adminDb
+        }
+      });
+    } catch (err: any) {
+      console.error('[Karlısın-DEBUG] Hata:', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
 
   // ---------------------------------------------------------
   // 1. API ROTLARI (KESİN OLARAK ÜSTTE)
@@ -2065,11 +2100,11 @@ async function startServer() {
   });
 }
 
-async function initAutoBroadcast() {
+async function initAutoBroadcast(force = false) {
   console.log('[Karlısın-AUTO] Otomatik bülten kontrolü başlatıldı.');
   if (!adminDb) {
     console.warn('[Karlısın-AUTO] adminDb henüz hazır değil. 10 saniye sonra tekrar denenecek...');
-    setTimeout(initAutoBroadcast, 10000);
+    setTimeout(() => initAutoBroadcast(force), 10000);
     return;
   }
   try {
@@ -2085,58 +2120,51 @@ async function initAutoBroadcast() {
     
     const lastBroadcastedId = systemSnap.exists ? systemSnap.data()?.last_broadcasted_article_id : null;
 
-    if (lastBroadcastedId !== currentId) {
-      console.log(`[Karlısın-AUTO] Yeni yazı tespit edildi (${lastArticle.title}, ID: ${currentId}). 3 dakika içinde gönderilecek...`);
+    if (lastBroadcastedId !== currentId || force) {
+      const delayMs = force ? 0 : 10000; // Dev mode: only 10 seconds delay instead of 3 mins
+      console.log(`[Karlısın-AUTO] Broadcast gerekebilir (${lastArticle.title}, ID: ${currentId}). ${delayMs/1000} saniye içinde işlenecek...`);
       
-      // Wait 3 minutes (180,000 ms)
       setTimeout(async () => {
         try {
-          // Double check if another process handled it
-          const reCheckSnap = await systemRef.get();
-          if (reCheckSnap.exists && reCheckSnap.data()?.last_broadcasted_article_id === currentId) {
-            console.log('[Karlısın-AUTO] Broadcast zaten başka bir işlem tarafından tamamlandı.');
-            return;
+          // Double check if another process handled it (only if not forced)
+          if (!force) {
+            const reCheckSnap = await systemRef.get();
+            if (reCheckSnap.exists && reCheckSnap.data()?.last_broadcasted_article_id === currentId) {
+              console.log('[Karlısın-AUTO] Broadcast zaten tamamlanmış.');
+              return;
+            }
           }
 
-          console.log('[Karlısın-AUTO] Broadcast işlemi başlatılıyor...');
+          console.log('[Karlısın-AUTO] Veritabanından aboneler çekiliyor...');
           const querySnapshot = await adminDb.collection('newsletter_subscribers').get();
-          const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e && e.includes('@'));
+          const subscribers = querySnapshot.docs.map((doc: any) => doc.data().email).filter((e: any) => !!e && e.includes('@'));
 
-          console.log(`[Karlısın-AUTO] Toplam abone sayısı: ${subscribers.length}`);
+          console.log(`[Karlısın-AUTO] Abone listesi çekildi. Toplam geçerli mail: ${subscribers.length}`);
+
+          // X (Twitter) Otomatik Paylaşım
+          const tweetText = `📢 Yeni Yazı: ${lastArticle.title}\n\n${lastArticle.excerpt.slice(0, 110)}...\n\n🔗 Okumak için: https://www.karlisin.com/blog/${lastArticle.slug || currentId}\n\n#Karlısın #Borsa #FinansalOzgurluk @KarlisinTR`;
+          console.log('[Karlısın-AUTO] X (Twitter) paylaşımı yapılıyor...');
+          await postToX(tweetText);
 
           if (subscribers.length === 0) {
-            console.log('[Karlısın-AUTO] Abone bulunamadı, sisteme kayıtlı olanlara mesaj gönderilemiyor.');
-            // Still post to X even if no subscribers
-            const tweetText = `📢 Yeni Yazı: ${lastArticle.title}\n\n${lastArticle.excerpt.slice(0, 110)}...\n\n🔗 Okumak için: https://www.karlisin.com/blog/${lastArticle.slug || currentId}\n\n#Karlısın #Borsa #FinansalOzgurluk @KarlisinTR`;
-            await postToX(tweetText);
-            
+            console.log('[Karlısın-AUTO] Hiç abone bulunamadı. Sadece X paylaşımı yapıldı.');
             await systemRef.set({ 
               last_broadcasted_article_id: currentId,
               updated_at: new Date().toISOString(),
               total_sent: 0,
-              note: 'Abone yoktu ama X paylaşıldı'
+              note: 'Sadece X paylaşıldı, abone yoktu.'
             }, { merge: true });
             return;
           }
 
           const resendFromEnv = process.env.RESEND_API_KEY;
-          if (!resendFromEnv || resendFromEnv === 're_123') {
-            console.warn('[Karlısın-AUTO] RESEND_API_KEY eksik veya placeholder. Mailler gönderilemiyor.');
-          }
-
           const resendInstance = new Resend(resendFromEnv || 're_123');
           const sender = getSenderEmail();
           const articleUrl = `https://www.karlisin.com/blog/${lastArticle.slug || currentId}`;
 
+          console.log(`[Karlısın-AUTO] ${subscribers.length} aboneye Resend üzerinden mail gönderimi başlıyor... (Gönderici: ${sender})`);
+
           let successCount = 0;
-          
-          // X (Twitter) Otomatik Paylaşım
-          const tweetText = `📢 Yeni Yazı: ${lastArticle.title}\n\n${lastArticle.excerpt.slice(0, 110)}...\n\n🔗 Okumak için: ${articleUrl}\n\n#Karlısın #Borsa #FinansalOzgurluk @KarlisinTR`;
-          console.log('[Karlısın-AUTO] X Paylaşımı yapılıyor...');
-          await postToX(tweetText);
-
-          console.log(`[Karlısın-AUTO] ${subscribers.length} aboneye mail gönderimi başlıyor... (From: ${sender})`);
-
           for (const email of subscribers) {
             try {
               const res = await resendInstance.emails.send({
@@ -2163,13 +2191,14 @@ async function initAutoBroadcast() {
                   </div>
                 `
               });
+              
               if (res.error) {
                 console.error(`[Karlısın-AUTO] Resend hatası (${email}):`, res.error);
               } else {
                 successCount++;
               }
-            } catch (err) {
-              console.error(`[Karlısın-AUTO] Mail gönderim istisnası (${email}):`, err);
+            } catch (err: any) {
+              console.error(`[Karlısın-AUTO] Mail gönderim istisnası (${email}):`, err.message);
             }
           }
 
@@ -2177,19 +2206,20 @@ async function initAutoBroadcast() {
           await systemRef.set({ 
             last_broadcasted_article_id: currentId,
             updated_at: new Date().toISOString(),
-            total_sent: successCount
-          });
+            total_sent: successCount,
+            last_article_title: lastArticle.title
+          }, { merge: true });
 
-          console.log(`[Karlısın-AUTO] Broadcast tamamlandı. ${successCount} mail başarıyla gönderildi.`);
-        } catch (err) {
-          console.error('[Karlısın-AUTO] Broadcast işlemi sırasında kritik hata:', err);
+          console.log(`[Karlısın-AUTO] Gönlerim tamamlandı. Başarılı: ${successCount}/${subscribers.length}`);
+        } catch (err: any) {
+          console.error('[Karlısın-AUTO] Broadcast işlemi sırasında kritik hata:', err.message);
         }
-      }, 180000); 
+      }, delayMs); 
     } else {
-      console.log(`[Karlısın-AUTO] Son yazı (${lastArticle.title}, ID: ${currentId}) zaten duyurulmuş. Kontrol tamam.`);
+      console.log(`[Karlısın-AUTO] Durum: Güncel. Son yazı (${lastArticle.title}) zaten gönderildi.`);
     }
   } catch (err: any) {
-  console.error('[Karlısın-AUTO] Kontrol hatası:', err.message);
+    console.error('[Karlısın-AUTO] Kontrol hatası:', err.message);
   }
 }
 
