@@ -554,5 +554,25 @@ export const articles = [
 
       <p>Geleceğinizi güvenle inşa ederken, iyi bir finansal okuryazarlık altyapısıyla desteklenen kararlar almak en sağlam yöntemdir. Finansal hedeflerinize giden bu keyifli yolda, finansal okuryazarlık adımlarınızı büyütürken her zaman yanınızdayız. Bu uzun soluklu yürüyüşte, güzel bir yol arkadaşlığı yapmaya ve sizlere en net verileri sunmaya devam edeceğiz.</p>
     `
+  },
+  {
+    id: 23,
+    slug: 'sistem-test-yazisi-karlisin-otomasyon-denemesi',
+    title: 'Sistem Test Yazısı: Karlısın Otomasyon Denemesi',
+    excerpt: 'Bu bir sistem test yazısıdır. Karlısın otomasyon sistemlerinin (X Paylaşımı ve Bülten Gönderimi) doğru çalışıp çalışmadığını kontrol etmek amacıyla oluşturulmuştur.',
+    category: 'Test',
+    date: '13 Mayıs 2026',
+    readTime: '1 dk',
+    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Merhaba! Bu yazı, <strong>Karlısın</strong> platformunun otomatik duyuru sistemlerini test etmek için yayına alınmıştır.</p>
+      <h3 style="color: white; margin-top: 24px;">Test Detayları</h3>
+      <p>Bu içerik yayına girdikten yaklaşık 3 dakika sonra:</p>
+      <ul>
+        <li>X (Twitter) @KarlisinTR hesabında otomatik paylaşım yapılması,</li>
+        <li>Bülten abonelerine bilgilendirme e-postası gitmesi beklenmektedir.</li>
+      </ul>
+      <p>Eğer bu sistemlerden birinde aksaklık yaşıyorsanız, lütfen .env anahtarlarınızı (RESEND_API_KEY, X_API_KEY vb.) ve uygulama izinlerini kontrol edin.</p>
+    `
   }
 ];
