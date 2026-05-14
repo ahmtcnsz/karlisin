@@ -63,7 +63,7 @@ async function postToX(text: string) {
     
     // Specially handle 402 CreditsDepleted for X
     if (err.status === 402 || err.code === 402 || (err.data && err.data.title === 'CreditsDepleted')) {
-      errorDetail = 'X API Kota Limitine Takıldı (Credits Depleted). Lütfen X Developer Portal üzerinden uygulama kullanım sınırlarını veya planını (Free/Basic) kontrol edin.';
+      errorDetail = 'X API Kota Limitine Takıldı (Credits Depleted). Lütfen X Developer Portal üzerinden "Free" planın aktif olduğunu ve Post limitlerinizin dolmadığını kontrol edin. Yeni hesaplarda onaylanma süreci bir kaç saat sürebilir.';
     }
 
     lastXError = {
@@ -74,6 +74,8 @@ async function postToX(text: string) {
       fullData: errorBody,
       timestamp: new Date().toISOString()
     };
+    console.error('[Karlısın-X] Tweet PAYLAŞILAMADI!');
+    console.error(`[Karlısın-X] Hata: ${lastXError.errorDetail}`);
     console.error('[Karlısın-X] Tweet paylaşım hatası!');
     console.error(`[Karlısın-X] Status: ${lastXError.status}`);
     console.error(`[Karlısın-X] Detail: ${lastXError.errorDetail}`);
