@@ -25,6 +25,7 @@ import NotFound from './components/NotFound';
 import { motion, AnimatePresence } from 'motion/react';
 import { initAnalytics } from './lib/firebase';
 import { logEvent } from 'firebase/analytics';
+import { SupportButton } from './components/SupportButton';
 
 // Scroll to top and track page views on route change
 function ScrollToTop() {
@@ -113,6 +114,7 @@ function Layout({ children, isLoggedIn, hideNav }: { children: React.ReactNode, 
         <PageWrapper>{children}</PageWrapper>
       </main>
       {!hideNav && <Footer />}
+      <SupportButton />
     </div>
   );
 }

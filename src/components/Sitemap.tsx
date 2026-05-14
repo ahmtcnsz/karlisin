@@ -4,6 +4,13 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, ArrowRight, Home, Calculator, ShoppingBag, PieChart, BookOpen, Shield, FileText, Info, TrendingUp, Mail } from 'lucide-react';
 
 const blogSlugs = [
+  'dolar-ve-altin-kuru-tahminleri-teknik-analiz-notlari',
+  'serbest-meslek-erbabi-icin-vergi-avantajlari',
+  'enflasyon-karsisinda-birikim-koruma-yontemleri',
+  'kdv-hesaplama-ve-iade-surecleri-hakkinda-bilmeniz-gerekenler',
+  'kripto-para-vergilendirmesi-turkiye-deki-son-durum',
+  'bilesik-faiz-nedir-yatirimlarinizi-nasil-buyutur',
+  'maas-vergi-hesaplama-rehberi-2026',
   'temettu-nedir-borsada-temettu-dagitimi-ve-pasif-gelir-rehberi',
   'temettu-verimi-nedir-ve-neden-onemlidir',
   'pazaryeri-saticilari-icin-kar-rehberi-trendyol-hepsiburada-ve-amazon-da-zarar-etmekten-nasil-kurtulursunuz',

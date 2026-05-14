@@ -3,58 +3,11 @@ import { motion } from 'motion/react';
 import { Clock, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const articles = [
-  {
-    id: 19,
-    slug: 'temettu-nedir-borsada-temettu-dagitimi-ve-pasif-gelir-rehberi',
-    title: 'Temettü Nedir? Borsada Temettü Dağıtımı ve Pasif Gelir Rehberi',
-    excerpt: 'Borsada yatırım yaparken sadece hisse senedinin fiyat artışından değil, aynı zamanda şirketin elde ettiği karlardan pay alabileceğinizi biliyor muydunuz?',
-    category: 'Rehber',
-    date: '11 Mayıs 2026',
-    readTime: '8 dk',
-    image: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&q=80&w=800',
-  },
-  {
-    id: 18,
-    slug: 'temettu-verimi-nedir-ve-neden-onemlidir',
-    title: 'Temettü Verimi Nedir ve Neden Önemlidir?',
-    excerpt: 'Bir şirketin ne kadar temettü dağıttığı kadar, bu temettünün hisse fiyatına oranının ne olduğu da yatırımcılar için kritik bir metrik olan temettü verimini oluşturur.',
-    category: 'Rehber',
-    date: '11 Mayıs 2026',
-    readTime: '10 dk',
-    image: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=800',
-  },
-  {
-    id: 15,
-    slug: 'karli-bir-e-ticaret-markasi-insasi-2026-yol-haritasi',
-    title: 'Karlı Bir E-ticaret Markası İnşası: 2026 Yol Haritası',
-    excerpt: 'Sıfırdan kârlı bir marka yaratmanın matematiği, lojistik stratejileri ve 2026 yılındaki büyüme fırsatları.',
-    category: 'Marka',
-    date: '24 Nisan 2026',
-    readTime: '12 dk',
-    image: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&q=80&w=800',
-  },
-  {
-    id: 14,
-    slug: '2026-da-borsa-istanbul-temettu-emekliligi-hayal-mi',
-    title: '2026\'da Borsa İstanbul: Temettü Emekliliği Hayal mi?',
-    excerpt: 'Enflasyon ve faiz sarmalında temettü yatırımcılığının 2026 yılındaki rolünü ve Karlısın ile nasıl pasif gelir inşa edilebileceğini tartışıyoruz.',
-    category: 'Yatırım',
-    date: '24 Nisan 2026',
-    readTime: '10 dk',
-    image: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=800',
-  },
-  {
-    id: 13,
-    slug: 'e-ticarette-kar-hesapla-ve-fiyat-belirle-kaca-satayim',
-    title: 'E-ticarette Kar Hesapla ve Fiyat Belirle: Kaça Satayım?',
-    excerpt: 'Satış fiyatınızı belirlerken yapılan en büyük hatalar ve doğru kar hesaplama yöntemleri ile Karlısın rehberi.',
-    category: 'SEO Rehber',
-    date: '23 Nisan 2026',
-    readTime: '12 dk',
-    image: 'https://images.unsplash.com/photo-1554224155-1696413575b8?auto=format&fit=crop&q=80&w=800',
-  }
-];
+import { articles as allArticles } from '../constants/articles';
+
+// En son 5 yazıyı göster (Listenin sonundakiler en günceldir)
+const articles = allArticles.slice(-5).reverse();
+
 
 export default function BlogSnippet() {
   const navigate = useNavigate();
