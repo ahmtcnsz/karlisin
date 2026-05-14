@@ -21,5 +21,19 @@ export const articles = [
       
       <p>Bu otomasyonlar, finansal okuryazarlık yolculuğunuzda en güncel bilgiye, en hızlı şekilde ulaşmanızı sağlamak için tasarlandı. Karlısın ile kârlı kalmaya devam edin!</p>
     `
+  },
+  {
+    id: 31,
+    slug: 'karlisin-otomasyon-sistem-dogrulamasi-nihai',
+    title: 'Karlısın: Otomasyon Sistem Doğrulaması (Nihai)',
+    excerpt: 'Sistem altyapımızdaki Access Token ve Permission iyileştirmelerini doğrulamak için son bir test.',
+    category: 'Sistem',
+    date: '14 Mayıs 2026',
+    readTime: '1 dk',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Bu yazı, Karlısın'ın <strong>X (Twitter)</strong> ve <strong>Resend</strong> otomasyon sistemleri için yapılan "Kritik Erişim" güncellemesini doğrulamak amacıyla oluşturulmuştur.</p>
+      <p>Eğer bu içeriği X hesabımızda veya gelen kutunuzda görüyorsanız, sistemimiz %100 kapasiteyle çalışıyor demektir.</p>
+    `
   }
 ];
