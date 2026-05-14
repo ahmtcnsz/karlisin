@@ -50,25 +50,36 @@ async function postToX(text: string) {
     // Use readWrite client for posting
     const rwClient = xClient.readWrite;
     console.log('[Karlısın-X] Tweet gönderiliyor...');
+    console.log(`[Karlısın-X] Kullanılan Anahtar (API): ${xApiKey.substring(0, 4)}...`);
+    
     const result = await rwClient.v2.tweet({ text: text.slice(0, 275) });
     const tweetId = result.data?.id || (result as any).id;
     console.log(`[Karlısın-X] Tweet başarıyla paylaşıldı: ${tweetId}`);
     lastXError = null;
     return result;
   } catch (err: any) {
+    const errorBody = err.data || err;
+    let errorDetail = err.data?.detail || err.data?.message || err.message || 'Detay yok';
+    
+    // Specially handle 402 CreditsDepleted for X
+    if (err.status === 402 || err.code === 402 || (err.data && err.data.title === 'CreditsDepleted')) {
+      errorDetail = 'X API Kota Limitine Takıldı (Credits Depleted). Lütfen X Developer Portal üzerinden uygulama kullanım sınırlarını veya planını (Free/Basic) kontrol edin.';
+    }
+
     lastXError = {
       message: err.message,
       code: err.code,
       status: err.data?.status || err.statusCode || err.code,
-      errorDetail: err.data?.detail || err.data?.message || err.message || 'Detay yok',
-      fullData: err.data || err,
+      errorDetail: errorDetail,
+      fullData: errorBody,
       timestamp: new Date().toISOString()
     };
     console.error('[Karlısın-X] Tweet paylaşım hatası!');
+    console.error(`[Karlısın-X] Status: ${lastXError.status}`);
+    console.error(`[Karlısın-X] Detail: ${lastXError.errorDetail}`);
+    
     if (err.data) {
-      console.error(`[Karlısın-X] Veri: ${JSON.stringify(err.data, null, 2)}`);
-    } else {
-      console.error(`[Karlısın-X] Hata:`, err);
+      console.error(`[Karlısın-X] API Yanıtı: ${JSON.stringify(err.data)}`);
     }
     
     // On 401/403 errors, maybe clear client to force re-init
@@ -956,24 +967,47 @@ async function startServer() {
     const isAiStudioDb = databaseId.startsWith('ai-studio-');
 
     const getAdminDb = async (pId: string, dId: string, label: string) => {
-      console.log(`[Karlısın-Firebase] Attempting ${label}: Project=${pId}, Db=${dId || 'default'}`);
-      const appName = `app-${pId}-${dId || 'default'}`;
+      console.log(`[Karlısın-Firebase] Attempting ${label}: Project=${pId || 'auto'}, Db=${dId || 'default'}`);
+      const appName = `app-${pId || 'default'}-${dId || 'default'}`;
       let app = getApps().find(a => a.name === appName);
       if (!app) {
-        app = initializeAdminApp({ projectId: pId }, appName);
+        const options = pId ? { projectId: pId } : {};
+        app = initializeAdminApp(options, appName);
       }
       const db = dId && dId !== '(default)' ? getAdminFirestore(app, dId) : getAdminFirestore(app);
-      // Verify
-      await db.collection('newsletter_subscribers').limit(1).get();
+      
+      // Verify with a timeout to avoid hanging
+      const verifyPromise = db.collection('newsletter_subscribers').limit(1).get();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout')), 5000)
+      );
+      
+      await Promise.race([verifyPromise, timeoutPromise]);
       return db;
     };
 
+    // Attempt 0: Auto-detection (best for Cloud Run if roles are set on the default project)
+    try {
+      adminDb = await getAdminDb('', '', 'Auto-Detect-Pattern');
+    } catch (e: any) {
+      console.warn(`[Karlısın-Firebase] Auto-Detect-Pattern failed: ${e.message}`);
+    }
+
     // Attempt 1: databaseId as ProjectId (common in AIS)
-    if (isAiStudioDb) {
+    if (!adminDb && isAiStudioDb) {
       try {
         adminDb = await getAdminDb(databaseId, '', 'AIS-Standard-Pattern');
       } catch (e: any) {
         console.warn(`[Karlısın-Firebase] AIS-Standard-Pattern failed: ${e.message}`);
+      }
+    }
+
+    // Attempt 1.5: Double AIS Pattern (Id as both Project and Db)
+    if (!adminDb && isAiStudioDb) {
+      try {
+        adminDb = await getAdminDb(databaseId, databaseId, 'AIS-Double-Pattern');
+      } catch (e: any) {
+        console.warn(`[Karlısın-Firebase] AIS-Double-Pattern failed: ${e.message}`);
       }
     }
 
@@ -986,13 +1020,26 @@ async function startServer() {
       }
     }
 
-    // Attempt 3: Local environment fallback
+    // Attempt 3: local config projectId with no databaseId
     if (!adminDb) {
       try {
-        adminDb = await getAdminDb(projectId, '', 'Fallback-Pattern');
+        adminDb = await getAdminDb(projectId, '', 'Project-Only-Pattern');
       } catch (e: any) {
-        console.error(`[Karlısın-Firebase] ALL ATTEMPTS FAILED. Use debug endpoint to diagnose.`);
+        console.warn(`[Karlısın-Firebase] Project-Only-Pattern failed: ${e.message}`);
       }
+    }
+
+    // FINAL Attempt: Environment Project ID
+    if (!adminDb && envProjectId) {
+      try {
+        adminDb = await getAdminDb(envProjectId, databaseId, 'Env-Project-Pattern');
+      } catch (e: any) {
+        console.error(`[Karlısın-Firebase] Env-Project-Pattern failed: ${e.message}`);
+      }
+    }
+
+    if (!adminDb) {
+      console.error(`[Karlısın-Firebase] ALL ADMIN SDK PATTERNS FAILED. Check service account permissions and Google Cloud Project configuration.`);
     }
 
     if (adminDb) {
@@ -1158,7 +1205,42 @@ async function startServer() {
 
   // Debug Version API
   app.get('/api/version', (req, res) => {
-    res.json({ version: '3.1.0', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
+    res.json({ 
+      version: '3.1.0', 
+      mode: process.env.NODE_ENV, 
+      timestamp: new Date().toISOString(),
+      last_x_error: lastXError 
+    });
+  });
+
+  // X (Twitter) Test Endpoint
+  app.get('/api/test-x', async (req, res) => {
+    const text = `Karlısın X Entegrasyon Testi 🚀\nZaman: ${new Date().toLocaleString('tr-TR')}\n#Karlısın #Test`;
+    console.log('[Karlısın-DEBUG] Manuel X testi başlatıldı...');
+    
+    try {
+      const result = await postToX(text);
+      if (result) {
+        res.json({ 
+          success: true, 
+          message: 'Tweet başarıyla gönderildi.', 
+          tweet: result 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: 'Tweet gönderilemedi, lastXError kontrol edin.',
+          error: lastXError 
+        });
+      }
+    } catch (e: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: 'Kritik hata', 
+        error: e.message,
+        lastXError: lastXError
+      });
+    }
   });
 
   // DIVIDEND API (Unified Engine: v3.1.0)

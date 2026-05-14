@@ -1,6 +1,25 @@
 
 export const articles = [
   {
+    id: 42,
+    slug: 'merhaba-dunya-test-yazisi',
+    title: 'Merhaba Dünya!',
+    excerpt: 'Karlısın sistemleri başarıyla güncellendi. Bu yazı, X ve E-Bülten entegrasyonlarını test etmek için yayınlanmıştır.',
+    category: 'Test',
+    date: '14 Mayıs 2026',
+    readTime: '1 dk',
+    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200',
+    content: `
+      <p>Merhaba Dünya! Karlısın platformu üzerindeki teknik çalışmalarımızı tamamladık.</p>
+      <p>Bu makale, aşağıdaki sistemlerin son kontrolü için paylaşılmıştır:</p>
+      <ul>
+        <li><strong>X Entegrasyonu:</strong> Güncellenmiş API anahtarları ile anlık paylaşım.</li>
+        <li><strong>E-Bülten Entegrasyonu:</strong> Firebase Admin IAM izinleri ile abone listesine erişim.</li>
+      </ul>
+      <p>Eğer her şey planlandığı gibi çalışıyorsa, bu mesaj hem X profilimizde hem de e-posta kutunuzda olacak. Harika gidiyoruz! 🚀</p>
+    `
+  },
+  {
     id: 1,
     slug: 'karlisin-x-ve-bulten-entegrasyonu-tamamlandi',
     title: 'Karlısın: X ve E-Bülten Entegrasyonu Tamamlandı',
