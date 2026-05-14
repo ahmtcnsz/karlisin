@@ -25,7 +25,9 @@ import {
   Gem,
   DollarSign,
   Table,
-  ListFilter
+  ListFilter,
+  Smartphone,
+  RefreshCw
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { 
@@ -538,13 +540,14 @@ export default function SalaryCalculator() {
           </div>
 
           {/* Calculator Section */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-16">
-            {/* Input Card */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-16">
+            {/* Left Column: Calculator - 5 Units */}
             <motion.div 
-              className="xl:col-span-1 bg-slate-900/60 backdrop-blur-2xl p-8 rounded-[40px] border border-white/5 shadow-2xl space-y-8 h-full"
+              className="lg:col-span-5 bg-slate-900/40 backdrop-blur-3xl p-8 md:p-10 rounded-[40px] border border-white/5 shadow-2xl relative overflow-hidden group h-fit lg:sticky lg:top-24"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
             >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-50" />
               <div className="flex bg-black/40 p-1.5 rounded-2xl gap-1">
                 <button 
                   onClick={() => setCalculationType('grossToNet')}
@@ -646,8 +649,8 @@ export default function SalaryCalculator() {
               </div>
             </motion.div>
 
-            {/* Main Result Area */}
-            <div className="xl:col-span-2 flex flex-col gap-8">
+            {/* Right Column: Dashboard - 7 Units */}
+            <div className="lg:col-span-7 flex flex-col gap-10">
               {/* Top Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <motion.div 
@@ -1450,28 +1453,119 @@ export default function SalaryCalculator() {
               </p>
             </div>
           </div>
-            <div className="mt-24 border-t border-white/5 pt-16">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-slate-400">
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">Vergi Dilimleri Nasıl Hesaplanır?</h2>
-                  <p className="text-sm leading-relaxed text-left">
-                    2026 yılı gelir vergisi tarifesi, kümülatif gelir matrahınız üzerinden kademeli olarak hesaplanır. 
-                    Maaşınızdan SGK ve İşsizlik primi düşüldükten sonra kalan tutar vergi matrahınızı oluşturur. 
-                    Bu matrah yıl boyunca toplandıkça (kümülatif matrah), girdiğiniz dilime göre vergi oranınız %15'ten %40'a kadar çıkabilir. 
-                    Karlısın ile kümülatif matrah hesapla işlemini kuruşu kuruşuna gerçekleştirebilirsiniz.
-                  </p>
+          {/* SEO Optimized Content Section */}
+          <section className="mt-24 border-t border-white/5 text-center">
+            <div className="flex flex-col gap-16 items-center">
+              <div className="space-y-8 max-w-4xl mx-auto">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.2] tracking-tight text-center">
+                  2026 Vergi Dilimleri ve <span className="text-indigo-400 italic">Maaş Hesaplama</span>
+                </h2>
+                <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
+                  Karlısın <strong>çalışma hayatım</strong> platformu olarak, <strong>maaş ve vergi hesaplama</strong> süreçlerinde en doğru veriyi sunuyoruz. 
+                   <strong> Çalışma hayatım</strong> içindeki en kritik kalemler olan <strong>maaş ve vergi hesaplama</strong>, <strong>kıdem ve ihbar tazminatı</strong> gibi unsurları uzmanlıkla analiz ediyoruz.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                  {[
+                    'Çalışma hayatım için 2026 vergi dilimleri uyumu',
+                    'Maaş ve vergi hesaplama ile brütten nete analiz',
+                    'Kıdem ve ihbar tazminatı kümülatif matrah takibi',
+                    'Çalışma hayatım yasal istisna ve maliyet analizleri'
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                        <ShieldCheck size={20} />
+                      </div>
+                      <span className="text-slate-300 font-bold text-sm lg:text-base">{item}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">Maaş Kesintileri Listesi</h2>
-                  <p className="text-sm leading-relaxed text-left">
-                    Bordronuzda yer alan temel kalemler şunlardır: SGK İşçi Payı (%14), İşsizlik Sigortası (%1), 
-                    Gelir Vergisi ve Damga Vergisi. Asgari ücret net hesaplama 2026 verilerine göre, 
-                    asgari ücretli her çalışanın maaşında gelir ve damga vergisi istisnası uygulanmaktadır. 
-                    Bu hesaplamada yasal tüm istisnalar anlık olarak uygulanmaktadır.
-                  </p>
+              </div>
+
+              <div className="w-full bg-white/5 rounded-[48px] p-10 md:p-16 border border-white/10 relative overflow-hidden group shadow-2xl text-center">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-30 group-hover:opacity-50 transition-opacity duration-700" />
+                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
+                  <div className="lg:col-span-2 space-y-6 text-center lg:text-left">
+                    <h3 className="text-3xl md:text-4xl font-black text-white leading-tight">Maaş Vergi Hesaplama Artık Çok Kolay</h3>
+                    <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                      <strong>Çalışma hayatım</strong> sayfalarında <strong>maaş ve vergi hesaplama</strong> yaparken kafa karışıklığına son veriyoruz.
+                      Karlısın, <strong>kıdem ve ihbar tazminatı</strong> haklarınızı da koruyarak en güncel <strong>maaş ve vergi hesaplama</strong> sonuçlarını sunar.
+                      <strong>Çalışma hayatım</strong> geleceğinizi planlarken <strong>maaş ve vergi hesaplama</strong> yanınızdayız.
+                    </p>
+                    <div className="flex flex-wrap gap-4 pt-4 justify-center lg:justify-start">
+                      <div className="px-6 py-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-xs font-black text-indigo-400 tracking-widest uppercase shadow-lg">
+                        #ÇALIŞMAHAYATIM
+                      </div>
+                      <div className="px-6 py-3 bg-purple-500/10 rounded-2xl border border-purple-500/20 text-xs font-black text-purple-400 tracking-widest uppercase shadow-lg">
+                        #MAAŞVEVERGİHESAPLAMA
+                      </div>
+                      <div className="px-6 py-3 bg-white/5 rounded-2xl border border-white/10 text-xs font-black text-slate-400 tracking-widest uppercase shadow-lg">
+                        #KIDEMVEİHBAR
+                      </div>
+                    </div>
+                  </div>
+                  <div className="hidden lg:flex justify-center">
+                    <div className="w-48 h-48 rounded-[40px] bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center p-8 shadow-[0_0_50px_rgba(99,102,241,0.3)] animate-pulse">
+                      <Calculator size={80} className="text-white" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+          </section>
+
+          {/* FAQ Section for SEO */}
+          <section className="max-w-4xl mx-auto px-6 py-24">
+            <h2 className="text-3xl font-black text-white mb-12 text-center">Sıkça Sorulan Sorular</h2>
+            <div className="space-y-6">
+              {[
+                {
+                  q: "Çalışma hayatım için 2026 maaş ve vergi hesaplama nasıl yapılır?",
+                  a: "Çalışma hayatım verilerine göre brüt tutardan kesintiler düşülür. Maaş ve vergi hesaplama aşamasında kümülatif matrah dikkate alınır. Karlısın profesyonel maaş ve vergi hesaplama aracı bu süreci saniyeler içinde tamamlar."
+                },
+                {
+                  q: "Kıdem ve ihbar tazminatı nasıl hesaplanır?",
+                  a: "Kıdem ve ihbar tazminatı hesaplanırken son brüt ücretiniz esas alınır. Kıdem ve ihbar tazminatı çalışma sürenize bağlı olarak değişir. Karlısın ile güvenli kıdem ve ihbar tazminatı analizi yapabilirsiniz."
+                },
+                {
+                  q: "Çalışma hayatım boyunca vergi dilimleri beni nasıl etkiler?",
+                  a: "Çalışma hayatım süresince yıllık gelir arttıkça maaş ve vergi hesaplama sonuçları değişir. Maaş ve vergi hesaplama dilimleri %15'ten başlar. Bu maaş ve vergi hesaplama süreci kümülatif matrah ile takip edilir."
+                },
+                {
+                  q: "Kıdem ve ihbar tazminatı brüt üzerinden mi hesaplanır?",
+                  a: "Evet, kıdem ve ihbar tazminatı hesaplamaları giydirilmiş brüt maaş üzerinden yapılır. Kıdem ve ihbar tazminatı hakedişleri için yasal tavan fiyatları her yıl güncellenir."
+                }
+              ].map((item, i) => (
+                <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-indigo-500/30 transition-colors text-left">
+                  <h3 className="text-white font-bold mb-3">{item.q}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Additional SEO Footer Sections */}
+          <section className="max-w-7xl mx-auto px-6 py-24 border-t border-white/5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 text-slate-400 italic">
+              <div className="space-y-8">
+                <h2 className="text-3xl font-black text-white uppercase tracking-tight text-left">Çalışma Hayatım ve 2026 Maaş Rehberi</h2>
+                <p className="text-lg leading-relaxed text-left">
+                  <strong>Çalışma hayatım</strong> yolculuğunda <strong>maaş ve vergi hesaplama</strong> en temel dinamiktir. 
+                  2026 yılında <strong>çalışma hayatım</strong> içindeki her birey için <strong>maaş ve vergi hesaplama</strong> artık daha kritik. 
+                  Ayrıca işten ayrılma süreçlerinde <strong>kıdem ve ihbar tazminatı</strong> haklarınızı bilmek, <strong>çalışma hayatım</strong> güvenliğiniz için şarttır. 
+                  Karlısın, <strong>çalışma hayatım</strong> boyunca size en doğru <strong>maaş ve vergi hesaplama</strong> verilerini sunmayı taahhüt eder.
+                </p>
+              </div>
+              <div className="space-y-8">
+                <h2 className="text-3xl font-black text-white uppercase tracking-tight text-left">Kıdem ve İhbar Tazminatı Analizi</h2>
+                <p className="text-lg leading-relaxed text-left">
+                  Yasal düzenlemelere göre <strong>kıdem ve ihbar tazminatı</strong> her yıl Ocak ve Temmuz aylarında güncellenir. 
+                  Siz de <strong>kıdem ve ihbar tazminatı</strong> hesaplayıcılarımız sayesinde <strong>çalışma hayatım</strong> boyunca biriken haklarınızı görün. 
+                  <strong>Maaş ve vergi hesaplama</strong> yanına eklediğimiz <strong>kıdem ve ihbar tazminatı</strong> modülleri ile <strong>çalışma hayatım</strong> bütünsel görünümünü yakalayın. 
+                  <strong>Kıdem ve ihbar tazminatı</strong> konusunda en güncel <strong>maaş ve vergi hesaplama</strong> araçlarımızla hizmetinizdeyiz.
+                </p>
+              </div>
+            </div>
+          </section>
           </div>
       </section>
     </div>

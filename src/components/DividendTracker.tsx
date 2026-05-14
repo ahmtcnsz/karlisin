@@ -988,14 +988,7 @@ const DividendTracker: React.FC = () => {
                                   {(data?.verification?.sources_count || 0) >= 2 ? 'ÇAPRAZ DOĞRULAMA AKTİF' : 'TEK KAYNAKDAN ÇEKİLİYOR'}
                                 </span>
                               </div>
-                              <button 
-                                onClick={() => fetchData(selectedSymbol, true)}
-                                disabled={loading}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-lg transition-colors ml-4 disabled:opacity-50"
-                              >
-                                <RefreshCw className={cn("w-3 h-3 text-indigo-400", loading && "animate-spin")} />
-                                <span className="text-[9px] font-black tracking-widest text-indigo-300 uppercase">Yenile</span>
-                              </button>
+
                             </div>
                           </div>
                         </div>

@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Clock, ArrowRight, BookOpen, Loader2, CheckCircle, ArrowLeft, Share2 } from 'lucide-react';
 import { getApiUrl } from '../lib/utils';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp, getDocsFromServer } from 'firebase/firestore';
 
 import { articles } from '../constants/articles';
@@ -97,11 +97,16 @@ export default function Blog() {
       setStatus('loading');
       setErrorMessage('');
       
-      await addDoc(collection(db, 'newsletter_subscribers'), {
-        email: email,
-        subscribedAt: serverTimestamp(),
-        source: 'blog_newsletter'
-      });
+      const path = 'newsletter_subscribers';
+      try {
+        await addDoc(collection(db, path), {
+          email: email,
+          subscribedAt: serverTimestamp(),
+          source: 'blog_newsletter'
+        });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, path);
+      }
 
       try {
         const apiUrl = getApiUrl('/api/mail');
@@ -129,7 +134,15 @@ export default function Blog() {
       setStatus('loading');
       console.log(`[Karlısın] Manuel duyuru başlatılıyor: ${article.title}`);
       
-      const querySnapshot = await getDocsFromServer(collection(db, 'newsletter_subscribers'));
+      const path = 'newsletter_subscribers';
+      let querySnapshot;
+      try {
+        querySnapshot = await getDocsFromServer(collection(db, path));
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, path);
+        return; // handleFirestoreError throws, but just in case
+      }
+      
       const subscribers = querySnapshot.docs.map(doc => doc.data().email).filter(e => !!e);
 
       if (subscribers.length === 0) {

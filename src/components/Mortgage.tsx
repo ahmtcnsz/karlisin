@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import { TrendingUp, PieChart, Bell, Wallet, LineChart, CheckCircle, Loader2 } from 'lucide-react';
 import { getApiUrl } from '../lib/utils';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Mortgage() {
@@ -23,11 +23,16 @@ export default function Mortgage() {
       setStatus('loading');
       setErrorMessage('');
       
-      await addDoc(collection(db, 'waitlist'), {
-        email: email,
-        source: 'temettu',
-        createdAt: serverTimestamp()
-      });
+      const path = 'waitlist';
+      try {
+        await addDoc(collection(db, path), {
+          email: email,
+          source: 'temettu',
+          createdAt: serverTimestamp()
+        });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, path);
+      }
 
       // Backend üzerinden hoş geldin maili gönder
       try {

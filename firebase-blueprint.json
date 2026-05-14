@@ -107,9 +107,22 @@
         "lastAnalysisAt": { "type": "string", "format": "date-time" },
         "analysesCount": { "type": "number" }
       }
+    },
+    "Admin": {
+      "title": "System Admin",
+      "description": "Internal document identifying a system administrator.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["superadmin", "editor"] }
+      }
     }
   },
   "firestore": {
+    "/admins/{userId}": {
+      "schema": "Admin",
+      "description": "List of authorized system administrators."
+    },
     "/waitlist/{entryId}": {
       "schema": "WaitlistEntry",
       "description": "Collection of waitlist entries."

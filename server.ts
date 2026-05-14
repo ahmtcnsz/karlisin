@@ -10,7 +10,7 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import yahooFinanceModule from 'yahoo-finance2';
 import NodeCache from 'node-cache';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, collection as clientCollection, getDocsFromServer as clientGetDocs, doc as clientDoc, getDocFromServer as clientGetDoc, setDoc as clientSetDoc, setLogLevel } from 'firebase/firestore';
 import { getApp, getApps, initializeApp as initializeAdminApp } from 'firebase-admin/app';
@@ -141,7 +141,7 @@ const getSenderEmail = () => {
 };
 
 // Initialize Gemini
-let genAI: GoogleGenerativeAI | null = null;
+let genAI: GoogleGenAI | null = null;
 
 const rateLimitCache = new NodeCache({ stdTTL: 86400 });
 
@@ -214,7 +214,14 @@ const getGenAI = () => {
 
   if (apiKey) {
     console.log(`[Karlısın-AI] Anahtar Aktif. Uzunluk: ${apiKey.length}`);
-    genAI = new GoogleGenerativeAI(apiKey);
+    genAI = new GoogleGenAI({ 
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
     return genAI;
   }
   
@@ -960,13 +967,9 @@ async function startServer() {
       databaseId = firebaseConfig.firestoreDatabaseId || '';
     }
 
-    // Override with env if available (often more accurate in Cloud Run)
-    const envProjectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT;
-    projectId = envProjectId || projectId;
-
-    // CRITICAL: In AI Studio, if we have a databaseId like "ai-studio-...", 
-    // it is often the REAL projectId for Admin SDK purposes.
-    const isAiStudioDb = databaseId.startsWith('ai-studio-');
+    // Provisioned Project Priority
+    const PROVISIONED_PROJECT = 'gen-lang-client-0551179549';
+    const PROVISIONED_DB = 'ai-studio-49437603-f001-4c08-82f8-dff9de0114f3';
 
     const getAdminDb = async (pId: string, dId: string, label: string) => {
       console.log(`[Karlısın-Firebase] Attempting ${label}: Project=${pId || 'auto'}, Db=${dId || 'default'}`);
@@ -978,7 +981,7 @@ async function startServer() {
       }
       const db = dId && dId !== '(default)' ? getAdminFirestore(app, dId) : getAdminFirestore(app);
       
-      // Verify with a timeout to avoid hanging
+      // Verify with a timeout
       const verifyPromise = db.collection('newsletter_subscribers').limit(1).get();
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Connection timeout')), 5000)
@@ -988,88 +991,36 @@ async function startServer() {
         await Promise.race([verifyPromise, timeoutPromise]);
         return db;
       } catch (err: any) {
-        // Detailed error for IAM instructions
-        if (err.message.includes('permission_denied') || err.message.includes('Permission denied') || err.message.includes('insufficient permissions')) {
-          console.error(`[Karlısın-Firebase] IAM HATASI [${label}]: Uygulamanızın servis hesabı bu projeye erişemedi. `);
-          console.error(`PROJE ID: ${pId || 'ais-europe-west3-a0847c9ca9f54'}`);
-          console.error(`GEREKLİ ADIM: Google Cloud Console'da bu proje için "ais-sandbox@ais-europe-west3-a0847c9ca9f54.iam.gserviceaccount.com" hesabına "Cloud Datastore User" rolü vermelisiniz.`);
+        if (err.message.includes('permission_denied') || err.message.includes('Permission denied')) {
+           console.error(`[Karlısın-Firebase] IAM HATASI [${label}]: Proje ID: ${pId}. "Cloud Datastore User" rolü eksik olabilir.`);
         }
         throw err;
       }
     };
 
-    // Attempt 0: Auto-detection (best for Cloud Run if roles are set on the default project)
+    // Sequence of attempts
     try {
-      adminDb = await getAdminDb('', '', 'Auto-Detect-Pattern');
-    } catch (e: any) {
-      console.warn(`[Karlısın-Firebase] Auto-Detect-Pattern failed: ${e.message}`);
-    }
-
-    // Attempt 1: databaseId as ProjectId (common in AIS)
-    if (!adminDb && isAiStudioDb) {
+      // 1. Provisioned Config (Most likely to work after set_up_firebase)
+      adminDb = await getAdminDb(PROVISIONED_PROJECT, PROVISIONED_DB, 'Provisioned-Config');
+    } catch (e) {
+      console.warn(`[Karlısın-Firebase] Provisioned-Config failed, trying fallbacks...`);
       try {
-        adminDb = await getAdminDb(databaseId, '', 'AIS-Standard-Pattern');
-      } catch (e: any) {
-        console.warn(`[Karlısın-Firebase] AIS-Standard-Pattern failed: ${e.message}`);
-      }
-    }
-
-    // Attempt 1.5: Double AIS Pattern (Id as both Project and Db)
-    if (!adminDb && isAiStudioDb) {
-      try {
-        adminDb = await getAdminDb(databaseId, databaseId, 'AIS-Double-Pattern');
-      } catch (e: any) {
-        console.warn(`[Karlısın-Firebase] AIS-Double-Pattern failed: ${e.message}`);
-      }
-    }
-
-    // Attempt 1.9: Pure Config Pattern (ProjectId and DatabaseId exactly as in config)
-    if (!adminDb && fs.existsSync(configPath)) {
-      try {
-        const pureConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-        const pId = pureConfig.projectId;
-        const dId = pureConfig.firestoreDatabaseId;
-        if (pId) {
-          adminDb = await getAdminDb(pId, dId, 'Pure-Config-Pattern');
+        // 2. Local File Config
+        if (projectId && projectId !== PROVISIONED_PROJECT) {
+           adminDb = await getAdminDb(projectId, databaseId, 'File-Config');
         }
-      } catch (e: any) {
-        console.warn(`[Karlısın-Firebase] Pure-Config-Pattern failed: ${e.message}`);
+      } catch (e2) {
+        try {
+          // 3. Auto-detect (Cloud Run default)
+          adminDb = await getAdminDb('', '', 'Auto-Detect');
+        } catch (e3) {
+          console.error(`[Karlısın-Firebase] ALL Firebase Admin patterns failed.`);
+        }
       }
-    }
-
-    // Attempt 2: config values as provided (with possible env overrides)
-    if (!adminDb) {
-      try {
-        adminDb = await getAdminDb(projectId, databaseId, 'Config-Pattern');
-      } catch (e: any) {
-        console.warn(`[Karlısın-Firebase] Config-Pattern failed: ${e.message}`);
-      }
-    }
-
-    // Attempt 3: local config projectId with no databaseId
-    if (!adminDb) {
-      try {
-        adminDb = await getAdminDb(projectId, '', 'Project-Only-Pattern');
-      } catch (e: any) {
-        console.warn(`[Karlısın-Firebase] Project-Only-Pattern failed: ${e.message}`);
-      }
-    }
-
-    // FINAL Attempt: Environment Project ID
-    if (!adminDb && envProjectId) {
-      try {
-        adminDb = await getAdminDb(envProjectId, databaseId, 'Env-Project-Pattern');
-      } catch (e: any) {
-        console.error(`[Karlısın-Firebase] Env-Project-Pattern failed: ${e.message}`);
-      }
-    }
-
-    if (!adminDb) {
-      console.error(`[Karlısın-Firebase] ALL ADMIN SDK PATTERNS FAILED. Check service account permissions and Google Cloud Project configuration.`);
     }
 
     if (adminDb) {
-      console.log(`[Karlısın-Firebase] Final Active Database: ${adminDb.databaseId} in Project: ${adminDb.projectId}`);
+      console.log(`[Karlısın-Firebase] Active Database: ${adminDb.databaseId} in Project: ${adminDb.projectId}`);
     }
 
   } catch (err: any) {
@@ -1366,7 +1317,6 @@ async function startServer() {
 
     try {
       const mimeType = image.split(';')[0].split(':')[1] || "image/jpeg";
-      const model = aiClient.getGenerativeModel({ model: "gemini-2.5-flash" });
       const prompt = `
         Sen bir finansal veri okuma uzmanısın. Ekli görsel bir borsa/portföy uygulaması ekran görüntüsüdür.
         Görseldeki hisse senedi veya fon bilgilerini (Sembol, Adet, Ortalama Maliyet, Toplam Tutar) ayıkla.
@@ -1382,21 +1332,24 @@ async function startServer() {
         8. Sadece JSON döndür, kod blokları (markdown) kullanma, açıklama yapma.
         9. Hiçbir veriyi bulamazsan boş bir liste döndür: []
       `;
-
-      const result = await model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            data: image.split(',')[1],
-            mimeType: mimeType
+      const result = await aiClient.models.generateContent({
+        model: "gemini-3.1-flash-lite",
+        contents: [
+          { text: prompt },
+          {
+            inlineData: {
+              data: image.split(',')[1],
+              mimeType: mimeType
+            }
           }
+        ],
+        config: {
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
         }
-      ]);
+      });
 
-      let text = result.response.text();
-      // Markdown temizliği (eğer model ```json ... ``` bloğu içinde verdiyse)
-      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      
+      let text = result.text || "";
       let parsed = [];
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
@@ -1518,8 +1471,6 @@ async function startServer() {
     }
 
     try {
-      const model = aiClient.getGenerativeModel({ model: "gemini-2.5-flash" });
-      
       const yf = getYahoo();
       let totalCost = 0;
       let totalLiveValue = 0;
@@ -1592,9 +1543,15 @@ async function startServer() {
         {"score": 85, "distribution": "Sadece düz bir metin (string)", "technicalNote": "..."}
       `;
 
-      const result = await model.generateContent(prompt);
-      let text = result.response.text();
-      text = text.replace(/\`\`\`json/g, "").replace(/\`\`\`/g, "").trim();
+      const result = await aiClient.models.generateContent({
+        model: "gemini-3.1-flash-lite",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
+        }
+      });
+      let text = result.text || "";
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       
@@ -2087,7 +2044,7 @@ async function startServer() {
             
             <div style="border-top: 1px solid #e2e8f0; pt: 24px; text-align: center;">
               <p style="font-size: 12px; color: #94a3b8; margin-top: 20px;">
-                © 2024 Karlısın — Finansal Özgürlük Yolculuğun
+                © 2026 Karlısın — Finansal Özgürlük Yolculuğun
               </p>
             </div>
           </div>
@@ -2252,7 +2209,142 @@ async function startServer() {
     res.json({ message: 'Broadcast tamamlandı', results });
   });
 
-  // API CATCH-ALL - MUST BE AT THE END OF ALL API ROUTES
+  // LIVE IPO DATA ENGINE (Scrapes + Gemini Intelligence)
+  app.get('/api/ipo-data', async (req, res) => {
+    console.log(`[Karlısın-IPO] İSTEK ALINDI: ${req.url}`);
+    const cacheKey = 'live_ipo_data_v3';
+    const isRefresh = req.query.refresh === 'true';
+    const cachedData = cache.get(cacheKey) as any;
+    
+    // Zaman Mantığı: Günde 1 kez saat 10:00'da (TR) güncelleme
+    // 10:00 TR = 07:00 UTC
+    const now = new Date();
+    const updateTimeUTC = new Date(now);
+    updateTimeUTC.setUTCHours(7, 0, 0, 0);
+
+    const isStale = cachedData ? (!cachedData.lastUpdate || new Date(cachedData.lastUpdate).getTime() < updateTimeUTC.getTime()) : true;
+    const isPastUpdateHour = now.getTime() > updateTimeUTC.getTime();
+
+    const shouldUpdate = !cachedData || isRefresh || (isPastUpdateHour && isStale);
+
+    if (cachedData && !shouldUpdate) {
+      console.log('[Karlısın-IPO] Güncel veri önbellekten dönülüyor.');
+      return res.json(cachedData);
+    }
+
+    const aiClient = getGenAI();
+    if (!aiClient) {
+      if (cachedData) return res.json(cachedData);
+      return res.status(503).json({ error: 'AI Servisi bulunamadı.' });
+    }
+
+    const maxRetries = 2;
+    let attempt = 0;
+
+    const runProc = async (): Promise<any> => {
+      attempt++;
+      console.log(`[Karlısın-IPO] Günlük güncelleme başlatılıyor... (Deneme: ${attempt})`);
+      
+      const todayIso = now.toISOString().split('T')[0];
+      const todayTR = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      let bistHtml = '';
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      try {
+        const bistRes = await fetch('https://halkarz.com/', {
+          headers: { 'User-Agent': getRandomUserAgent() },
+          signal: controller.signal as any
+        });
+        bistHtml = bistRes.ok ? await bistRes.text() : '';
+      } catch (e: any) {
+        console.warn('[Karlısın-IPO] Scrape hatası:', e.message);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      // Eğer dış kaynak tamamen ulaşılamaz durumdaysa ve önbellek varsa, AI çağırmaya gerek yok
+      if (!bistHtml && cachedData) {
+        console.log('[Karlısın-IPO] Kaynağa ulaşılamadı, mevcut önbellek yeni kabul ediliyor.');
+        return cachedData;
+      }
+      
+      // Eğer kaynak yoksa ve önbellek de yoksa, en azından boş bir yapı üretelim (AI'yı boş HTML ile yormayalım)
+      if (!bistHtml && !cachedData) {
+        return { bist: [], nasdaq: [], lastUpdate: new Date().toISOString() };
+      }
+
+      const prompt = `
+        Bugünün Tarihi: ${todayTR} (ISO: ${todayIso})
+        "halkarz.com" içeriğinden 2026 yılı halka arzlarını ayıkla.
+        
+        KURALLAR:
+        - Tarih henüz gelmediyse: "upcoming"
+        - Bugün aralıktaysa: "ongoing"
+        - Geçmişse: "completed"
+        
+        FORMAT: { "bist": [...], "nasdaq": [...], "lastUpdate": "ISO Date" } (JSON)
+      `;
+
+      try {
+        const result = await aiClient.models.generateContent({
+          model: "gemini-3.1-flash-lite",
+          contents: [{ role: 'user', parts: [{ text: prompt }, { text: `HTML: ${bistHtml.substring(0, 40000)}` }] }],
+          config: { 
+            responseMimeType: "application/json", 
+            temperature: 0.1,
+            thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
+          }
+        });
+        
+        let text = result.text || "";
+        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        if (text) {
+          const parsed = JSON.parse(text);
+          parsed.lastUpdate = new Date().toISOString(); // Güncelleme zamanını damgalıyoruz
+
+          // ID Fixes
+          if (parsed.bist) parsed.bist = parsed.bist.map((it: any, i: number) => ({ ...it, id: it.id || (i + 1) }));
+          if (parsed.nasdaq) parsed.nasdaq = parsed.nasdaq.map((it: any, i: number) => ({ ...it, id: it.id || (i + 101) }));
+          
+          cache.set(cacheKey, parsed, 172800); // 48 saat sakla (Reset durumunda veri kalsın)
+          return parsed;
+        }
+        throw new Error('Yanıt boş.');
+      } catch (err: any) {
+        const isBusy = err.message?.includes('503') || err.message?.includes('demand') || err.message?.includes('UNAVAILABLE');
+        if (isBusy && attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 2000));
+          return runProc();
+        }
+        throw err;
+      }
+    };
+
+    try {
+      const data = await runProc();
+      return res.json(data);
+    } catch (err: any) {
+      console.error('[Karlısın-IPO] Hata:', err.message);
+      
+      // FALLBACK: Eğer AI veya Scrape tamamen başarısız olursa
+      // En azından önbellekteki eski veriyi dön, o da yoksa boş bir yapı dön
+      // Böylece frontend 500 hatası alıp "siyaha düşmez"
+      const fallback = cachedData || { 
+        bist: [], 
+        nasdaq: [], 
+        lastUpdate: new Date().toISOString(),
+        isFallback: true 
+      };
+      
+      console.log('[Karlısın-IPO] Hata durumunda güvenli veri (fallback) dönülüyor.');
+      return res.json(fallback);
+    }
+  });
+
+  // API CATCH-ALL
   app.all('/api/*', (req, res) => {
     res.status(404).json({ error: 'API rotası bulunamadı', path: req.path });
   });
@@ -2262,9 +2354,9 @@ async function startServer() {
   // ---------------------------------------------------------
   
   const distPath = path.resolve(__dirname, 'dist');
-  const isProduction = (process.env.NODE_ENV === 'production' || !!process.env.K_SERVICE) && fs.existsSync(distPath);
+  const isProduction = false; // FORCED FALSE FOR PREVIEW STABILITY
   
-  if (isProduction) {
+  if (isProduction && fs.existsSync(distPath)) {
     console.log(`[Karlısın-INIT] Versiyon: 2.2.1-stable`);
     console.log(`[Karlısın-INIT] Production modu aktif.`);
     console.log(`[Karlısın-INIT] Statik dosya yolu: ${distPath}`);

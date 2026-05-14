@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ArrowRight, Home, Calculator, ShoppingBag, PieChart, BookOpen, Shield, FileText, Info, TrendingUp, Mail } from 'lucide-react';
+import { ChevronRight, ArrowRight, Home, Calculator, ShoppingBag, PieChart, BookOpen, Shield, FileText, Info, TrendingUp, Mail, Calendar, Briefcase } from 'lucide-react';
 
 const blogSlugs = [
   'dolar-ve-altin-kuru-tahminleri-teknik-analiz-notlari',
@@ -41,9 +41,11 @@ export default function Sitemap() {
       icon: <Calculator size={20} className="text-indigo-400" />,
       links: [
         { name: '2026 Maaş ve Gelir Vergisi Hesaplama', path: '/maas-vergi-hesaplama', icon: <Calculator size={16} /> },
+        { name: 'Kıdem ve İhbar Tazminatı Hesaplama', path: '/kidem-ihbar-tazminat-hesaplama', icon: <Briefcase size={16} /> },
         { name: 'Trendol & Amazon Pazar Kâr Analizi', path: '/pazar-kar-hesaplama', icon: <ShoppingBag size={16} /> },
         { name: 'Temettü Dağıtımı ve Verimi Takibi', path: '/temettu-takibi', icon: <PieChart size={16} /> },
         { name: 'Borsa Takibi ve Şirket Finansal Analizi', path: '/borsa/nabiz', icon: <TrendingUp size={16} /> },
+        { name: 'Borsa İstanbul Halka Arz Takvimi', path: '/borsa/halka-arz', icon: <Calendar size={16} /> },
       ]
     },
     {
@@ -56,8 +58,17 @@ export default function Sitemap() {
           path: `/blog/${slug}`,
           icon: <ChevronRight size={14} className="text-slate-500" />
         })),
+      ]
+    },
+    {
+      title: 'Platform ve Kurumsal',
+      icon: <Info size={20} className="text-blue-400" />,
+      links: [
         { name: 'Hakkımızda', path: '/hakkimizda', icon: <Info size={16} /> },
         { name: 'İletişim', path: '/iletisim', icon: <Mail size={16} /> },
+        { name: 'Hikayemiz (AI)', path: '/hikayemiz', icon: <BookOpen size={16} /> },
+        { name: 'Platform Sunumu', path: '/sunum', icon: <FileText size={16} /> },
+        { name: 'Kullanıcı Paneli', path: '/dashboard', icon: <Home size={16} /> },
       ]
     },
     {

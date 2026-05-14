@@ -10,9 +10,12 @@ import {
   ShieldCheck, 
   Smartphone,
   Globe,
-  PieChart
+  PieChart,
+  Wallet
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+
+const MotionLink = motion.create(Link);
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -26,6 +29,16 @@ export default function Landing() {
       badge: 'GÜNCEL',
       color: 'from-indigo-500/20 to-indigo-600/5',
       borderColor: 'border-indigo-500/20'
+    },
+    {
+      id: 'severance',
+      path: '/kidem-ihbar-tazminat-hesaplama',
+      title: 'Kıdem & İhbar Tazminatı',
+      description: 'İşten ayrılma durumunda alacağınız kıdem ve ihbar tazminatını güncel tavan ücretlerle hesaplayın.',
+      icon: <Wallet className="text-purple-400" size={28} />,
+      badge: 'YENİ',
+      color: 'from-purple-500/20 to-purple-600/5',
+      borderColor: 'border-purple-500/20'
     },
     {
       id: 'calculators',
@@ -161,15 +174,15 @@ export default function Landing() {
         
         <div className="flex flex-wrap justify-center gap-8">
           {tools.map((tool, i) => (
-            <motion.div
+            <MotionLink
               key={tool.id}
+              to={tool.path}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.15 }}
               whileHover={{ y: -12, scale: 1.02 }}
-              onClick={() => navigate(tool.path)}
-              className={`cursor-pointer w-full md:w-[380px] p-10 bg-gradient-to-br ${tool.color} rounded-[48px] border-2 ${tool.borderColor} backdrop-blur-3xl flex flex-col items-start gap-8 group transition-all shadow-2xl shadow-black/20`}
+              className={`w-full md:w-[380px] p-10 bg-gradient-to-br ${tool.color} rounded-[48px] border-2 ${tool.borderColor} backdrop-blur-3xl flex flex-col items-start gap-8 group transition-all shadow-2xl shadow-black/20 decoration-none`}
             >
               <div className="w-16 h-16 bg-white/10 rounded-3xl border border-white/20 flex items-center justify-center transition-all group-hover:rotate-6 group-hover:bg-white/20 shadow-xl">
                 {tool.icon}
@@ -193,7 +206,7 @@ export default function Landing() {
                   <ArrowRight size={18} />
                 </div>
               </div>
-            </motion.div>
+            </MotionLink>
           ))}
         </div>
       </section>

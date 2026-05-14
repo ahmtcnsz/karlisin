@@ -29,6 +29,13 @@ export default function Footer() {
         tags: ['Temettü Takvimi', 'Temettü Verimi', 'Hisse Analizi', 'Pasif Gelir', 'Borsa İstanbul']
       };
     }
+    if (path.includes('borsa/halka-arz')) {
+      return {
+        title: "BIST Halka Arz Takvimi ve Analizi",
+        desc: "Borsa İstanbul'daki güncel halka arzlar, talep toplama tarihleri ve katılım endeksi bilgilerini takip edin. Karlısın Halka Arz Takvimi, şirketlerin izahnamelerini analiz ederek tahmini lot dağıtımı ve fiyat tespit raporlarını sizin için derler. Yeni fırsatları kaçırmamak için bildirimlerinizi aktif tutun.",
+        tags: ['Halka Arz Takvimi', 'Borsa İstanbul', 'Yeni Halka Arz', 'Halka Arz Analizi', 'Talep Toplama']
+      };
+    }
     if (path.includes('borsa/nabiz')) {
       return {
         title: "Canlı Borsa ve Piyasanın Nabzı",
@@ -100,6 +107,8 @@ export default function Footer() {
     'Temettü Verimi': '/temettu-takibi',
     'Temettü Takibi': '/temettu-takibi',
     'Temettü Veren Şirketler': '/temettu-takibi',
+    'Halka Arz Takvimi': '/borsa/halka-arz',
+    'Yeni Halka Arz': '/borsa/halka-arz',
     'Canlı Borsa': '/borsa/nabiz',
     'Borsa Analizi': '/borsa/nabiz',
     'Piyasa Analizi': '/borsa/nabiz',
@@ -142,12 +151,20 @@ export default function Footer() {
                   <span className="relative z-10">YENİ</span>
                 </div>
               </Link>
+              <Link to="/kidem-ihbar-tazminat-hesaplama" className="text-sm text-slate-400 font-medium hover:text-white transition-colors">Kıdem Tazminatı</Link>
               <Link to="/blog" className="text-sm text-slate-400 font-medium hover:text-white transition-colors">Blog</Link>
               <Link to="/temettu-takibi" className="text-sm text-slate-400 font-medium hover:text-white transition-colors flex items-center gap-2">
                 Temettü Takibi
                 <div className="relative overflow-hidden px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">
                   {badgeGlint}
                   <span className="relative z-10">AKTİF</span>
+                </div>
+              </Link>
+              <Link to="/borsa/halka-arz" className="text-sm text-slate-400 font-medium hover:text-white transition-colors flex items-center gap-2">
+                Halka Arz Takvimi
+                <div className="relative overflow-hidden px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black tracking-tighter rounded-md border border-indigo-500/20">
+                  {badgeGlint}
+                  <span className="relative z-10">GÜNCEL</span>
                 </div>
               </Link>
               <Link to="/borsa/nabiz" className="text-sm text-slate-400 font-medium hover:text-white transition-colors flex items-center gap-2">

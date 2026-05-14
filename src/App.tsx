@@ -14,7 +14,9 @@ import About from './components/About';
 import Blog from './components/Blog';
 import Contact from './components/Contact';
 import SalaryCalculator from './components/SalaryCalculator';
+import SeveranceCalculator from './components/SeveranceCalculator';
 import DividendTracker from './components/DividendTracker';
+import HalkaArzTakvimi from './components/HalkaArzTakvimi';
 import { MarketPulse } from './components/PiyasaninNabzi';
 import Policy from './components/Policy';
 import Landing from './components/Landing';
@@ -83,7 +85,9 @@ function AppContent({ isLoggedIn }: { isLoggedIn: boolean }) {
             <Route path="/pazar-kar-hesaplama" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Home /></Layout>} />
             <Route path="/pazar-kar" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Home /></Layout>} />
             <Route path="/maas-vergi-hesaplama" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><SalaryCalculator /></Layout>} />
+            <Route path="/kidem-ihbar-tazminat-hesaplama" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><SeveranceCalculator /></Layout>} />
             <Route path="/temettu-takibi" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><DividendTracker /></Layout>} />
+            <Route path="/borsa/halka-arz" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><HalkaArzTakvimi /></Layout>} />
             <Route path="/borsa/nabiz" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><MarketPulse /></Layout>} />
             <Route path="/dashboard" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Dashboard /></Layout>} />
             <Route path="/blog" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Blog /></Layout>} />

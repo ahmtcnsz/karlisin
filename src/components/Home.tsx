@@ -241,8 +241,8 @@ export default function Home() {
             transition={{ delay: 0.1 }}
             className="text-4xl md:text-5xl lg:text-7xl font-black text-white mb-6 max-w-5xl mx-auto leading-[1.3] md:leading-[1.2] tracking-tight text-center flex flex-col items-center justify-center px-4"
           >
-            Pazaryeri Kâr Hesaplama 2026: <br/>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 italic px-2 py-2">Trendyol & Hepsiburada.</span>
+            PAZAR KAR 2026: <br/>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 italic px-2 py-2 uppercase">E-ticaret Kâr Analizi.</span>
           </motion.h1>
           
           <motion.p 
@@ -329,13 +329,13 @@ export default function Home() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-black text-slate-500 tracking-widest ml-1">KOMİSYON (%)</label>
-                    <div className="relative group cursor-not-allowed">
-                      <div className="w-full h-12 bg-white/5 border border-white/5 rounded-xl px-4 flex items-center font-black text-indigo-400/80 bg-slate-950/20">
+                    <label className="text-[10px] font-black text-slate-500 tracking-widest ml-1 uppercase">Pazaryeri Komisyonu</label>
+                    <div className="relative">
+                      <div className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 flex items-center font-black text-slate-300">
                         %{marketRates[market]}
                       </div>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600">
-                        <Shield size={16} />
+                        <Percent size={16} />
                       </div>
                     </div>
                   </div>
@@ -702,22 +702,21 @@ export default function Home() {
         <div className="flex flex-col gap-16 items-center">
           <div className="space-y-8 max-w-4xl mx-auto">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.2] tracking-tight">
-              2026 Vergi Dilimleri ve <span className="text-indigo-400 italic">Maaş Hesaplama</span>
+              2026 <span className="text-indigo-400 italic">PAZAR KAR</span> ve Satış Analizi
             </h2>
             <p className="text-xl md:text-2xl text-slate-400 font-medium leading-relaxed">
-              Karlısın olarak, finansal özgürlüğe giden yolun doğru veriden geçtiğine inanıyoruz. 
-              <strong> 2026 brütten nete maaş hesaplama</strong> aracımızla, gelir vergisi dilimleri, 
-              SGK kesintileri ve net kazancınızı saniyeler içinde analiz edin.
+              Karlısın <strong>çalışma hayatım</strong> vizyonuyla, e-ticaret satıcıları için en gelişmiş <strong>pazar kar</strong> hesaplama sistemini sunuyoruz. 
+              Trendyol, Hepsiburada ve Amazon gibi platformlarda <strong>pazar kar</strong> oranlarınızı optimize ederek <strong>çalışma hayatım</strong> kalitenizi artırın.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
               {[
-                'Güncel 2026 vergi dilimleri ile uyumlu hesaplama',
-                'Brütten nete ve netten brüte çift yönlü analiz',
-                'Pazaryeri komisyon ve kârlılık araçları',
-                'Yatırım ROI ve mortgage projeksiyonları'
+                'Çalışma hayatım için 2026 pazar kar stratejileri',
+                'Pazar kar analizi ile net kazanç takibi',
+                'Komisyon ve kargo baremli pazar kar hesabı',
+                'Çalışma hayatım verimliliği için fiyatlandırma'
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 group hover:border-indigo-500/30 transition-all">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
                     <Verified size={20} />
                   </div>
                   <span className="text-slate-300 font-bold text-sm lg:text-base">{item}</span>
@@ -730,27 +729,27 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-30 group-hover:opacity-50 transition-opacity duration-700" />
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
               <div className="lg:col-span-2 space-y-6 text-center lg:text-left">
-                <h3 className="text-3xl md:text-4xl font-black text-white leading-tight">Maaş Vergi Hesaplama Artık Çok Kolay</h3>
+                <h3 className="text-3xl md:text-4xl font-black text-white leading-tight">Pazar Kar Analizi ile Geleceği Planlayın</h3>
                 <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  Karmaşık mevzuat sayfalarında kaybolmayın. Karlısın, en güncel yasal düzenlemeleri 
-                  otomatik olarak günceller, böylece siz sadece rakamlarınıza odaklanırsınız. 
-                  <strong> Maaş vergi hesaplama</strong> süreçlerinizi dijitalleştirin ve geleceğinizi kontrol altına alın.
+                  <strong>Çalışma hayatım</strong> içinde başarılı bir e-ticaret kariyeri için <strong>pazar kar</strong> yönetimini şansa bırakmayın. 
+                  Karlısın, her satışta <strong>pazar kar</strong> takibini kolaylaştırır ve <strong>çalışma hayatım</strong> dengenizi korumanıza yardımcı olur.
+                  Güncel 2026 verileriyle en doğru <strong>pazar kar</strong> sonuçları burada.
                 </p>
                 <div className="flex flex-wrap gap-4 pt-4 justify-center lg:justify-start">
                   <div className="px-6 py-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-xs font-black text-indigo-400 tracking-widest uppercase shadow-lg">
-                    #HIZLIHESAPLA
+                    #PAZARKAR
                   </div>
                   <div className="px-6 py-3 bg-purple-500/10 rounded-2xl border border-purple-500/20 text-xs font-black text-purple-400 tracking-widest uppercase shadow-lg">
-                    #GÜVENİLİRVERİ
+                    #ÇALIŞMAHAYATIM
                   </div>
                   <div className="px-6 py-3 bg-white/5 rounded-2xl border border-white/10 text-xs font-black text-slate-400 tracking-widest uppercase shadow-lg">
-                    #2026-UYUMLU
+                    #2026-PAZARYERİ
                   </div>
                 </div>
               </div>
               <div className="hidden lg:flex justify-center">
                 <div className="w-48 h-48 rounded-[40px] bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center p-8 shadow-[0_0_50px_rgba(99,102,241,0.3)] animate-pulse">
-                  <Calculator size={80} className="text-white" />
+                  <TrendingUp size={80} className="text-white" />
                 </div>
               </div>
             </div>
@@ -764,20 +763,20 @@ export default function Home() {
         <div className="space-y-6">
           {[
             {
-              q: "2026 brütten nete maaş hesaplama nasıl yapılır?",
-              a: "Maaşınızın brüt tutarından %14 SGK işçi payı, %1 işsizlik sigortası payı düşülür. Kalan tutar üzerinden 2026 gelir vergisi dilimlerine göre vergi ve binde 7.59 damga vergisi kesilerek net maaşınıza ulaşılır. Karlısın bu süreci otomatikleştirir."
+              q: "Çalışma hayatım boyunca pazar kar analizi neden önemli?",
+              a: "E-ticaret ile geçen bir çalışma hayatım içinde pazar kar marjlarını bilmek sürdürülebilirlik sağlar. Karlısın ile pazar kar hesaplayarak çalışma hayatım kalitenizi yükseltin."
             },
             {
-              q: "Maaş vergi hesaplama neden önemlidir?",
-              a: "Gelir vergisi dilimleri yıl içinde arttığı için aylık net kazancınız aylar geçtikçe değişebilir. Vergi hesaplama araçlarımız, yıl boyu alacağınız toplam ve ortalama maaşı görmenizi sağlayarak bütçe yapmanıza yardımcı olur."
+              q: "Pazar kar hesaplama yapılırken hangi kalemler dikkate alınır?",
+              a: "Pazar kar için ürün maliyeti, kargo, komisyon ve KDV kalemleri toplanarak pazar kar sonucuna ulaşılır. Çalışma hayatım içinde pazar kar takibi yapmak için Karlısın en büyük yardımcınızdır."
             },
             {
-              q: "Karlısın güvenilir mi?",
-              a: "Hesaplamalarımız en güncel yasal mevzuatlara (GİB ve Sosyal Güvenlik Kurumu tebliğlerine) uygun olarak geliştirilmektedir. Sonuçlar projeksiyon amaçlı olup finansal danışmanlık yerine geçmez."
+              q: "2026 komisyon oranları pazar kar durumunu nasıl etkiler?",
+              a: "2026 güncellemeleriyle değişen maliyetler pazar kar hedeflerinizi etkileyebilir. Pazar kar oranlarınızı korumak için çalışma hayatım boyunca düzenli analiz yapmalısınız."
             },
             {
-              q: "E-ticarette 'Kaça Satayım?' sorusuna nasıl yanıt bulurum?",
-              a: "Karlılık analiz aracımız; ürün alış fiyatı, komisyon oranları, kargo maliyeti ve reklam giderlerini (ROAS) analiz ederek minimum kârlı satış fiyatınızı saniyeler içinde hesaplar."
+              q: "Pazar kar ve çalışma hayatım verimliliği arasında nasıl bir ilişki var?",
+              a: "Doğru pazar kar analizi, gereksiz efor sarf etmeden çalışma hayatım dengenizi korumanızı sağlar. Pazar kar odaklı büyüme her zaman daha sağlıklıdır."
             }
           ].map((item, i) => (
             <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-indigo-500/30 transition-colors">
@@ -907,19 +906,22 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 text-slate-400">
             <div className="space-y-8">
-              <h2 className="text-3xl font-black text-white uppercase tracking-tight">Trendyol Komisyon Oranları Listesi 2026</h2>
-              <p className="text-lg leading-relaxed text-left">
-                2026 yılında Trendyol satışlarınızda doğru fiyatlandırma yapmak için kategori bazlı komisyon oranlarını, 
-                operasyonel giderleri ve KDV kalemlerini doğru hesaplamalısınız. Karlısın ile e-ticaret net kâr marjı analizi yaparak, 
-                ürününüzün gerçek kârlılığını saniyeler içinde görebilirsiniz.
+              <h2 className="text-3xl font-black text-white uppercase tracking-tight">Çalışma Hayatım ve Pazar Kar</h2>
+              <p className="text-lg leading-relaxed text-left italic">
+                E-ticaretle geçen bir <strong>çalışma hayatım</strong> içinde en büyük engel <strong>pazar kar</strong> belirsizliğidir. 
+                2026 yılı <strong>çalışma hayatım</strong> hedeflerinize ulaşmak için <strong>pazar kar</strong> yönetimine önem verin. 
+                Siz de <strong>çalışma hayatım</strong> boyunca <strong>pazar kar</strong> odaklı analizlerle <strong>çalışma hayatım</strong> güvencenizi artırabilirsiniz. 
+                Karlısın, <strong>çalışma hayatım</strong> planlarınızda <strong>pazar kar</strong> verileriyle yanınızda.
               </p>
             </div>
             <div className="space-y-8">
-              <h2 className="text-3xl font-black text-white uppercase tracking-tight">Pazaryeri Kargo Maliyeti Hesaplama</h2>
-              <p className="text-lg leading-relaxed text-left">
-                Hepsiburada ve Amazon gibi pazaryerlerinde satış yaparken ürün maliyet analizi sadece ürünın alış fiyatı değildir. 
-                Kargo maliyetleri, kampanya katılım payları ve reklam giderleri kârınızı doğrudan etkiler. 
-                Ücretsiz aracımızla her ürün için en doğru fiyatı belirleyin ve rekabette öne geçin.
+              <h2 className="text-3xl font-black text-white uppercase tracking-tight">Pazar Kar Oranlarının Önemi</h2>
+              <p className="text-lg leading-relaxed text-left italic">
+                Her yeni günde <strong>çalışma hayatım</strong> kararlılığı için <strong>pazar kar</strong> marjlarınızı korumalıyız. 
+                <strong>Pazar kar</strong> ne kadar yüksekse <strong>çalışma hayatım</strong> o kadar huzurlu geçer. 
+                En doğru <strong>pazar kar</strong> hesapları ile <strong>çalışma hayatım</strong> boyunca kazançlı çıkın. 
+                <strong>Pazar kar</strong> ve <strong>çalışma hayatım</strong> için Karlısın modern çözümler sunar. 
+                Siz de <strong>pazar kar</strong> analiziyle <strong>çalışma hayatım</strong> standartlarınızı belirleyin.
               </p>
             </div>
           </div>

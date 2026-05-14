@@ -1,6 +1,6 @@
 {
-  "name": "Karlısın | Temettü Dağıtımı & Temettü Dağıtan Hisseler Takip Aracı",
-  "description": "Temettü dağıtımı, temettü dağıtan hisseler, BIST temettü takvimi ve Unified Data Engine ile 12 aylık hedef fiyat tahmin araçları.",
+  "name": "Karlısın | Temettü & Halka Arz Takip Aracı",
+  "description": "Temettü dağıtımı, canlı halka arz takvimi, BIST hisse analizleri ve Gemini AI destekli hedef fiyat tahmin araçları.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

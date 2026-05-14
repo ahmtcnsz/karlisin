@@ -6,7 +6,10 @@ import {
   X, 
   ChevronDown, 
   TrendingUp, 
-  Activity 
+  Activity,
+  Calendar,
+  Briefcase,
+  HandCoins
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -23,7 +26,6 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
   const navItems = [
     { id: 'landing', path: '/anasayfa', label: 'Anasayfa' },
     { id: 'calculators', path: '/pazar-kar-hesaplama', label: 'Pazar Kâr', badge: 'POPÜLER' },
-    { id: 'salary', path: '/maas-vergi-hesaplama', label: 'Maaş & Vergi', badge: 'YENİ' },
   ];
 
   const isActive = (path: string) => {
@@ -31,7 +33,8 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
     return location.pathname === path;
   };
 
-  const isBorsaActive = location.pathname === '/temettu-takibi' || location.pathname === '/borsa/nabiz';
+  const isBorsaActive = location.pathname === '/temettu-takibi' || location.pathname === '/borsa/nabiz' || location.pathname === '/borsa/halka-arz';
+  const isWorkActive = location.pathname === '/maas-vergi-hesaplama' || location.pathname === '/kidem-ihbar-tazminat-hesaplama';
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5 transition-all">
@@ -53,8 +56,8 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
           </Link>
         </div>
         
-        {/* Navigation - Perfectly Centered Single Line */}
-        <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-1 whitespace-nowrap">
+        {/* Navigation - Flexible Center */}
+        <div className="hidden md:flex flex-1 justify-center items-center gap-1 whitespace-nowrap">
           {navItems.map((item) => (
             <Link
               key={item.id}
@@ -99,6 +102,61 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
             </Link>
           ))}
 
+          {/* ÇALIŞMA HAYATIM DROPDOWN */}
+          <div 
+            className="relative group/dropdown"
+            onMouseEnter={() => setActiveDropdown('work')}
+            onMouseLeave={() => setActiveDropdown(null)}
+          >
+            <button 
+              className={cn(
+                "px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-2 cursor-pointer",
+                isWorkActive ? "text-white bg-white/5 border border-white/10 shadow-inner" : "text-slate-500 hover:text-slate-300"
+              )}
+            >
+              ÇALIŞMA HAYATIM
+              <div className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded text-[8px] border border-indigo-500/30 font-black">YENİ</div>
+              <ChevronDown className={cn("w-3 h-3 transition-transform", activeDropdown === 'work' ? "rotate-180" : "")} />
+            </button>
+
+            <AnimatePresence>
+              {activeDropdown === 'work' && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute top-full left-0 w-64 pt-2 z-50 pointer-events-auto"
+                >
+                  <div className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-2 select-none">
+                    <Link 
+                      to="/maas-vergi-hesaplama" 
+                      onClick={() => setActiveDropdown(null)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        location.pathname === '/maas-vergi-hesaplama' ? "bg-indigo-600 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"
+                      )}
+                    >
+                      <Briefcase className={cn("w-4 h-4", location.pathname === '/maas-vergi-hesaplama' ? "text-white" : "text-indigo-400")} />
+                      MAAŞ & VERGİ HESAPLAMA
+                    </Link>
+                    <Link 
+                      to="/kidem-ihbar-tazminat-hesaplama" 
+                      onClick={() => setActiveDropdown(null)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        location.pathname === '/kidem-ihbar-tazminat-hesaplama' ? "bg-indigo-600 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"
+                      )}
+                    >
+                      <HandCoins className={cn("w-4 h-4", location.pathname === '/kidem-ihbar-tazminat-hesaplama' ? "text-white" : "text-indigo-400")} />
+                      KIDEM & İHBAR TAZMİNATI
+                    </Link>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* BORSA DROPDOWN */}
           <div 
             className="relative group/dropdown"
@@ -133,8 +191,19 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
                         location.pathname === '/temettu-takibi' ? "bg-indigo-600 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"
                       )}
                     >
-                      <TrendingUp className="w-4 h-4" />
+                      <TrendingUp className={cn("w-4 h-4", location.pathname === '/temettu-takibi' ? "text-white" : "text-indigo-400")} />
                       TEMETTÜ TAKİBİ
+                    </Link>
+                    <Link 
+                      to="/borsa/halka-arz" 
+                      onClick={() => setActiveDropdown(null)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        location.pathname === '/borsa/halka-arz' ? "bg-indigo-600 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"
+                      )}
+                    >
+                      <Calendar className={cn("w-4 h-4", location.pathname === '/borsa/halka-arz' ? "text-white" : "text-indigo-400")} />
+                      HALKA ARZ TAKVİMİ
                     </Link>
                     <Link 
                       to="/borsa/nabiz" 
@@ -145,7 +214,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <Activity className="w-4 h-4" />
+                        <Activity className={cn("w-4 h-4", location.pathname === '/borsa/nabiz' ? "text-white" : "text-indigo-400")} />
                         PİYASANIN NABZI
                       </div>
                       <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded text-[7px] border border-indigo-500/30">YAKINDA</span>
@@ -171,25 +240,35 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
         {/* Right Actions */}
         <div className="ml-auto flex items-center gap-4">
           <div className="relative group hidden md:block">
-            <button className="flex items-center gap-2 px-4 py-2 text-[10px] font-black text-white hover:text-indigo-400 transition-colors uppercase tracking-widest border border-white/10 rounded-lg cursor-default">
+            <button 
+              onMouseEnter={() => setActiveDropdown('kurumsal')}
+              onMouseLeave={() => setActiveDropdown(null)}
+              className="flex items-center gap-2 px-4 py-2 text-[10px] font-black text-white hover:text-indigo-400 transition-colors uppercase tracking-widest border border-white/10 rounded-lg cursor-pointer"
+            >
               Kurumsal
-              <motion.div
-                animate={{ rotate: 0 }}
-                whileHover={{ rotate: 180 }}
-                className="w-2 h-2 border-r border-b border-white/40 rotate-45 mb-1"
-              />
+              <ChevronDown className={cn("w-3 h-3 transition-transform", activeDropdown === 'kurumsal' ? "rotate-180" : "")} />
             </button>
             
-            {/* Dropdown Menu */}
-            <div className="absolute right-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300">
-              <div className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 min-w-[200px] shadow-2xl overflow-hidden">
-                <Link to="/hakkimizda" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">Hakkımızda</Link>
-                <Link to="/iletisim" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">İletişim</Link>
-                <Link to="/gizlilik-politikasi" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">Gizlilik Politikası</Link>
-                <Link to="/kullanim-kosullari" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">Kullanım Şartları</Link>
-                <Link to="/site-haritasi" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest border-t border-white/5 mt-1 pt-4">Site Haritası</Link>
-              </div>
-            </div>
+            <AnimatePresence>
+              {activeDropdown === 'kurumsal' && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 top-full pt-2 z-50 pointer-events-auto"
+                  onMouseEnter={() => setActiveDropdown('kurumsal')}
+                  onMouseLeave={() => setActiveDropdown(null)}
+                >
+                  <div className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 min-w-[200px] shadow-2xl overflow-hidden">
+                    <Link to="/hakkimizda" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">Hakkımızda</Link>
+                    <Link to="/iletisim" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">İletişim</Link>
+                    <Link to="/gizlilik-politikasi" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">Gizlilik Politikası</Link>
+                    <Link to="/kullanim-kosullari" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest">Kullanım Şartları</Link>
+                    <Link to="/site-haritasi" className="flex items-center px-4 py-3 text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest border-t border-white/5 mt-1 pt-4">Site Haritası</Link>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
           
           <button 
@@ -225,12 +304,23 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
               >
                 PAZAR KÂR <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-500 rounded text-[8px] border border-amber-500/20">POPÜLER</span>
               </Link>
+              
+              <div className="mx-4 my-2 h-px bg-white/5" />
+              <p className="px-4 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-2">ÇALIŞMA HAYATIM</p>
+              
               <Link 
                 to="/maas-vergi-hesaplama" 
                 className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-between", isActive('/maas-vergi-hesaplama') ? "bg-white/10 text-white" : "text-slate-400")}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 MAAŞ & VERGİ <span className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[8px] border border-indigo-500/20">YENİ</span>
+              </Link>
+              <Link 
+                to="/kidem-ihbar-tazminat-hesaplama" 
+                className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", isActive('/kidem-ihbar-tazminat-hesaplama') ? "bg-white/10 text-white" : "text-slate-400")}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                KIDEM & İHBAR
               </Link>
 
               <div className="mx-4 my-2 h-px bg-white/5" />

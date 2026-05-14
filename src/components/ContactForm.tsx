@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Mail, ChevronDown, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import ReCAPTCHA from "react-google-recaptcha";
 
@@ -29,13 +29,18 @@ const ContactForm: React.FC = () => {
 
     try {
       // 1. Firebase Log
-      await addDoc(collection(db, 'contact_requests'), {
-        email: userEmail,
-        type: feedbackType,
-        message: feedbackMessage,
-        source: 'contact_page',
-        createdAt: serverTimestamp()
-      });
+      const path = 'contact_requests';
+      try {
+        await addDoc(collection(db, path), {
+          email: userEmail,
+          type: feedbackType,
+          message: feedbackMessage,
+          source: 'contact_page',
+          createdAt: serverTimestamp()
+        });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, path);
+      }
 
       // 2. Email Notification via Server API
       const response = await fetch('/api/contact', {
