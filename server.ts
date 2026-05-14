@@ -1023,7 +1023,21 @@ async function startServer() {
       }
     }
 
-    // Attempt 2: config values as provided
+    // Attempt 1.9: Pure Config Pattern (ProjectId and DatabaseId exactly as in config)
+    if (!adminDb && fs.existsSync(configPath)) {
+      try {
+        const pureConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        const pId = pureConfig.projectId;
+        const dId = pureConfig.firestoreDatabaseId;
+        if (pId) {
+          adminDb = await getAdminDb(pId, dId, 'Pure-Config-Pattern');
+        }
+      } catch (e: any) {
+        console.warn(`[Karlısın-Firebase] Pure-Config-Pattern failed: ${e.message}`);
+      }
+    }
+
+    // Attempt 2: config values as provided (with possible env overrides)
     if (!adminDb) {
       try {
         adminDb = await getAdminDb(projectId, databaseId, 'Config-Pattern');

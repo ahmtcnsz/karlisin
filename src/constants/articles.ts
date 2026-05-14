@@ -1,25 +1,6 @@
 
 export const articles = [
   {
-    id: 42,
-    slug: 'merhaba-dunya-test-yazisi',
-    title: 'Merhaba Dünya!',
-    excerpt: 'Karlısın sistemleri başarıyla güncellendi. Bu yazı, X ve E-Bülten entegrasyonlarını test etmek için yayınlanmıştır.',
-    category: 'Test',
-    date: '14 Mayıs 2026',
-    readTime: '1 dk',
-    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200',
-    content: `
-      <p>Merhaba Dünya! Karlısın platformu üzerindeki teknik çalışmalarımızı tamamladık.</p>
-      <p>Bu makale, aşağıdaki sistemlerin son kontrolü için paylaşılmıştır:</p>
-      <ul>
-        <li><strong>X Entegrasyonu:</strong> Güncellenmiş API anahtarları ile anlık paylaşım.</li>
-        <li><strong>E-Bülten Entegrasyonu:</strong> Firebase Admin IAM izinleri ile abone listesine erişim.</li>
-      </ul>
-      <p>Eğer her şey planlandığı gibi çalışıyorsa, bu mesaj hem X profilimizde hem de e-posta kutunuzda olacak. Harika gidiyoruz! 🚀</p>
-    `
-  },
-  {
     id: 1,
     slug: 'karlisin-x-ve-bulten-entegrasyonu-tamamlandi',
     title: 'Karlısın: X ve E-Bülten Entegrasyonu Tamamlandı',
@@ -39,20 +20,6 @@ export const articles = [
       </ul>
       
       <p>Bu otomasyonlar, finansal okuryazarlık yolculuğunuzda en güncel bilgiye, en hızlı şekilde ulaşmanızı sağlamak için tasarlandı. Karlısın ile kârlı kalmaya devam edin!</p>
-    `
-  },
-  {
-    id: 31,
-    slug: 'karlisin-otomasyon-sistem-dogrulamasi-nihai',
-    title: 'Karlısın: Otomasyon Sistem Doğrulaması (Nihai)',
-    excerpt: 'Sistem altyapımızdaki Access Token ve Permission iyileştirmelerini doğrulamak için son bir test.',
-    category: 'Sistem',
-    date: '14 Mayıs 2026',
-    readTime: '1 dk',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200',
-    content: `
-      <p>Bu yazı, Karlısın'ın <strong>X (Twitter)</strong> ve <strong>Resend</strong> otomasyon sistemleri için yapılan "Kritik Erişim" güncellemesini doğrulamak amacıyla oluşturulmuştur.</p>
-      <p>Eğer bu içeriği X hesabımızda veya gelen kutunuzda görüyorsanız, sistemimiz %100 kapasiteyle çalışıyor demektir.</p>
     `
   }
 ];
