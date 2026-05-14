@@ -982,8 +982,18 @@ async function startServer() {
         setTimeout(() => reject(new Error('Connection timeout')), 5000)
       );
       
-      await Promise.race([verifyPromise, timeoutPromise]);
-      return db;
+      try {
+        await Promise.race([verifyPromise, timeoutPromise]);
+        return db;
+      } catch (err: any) {
+        // Detailed error for IAM instructions
+        if (err.message.includes('permission_denied') || err.message.includes('Permission denied') || err.message.includes('insufficient permissions')) {
+          console.error(`[Karlısın-Firebase] IAM HATASI [${label}]: Uygulamanızın servis hesabı bu projeye erişemedi. `);
+          console.error(`PROJE ID: ${pId || 'ais-europe-west3-a0847c9ca9f54'}`);
+          console.error(`GEREKLİ ADIM: Google Cloud Console'da bu proje için "ais-sandbox@ais-europe-west3-a0847c9ca9f54.iam.gserviceaccount.com" hesabına "Cloud Datastore User" rolü vermelisiniz.`);
+        }
+        throw err;
+      }
     };
 
     // Attempt 0: Auto-detection (best for Cloud Run if roles are set on the default project)
