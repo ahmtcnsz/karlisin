@@ -113,7 +113,6 @@ export default function HalkaArzTakvimi() {
 
   const fetchLiveIPOs = async (isRefresh = false) => {
     try {
-      // SADECE manuel yenilemede loading göster, otomatik güncellemeyi sessiz yap
       if (isRefresh) {
         setLoading(true);
       } else {
@@ -122,15 +121,15 @@ export default function HalkaArzTakvimi() {
       
       const url = isRefresh ? '/api/ipo-data?refresh=true' : '/api/ipo-data';
       const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error(`API hatası: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`API hatası: ${res.status}`);
+      
       const data = await res.json();
       
-      if (data && data.bist && Array.isArray(data.bist)) {
+      // Sadece veri gerçekten varsa ve diziyse güncelle, yoksa eski (ipoData) verisini bozma
+      if (data && data.bist && Array.isArray(data.bist) && data.bist.length > 0) {
         setBistData(data.bist);
       }
-      if (data && data.nasdaq && Array.isArray(data.nasdaq)) {
+      if (data && data.nasdaq && Array.isArray(data.nasdaq) && data.nasdaq.length > 0) {
         setNasdaqData(data.nasdaq);
       }
       
@@ -139,7 +138,9 @@ export default function HalkaArzTakvimi() {
         setLastUpdate(updateDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) + ' (' + updateDate.toLocaleDateString('tr-TR') + ')');
       }
     } catch (err) {
-      console.warn('[Karlısın-Frontend] Canlı veri senkronize edilemedi, mevcut verilerle devam ediliyor.');
+      console.warn('[Karlısın-IPO] Senkronizasyon hatası, statik veriye dönülüyor:', err);
+      // Hata durumunda en azından statik veriyi garantile
+      if (!bistData || bistData.length === 0) setBistData(ipoData);
     } finally {
       setLoading(false);
       setIsBackgroundUpdating(false);

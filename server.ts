@@ -982,13 +982,18 @@ async function fetchWordPressPosts() {
         imageUrl = featuredMedia.source_url || 
                    featuredMedia.media_details?.sizes?.full?.source_url || 
                    featuredMedia.media_details?.sizes?.large?.source_url ||
+                   featuredMedia.media_details?.sizes?.medium_large?.source_url ||
+                   featuredMedia.media_details?.sizes?.medium?.source_url ||
                    featuredMedia.guid?.rendered ||
                    imageUrl;
+      } else if (post.featured_media_url) {
+        imageUrl = post.featured_media_url;
       } else if (post.jetpack_featured_media_url) {
-        // Jetpack eklentisi kullanılıyorsa
         imageUrl = post.jetpack_featured_media_url;
       } else if (post.featured_media_src_url) {
         imageUrl = post.featured_media_src_url;
+      } else if (post.featured_image_url) {
+        imageUrl = post.featured_image_url;
       } else {
         // Fallback: İçerikteki ilk resmi bulmaya çalış
         const content = post.content?.rendered || "";
@@ -1025,12 +1030,18 @@ async function fetchWordPressPosts() {
       };
     });
 
-    // 1 saat önbelleğe al
-    cache.set(cacheKey, mappedPosts, 3600);
+    // 2 dakika önbelleğe al (Hızlı güncelleme için)
+    cache.set(cacheKey, mappedPosts, 120);
     return mappedPosts;
   } catch (error) {
     console.error('[Karlısın-WP] FETCH HATASI:', error);
-    return articles; // Hata durumunda lokale dön
+    // Hata durumunda önbellekteki veriyi döndürmeye çalış
+    const staleContent = cache.get(cacheKey);
+    if (staleContent) {
+      console.log('[Karlısın-WP] Hata nedeniyle eski önbellek verisi döndürülüyor.');
+      return staleContent;
+    }
+    return articles; // Hiçbir şey yoksa lokale dön
   }
 }
 
