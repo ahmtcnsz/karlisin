@@ -973,26 +973,34 @@ async function fetchWordPressPosts() {
     if (!Array.isArray(posts)) return articles;
     
     const mappedPosts = posts.map((post: any, index: number) => {
-      // Öne çıkan görseli al - Daha kapsamlı kontrol
+      // Öne çıkan görseli al - Gelişmiş kontrol hiyerarşisi
       let imageUrl = 'https://images.unsplash.com/photo-1535320903710-d993d3d77d29?auto=format&fit=crop&q=80&w=1200';
       
       const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0];
       
       if (featuredMedia) {
-        // En iyi görsel URL'ini bulmaya çalış
         imageUrl = featuredMedia.source_url || 
                    featuredMedia.media_details?.sizes?.full?.source_url || 
                    featuredMedia.media_details?.sizes?.large?.source_url ||
                    featuredMedia.guid?.rendered ||
                    imageUrl;
+      } else if (post.jetpack_featured_media_url) {
+        // Jetpack eklentisi kullanılıyorsa
+        imageUrl = post.jetpack_featured_media_url;
       } else if (post.featured_media_src_url) {
-        // Bazı eklentiler bu alanı sağlar
         imageUrl = post.featured_media_src_url;
+      } else {
+        // Fallback: İçerikteki ilk resmi bulmaya çalış
+        const content = post.content?.rendered || "";
+        const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
+        if (imgMatch && imgMatch[1]) {
+          imageUrl = imgMatch[1];
+          if (index === 0) console.log(`[Karlısın-WP] Görsel içerikten çekildi: ${imageUrl}`);
+        }
       }
 
-      if (index === 0) {
-        console.log(`[Karlısın-WP] İlk yazı görseli: ${imageUrl}`);
-        if (!featuredMedia) console.log(`[Karlısın-WP] İlk yazıda _embedded['wp:featuredmedia'] bulunamadı!`);
+      if (index === 0 && imageUrl.includes('unsplash')) {
+        console.log(`[Karlısın-WP] UYARI: İlk yazı için görsel bulunamadı, varsayılan görsel kullanılıyor.`);
       }
 
       // Kategori bul
