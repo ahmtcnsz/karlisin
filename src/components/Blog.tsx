@@ -13,7 +13,7 @@ export default function Blog() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [liveArticles, setLiveArticles] = useState<typeof articles>(articles);
+  const [liveArticles, setLiveArticles] = useState<typeof articles>([]);
   const [loadingArticles, setLoadingArticles] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState<typeof articles[0] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,9 +30,13 @@ export default function Blog() {
         if (res.ok) {
           const data = await res.json();
           setLiveArticles(data);
+        } else {
+          // API hata verirse yerel yazıları yükle (fallback)
+          setLiveArticles(articles);
         }
       } catch (err) {
         console.error('Blog posts fetch error:', err);
+        setLiveArticles(articles);
       } finally {
         setLoadingArticles(false);
       }
@@ -335,103 +339,120 @@ export default function Blog() {
       </div>
 
       <div className="flex flex-col gap-16 items-center">
-        {/* Featured Article - Only show if not searching */}
-        {filteredArticles.length > 0 && searchQuery === '' && (
-          <motion.article 
-            initial={{ opacity: 0, y: 30 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            onClick={() => navigate(`/blog/${filteredArticles[0].slug || filteredArticles[0].id}`)} 
-            className="bg-white/5 backdrop-blur-md rounded-3xl md:rounded-[48px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer shadow-2xl max-w-5xl"
-          >
-            <div className="aspect-video overflow-hidden relative">
-              <img src={filteredArticles[0].image} alt={filteredArticles[0].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
-              <div className="absolute top-6 left-6">
-                <span className="px-4 py-1.5 bg-indigo-500 backdrop-blur-md text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg">SON YAZI</span>
-              </div>
-            </div>
-            
-            <div className="p-10 md:p-16 flex flex-col items-center text-center">
-              <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-black text-slate-500 uppercase tracking-widest mb-6">
-                <span className="px-3 py-1 bg-white/5 rounded-lg border border-white/10">{filteredArticles[0].category}</span>
-                <span className="hidden sm:inline">•</span>
-                <span className="flex items-center gap-1.5"><Clock size={14} /> {filteredArticles[0].readTime} oku</span>
-                <span className="hidden sm:inline">•</span>
-                <span>{filteredArticles[0].date}</span>
-              </div>
-              <h2 className="text-3xl md:text-5xl font-black text-white mb-6 group-hover:text-indigo-400 transition-colors leading-tight tracking-tight">{filteredArticles[0].title}</h2>
-              <p className="text-lg text-slate-400 font-medium mb-10 line-clamp-3 leading-relaxed max-w-3xl">{filteredArticles[0].excerpt}</p>
-              <div className="flex items-center gap-4">
-                <button className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-indigo-400 group-hover:text-white transition-all">
-                  Hemen Oku <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
-                </button>
-                {searchParams.get('admin') === 'true' && (
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleManualBroadcast(filteredArticles[0]);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/5"
-                  >
-                    <CheckCircle size={14} /> Duyuru Gönder
-                  </button>
-                )}
-              </div>
-            </div>
-          </motion.article>
-        )}
-
-        {/* Regular Articles List */}
-        <div className="w-full max-w-7xl">
-          {filteredArticles.length === 0 ? (
-            <div className="text-center py-20 bg-white/5 rounded-[40px] border border-white/10 w-full">
-              <Search size={48} className="mx-auto text-slate-600 mb-4" />
-              <p className="text-slate-400 font-medium">Aradığınız kriterlere uygun yazı bulunamadı.</p>
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="mt-4 text-indigo-400 font-bold hover:underline"
+        {loadingArticles ? (
+          <div className="flex flex-col items-center justify-center py-32 w-full">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="text-indigo-500 mb-4"
+            >
+              <Loader2 size={48} />
+            </motion.div>
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-sm animate-pulse">
+              İçerikler Yükleniyor...
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Featured Article - Only show if not searching */}
+            {filteredArticles.length > 0 && searchQuery === '' && (
+              <motion.article 
+                initial={{ opacity: 0, y: 30 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                onClick={() => navigate(`/blog/${filteredArticles[0].slug || filteredArticles[0].id}`)} 
+                className="bg-white/5 backdrop-blur-md rounded-3xl md:rounded-[48px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer shadow-2xl max-w-5xl"
               >
-                Tüm yazıları göster
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {/* Show articles other than the featured one if not searching */}
-              {(searchQuery === '' ? filteredArticles.slice(1) : filteredArticles).map((article, i) => (
-                <motion.article 
-                  key={article.id} 
-                  initial={{ opacity: 0, y: 20 }} 
-                  whileInView={{ opacity: 1, y: 0 }} 
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }} 
-                  onClick={() => navigate(`/blog/${article.slug || article.id}`)} 
-                  className="bg-white/5 backdrop-blur-md rounded-[40px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer text-center items-center"
-                >
-                  <div className="aspect-[16/9] w-full overflow-hidden relative">
-                    <img src={article.image} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
-                    <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10">{article.category}</span>
-                    </div>
+                <div className="aspect-video overflow-hidden relative">
+                  <img src={filteredArticles[0].image} alt={filteredArticles[0].title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
+                  <div className="absolute top-6 left-6">
+                    <span className="px-4 py-1.5 bg-indigo-500 backdrop-blur-md text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg">SON YAZI</span>
                   </div>
-                  
-                  <div className="p-8 flex flex-col items-center flex-grow">
-                    <div className="flex items-center justify-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">
-                      <span className="flex items-center gap-1.5"><Clock size={12} /> {article.readTime} oku</span>
-                      <span>•</span>
-                      <span>{article.date}</span>
-                    </div>
-                    <h2 className="text-xl font-black text-white mb-4 group-hover:text-indigo-400 transition-colors line-clamp-2 leading-tight">{article.title}</h2>
-                    <p className="text-sm text-slate-400 font-medium mb-6 line-clamp-2 leading-relaxed">{article.excerpt}</p>
-                    <div className="mt-auto pt-4 border-t border-white/5 w-full">
-                      <button className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-400 group-hover:text-white transition-colors w-full">
-                        Devamını Oku <ArrowRight size={14} />
+                </div>
+                
+                <div className="p-10 md:p-16 flex flex-col items-center text-center">
+                  <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-black text-slate-500 uppercase tracking-widest mb-6">
+                    <span className="px-3 py-1 bg-white/5 rounded-lg border border-white/10">{filteredArticles[0].category}</span>
+                    <span className="hidden sm:inline">•</span>
+                    <span className="flex items-center gap-1.5"><Clock size={14} /> {filteredArticles[0].readTime} oku</span>
+                    <span className="hidden sm:inline">•</span>
+                    <span>{filteredArticles[0].date}</span>
+                  </div>
+                  <h2 className="text-3xl md:text-5xl font-black text-white mb-6 group-hover:text-indigo-400 transition-colors leading-tight tracking-tight">{filteredArticles[0].title}</h2>
+                  <p className="text-lg text-slate-400 font-medium mb-10 line-clamp-3 leading-relaxed max-w-3xl">{filteredArticles[0].excerpt}</p>
+                  <div className="flex items-center gap-4">
+                    <button className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-indigo-400 group-hover:text-white transition-all">
+                      Hemen Oku <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+                    </button>
+                    {searchParams.get('admin') === 'true' && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleManualBroadcast(filteredArticles[0]);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/5"
+                      >
+                        <CheckCircle size={14} /> Duyuru Gönder
                       </button>
-                    </div>
+                    )}
                   </div>
-                </motion.article>
-              ))}
+                </div>
+              </motion.article>
+            )}
+
+            {/* Regular Articles List */}
+            <div className="w-full max-w-7xl">
+              {filteredArticles.length === 0 ? (
+                <div className="text-center py-20 bg-white/5 rounded-[40px] border border-white/10 w-full">
+                  <Search size={48} className="mx-auto text-slate-600 mb-4" />
+                  <p className="text-slate-400 font-medium">Aradığınız kriterlere uygun yazı bulunamadı.</p>
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="mt-4 text-indigo-400 font-bold hover:underline"
+                  >
+                    Tüm yazıları göster
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {/* Show articles other than the featured one if not searching */}
+                  {(searchQuery === '' ? filteredArticles.slice(1) : filteredArticles).map((article, i) => (
+                    <motion.article 
+                      key={article.id} 
+                      initial={{ opacity: 0, y: 20 }} 
+                      whileInView={{ opacity: 1, y: 0 }} 
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.1 }} 
+                      onClick={() => navigate(`/blog/${article.slug || article.id}`)} 
+                      className="bg-white/5 backdrop-blur-md rounded-[40px] border border-white/10 overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col cursor-pointer text-center items-center"
+                    >
+                      <div className="aspect-[16/9] w-full overflow-hidden relative">
+                        <img src={article.image} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
+                        <div className="absolute top-4 left-4">
+                          <span className="px-3 py-1 bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10">{article.category}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="p-8 flex flex-col items-center flex-grow">
+                        <div className="flex items-center justify-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">
+                          <span className="flex items-center gap-1.5"><Clock size={12} /> {article.readTime} oku</span>
+                          <span>•</span>
+                          <span>{article.date}</span>
+                        </div>
+                        <h2 className="text-xl font-black text-white mb-4 group-hover:text-indigo-400 transition-colors line-clamp-2 leading-tight">{article.title}</h2>
+                        <p className="text-sm text-slate-400 font-medium mb-6 line-clamp-2 leading-relaxed">{article.excerpt}</p>
+                        <div className="mt-auto pt-4 border-t border-white/5 w-full">
+                          <button className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-400 group-hover:text-white transition-colors w-full">
+                            Devamını Oku <ArrowRight size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.article>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
       {/* Featured Newsletter */}
