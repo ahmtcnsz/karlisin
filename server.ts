@@ -941,6 +941,72 @@ class UnifiedDataService {
   }
 }
 
+// WordPress API Integration
+async function fetchWordPressPosts() {
+  const wpUrl = process.env.WORDPRESS_URL?.trim();
+  if (!wpUrl || wpUrl === '') return articles;
+
+  const cacheKey = 'wp_posts';
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const wpApiUrl = `${wpUrl.replace(/\/$/, '')}/wp-json/wp/v2/posts?_embed&per_page=50&status=publish`;
+    console.log(`[Karlısın-WP] Fetching from: ${wpApiUrl}`);
+    
+    const response = await fetch(wpApiUrl, {
+      headers: {
+        'User-Agent': 'Karlisin-Platform-Bot/1.0'
+      }
+    });
+
+    if (!response.ok) {
+      console.warn(`[Karlısın-WP] API YANITI HATALI: ${response.status}`);
+      return articles;
+    }
+    
+    const posts = await response.json();
+    if (!Array.isArray(posts)) return articles;
+    
+    const mappedPosts = posts.map((post: any) => {
+      // Öne çıkan görseli al
+      let imageUrl = 'https://images.unsplash.com/photo-1535320903710-d993d3d77d29?auto=format&fit=crop&q=80&w=1200';
+      const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0];
+      if (featuredMedia?.source_url) {
+        imageUrl = featuredMedia.source_url;
+      }
+
+      // Kategori bul
+      const categories = post._embedded?.['wp:term']?.[0] || [];
+      const categoryName = categories.length > 0 ? categories[0].name : 'Finans';
+
+      // HTML temizleme ve düzgün özet oluşturma
+      const cleanExcerpt = post.excerpt?.rendered 
+        ? post.excerpt.rendered.replace(/<[^>]*>?/gm, '').trim()
+        : (post.content?.rendered || '').replace(/<[^>]*>?/gm, '').substring(0, 160).trim() + '...';
+
+      return {
+        id: post.id,
+        slug: post.slug,
+        title: post.title?.rendered || 'Başlıksız Yazı',
+        excerpt: cleanExcerpt,
+        content: post.content?.rendered || '',
+        category: categoryName,
+        date: new Date(post.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
+        readTime: `${Math.max(3, Math.ceil((post.content?.rendered || '').split(' ').length / 200))} dk`,
+        image: imageUrl
+      };
+    });
+
+    // 1 saat önbelleğe al
+    cache.set(cacheKey, mappedPosts, 3600);
+    return mappedPosts;
+  } catch (error) {
+    console.error('[Karlısın-WP] FETCH HATASI:', error);
+    return articles; // Hata durumunda lokale dön
+  }
+}
+
 async function startServer() {
   // Deriving __dirname for ES module compatibility/CommonJS
   try {
@@ -1344,8 +1410,7 @@ async function startServer() {
           }
         ],
         config: {
-          responseMimeType: "application/json",
-          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
+          responseMimeType: "application/json"
         }
       });
 
@@ -1547,8 +1612,7 @@ async function startServer() {
         model: "gemini-3.1-flash-lite",
         contents: prompt,
         config: {
-          responseMimeType: "application/json",
-          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
+          responseMimeType: "application/json"
         }
       });
       let text = result.text || "";
@@ -1949,6 +2013,16 @@ async function startServer() {
     });
   });
 
+  // WordPress Blog API
+  app.get('/api/blog/posts', async (req, res) => {
+    try {
+      const wpPosts = await fetchWordPressPosts();
+      res.json(wpPosts);
+    } catch (err) {
+      res.status(500).json({ error: 'Blog yazıları yüklenemedi' });
+    }
+  });
+
   app.get('/api/debug', (req, res) => {
     const yfTest = getYahoo();
     res.json({
@@ -2293,8 +2367,7 @@ async function startServer() {
           contents: [{ role: 'user', parts: [{ text: prompt }, { text: `HTML: ${bistHtml.substring(0, 40000)}` }] }],
           config: { 
             responseMimeType: "application/json", 
-            temperature: 0.1,
-            thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
+            temperature: 0.1
           }
         });
         

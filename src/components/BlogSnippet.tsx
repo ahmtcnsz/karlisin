@@ -1,16 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Clock, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import { getApiUrl } from '../lib/utils';
 import { articles as allArticles } from '../constants/articles';
-
-// En son 5 yazıyı göster (Listenin sonundakiler en günceldir)
-const articles = allArticles.slice(-5).reverse();
-
 
 export default function BlogSnippet() {
   const navigate = useNavigate();
+  const [articles, setArticles] = useState<typeof allArticles>(allArticles.slice(-3).reverse());
+
+  useEffect(() => {
+    async function fetchLatest() {
+      try {
+        const res = await fetch(getApiUrl('/api/blog/posts'));
+        if (res.ok) {
+          const data = await res.json();
+          // En son 3 yazıyı al
+          setArticles(data.slice(0, 3));
+        }
+      } catch (err) {
+        console.error('Snippet fetch error:', err);
+      }
+    }
+    fetchLatest();
+  }, []);
 
   return (
     <section className="space-y-8">

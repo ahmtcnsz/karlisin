@@ -13,15 +13,36 @@ export default function Blog() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [liveArticles, setLiveArticles] = useState<typeof articles>(articles);
+  const [loadingArticles, setLoadingArticles] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState<typeof articles[0] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { id: pathSlug } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  // Yazıları API'den çek
+  useEffect(() => {
+    async function fetchPosts() {
+      try {
+        setLoadingArticles(true);
+        const res = await fetch(getApiUrl('/api/blog/posts'));
+        if (res.ok) {
+          const data = await res.json();
+          setLiveArticles(data);
+        }
+      } catch (err) {
+        console.error('Blog posts fetch error:', err);
+      } finally {
+        setLoadingArticles(false);
+      }
+    }
+    fetchPosts();
+  }, []);
+
   // Filtrelenmiş makaleler
   const trimmedSearch = searchQuery.trim().toLowerCase();
-  const filteredArticles = [...articles]
+  const filteredArticles = [...liveArticles]
     .filter(article => 
       article.title.toLowerCase().includes(trimmedSearch) ||
       article.excerpt.toLowerCase().includes(trimmedSearch) ||
@@ -31,13 +52,15 @@ export default function Blog() {
 
   // URL'den makale slug'ını veya ID'sini oku
   useEffect(() => {
+    if (loadingArticles) return;
+
     const slugOrId = pathSlug || searchParams.get('id');
     if (slugOrId) {
       // Önce slug ile ara
-      let article = articles.find(a => a.slug === slugOrId);
+      let article = liveArticles.find(a => a.slug === slugOrId);
       // Bulunamazsa ID ile ara (geriye dönük uyumluluk)
       if (!article) {
-        article = articles.find(a => String(a.id) === slugOrId);
+        article = liveArticles.find(a => String(a.id) === slugOrId);
       }
 
       if (article) {
@@ -49,7 +72,7 @@ export default function Blog() {
     } else {
       setSelectedArticle(null);
     }
-  }, [pathSlug, searchParams]);
+  }, [pathSlug, searchParams, liveArticles, loadingArticles]);
 
   const handleShare = async (article: typeof articles[0]) => {
     const shareUrl = `https://www.karlisin.com/blog/${article.slug || article.id}`;
@@ -222,7 +245,7 @@ export default function Blog() {
             <div className="mt-16 pt-8 border-t border-white/10">
               <h3 className="text-2xl font-black text-white mb-8 italic uppercase tracking-wider">İlginizi Çekebilir</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {articles
+                {liveArticles
                   .filter(a => a.id !== selectedArticle.id)
                   .sort(() => Math.random() - 0.5)
                   .slice(0, 2)
@@ -289,7 +312,7 @@ export default function Blog() {
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
         <div className="max-w-2xl">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 text-indigo-300 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-indigo-500/20 font-bold">
-            {articles.length} Toplam İçerik
+            {liveArticles.length} Toplam İçerik
           </motion.div>
           <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl font-black text-white tracking-tight">
             Karlısın <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Blog</span>
