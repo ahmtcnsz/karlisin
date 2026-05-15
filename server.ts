@@ -954,14 +954,18 @@ async function fetchWordPressPosts() {
     const wpApiUrl = `${wpUrl.replace(/\/$/, '')}/wp-json/wp/v2/posts?_embed&per_page=50&status=publish`;
     console.log(`[Karlısın-WP] Fetching from: ${wpApiUrl}`);
     
+    const startTime = Date.now();
     const response = await fetch(wpApiUrl, {
       headers: {
         'User-Agent': 'Karlisin-Platform-Bot/1.0'
       }
     });
 
+    console.log(`[Karlısın-WP] Response received in ${Date.now() - startTime}ms. Status: ${response.status} (${response.statusText})`);
+
     if (!response.ok) {
-      console.warn(`[Karlısın-WP] API YANITI HATALI: ${response.status}`);
+      const errorText = await response.text().catch(() => 'No body');
+      console.warn(`[Karlısın-WP] API YANITI HATALI. URL: ${wpApiUrl}, Status: ${response.status}, Body: ${errorText.substring(0, 200)}`);
       return articles;
     }
     
@@ -1251,6 +1255,8 @@ async function startServer() {
     res.json({ 
       version: '3.1.0', 
       mode: process.env.NODE_ENV, 
+      wordpress_configured: !!process.env.WORDPRESS_URL,
+      wordpress_url_preview: process.env.WORDPRESS_URL ? `${process.env.WORDPRESS_URL.substring(0, 15)}...` : 'not set',
       timestamp: new Date().toISOString(),
       last_x_error: lastXError 
     });
