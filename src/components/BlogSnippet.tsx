@@ -12,7 +12,7 @@ export default function BlogSnippet() {
   useEffect(() => {
     async function fetchLatest() {
       try {
-        const res = await fetch(getApiUrl('/api/blog/posts'));
+        const res = await fetch(getApiUrl('/api/blog/v2/posts'));
         if (res.ok) {
           const data = await res.json();
           // En son 3 yazıyı al

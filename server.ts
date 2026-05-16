@@ -944,6 +944,7 @@ class UnifiedDataService {
 // WordPress API Integration
 async function fetchWordPressPosts() {
   const wpUrl = process.env.WORDPRESS_URL?.trim();
+  console.log(`[Karlısın-WP] Fetching from URL: ${wpUrl || 'NOT SET (using local articles)'}`);
   if (!wpUrl || wpUrl === '') return articles;
 
   const cacheKey = 'wp_posts';
@@ -973,7 +974,7 @@ async function fetchWordPressPosts() {
     if (!Array.isArray(posts)) return articles;
     
     const mappedPosts = posts.map((post: any, index: number) => {
-      // Öne çıkan görseli al - Gelişmiş kontrol hiyerarşisi
+      // Öne çıkan görseli al - Ultra kapsamlı kontrol hiyerarşisi
       let imageUrl = 'https://images.unsplash.com/photo-1535320903710-d993d3d77d29?auto=format&fit=crop&q=80&w=1200';
       
       const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0];
@@ -994,18 +995,23 @@ async function fetchWordPressPosts() {
         imageUrl = post.featured_media_src_url;
       } else if (post.featured_image_url) {
         imageUrl = post.featured_image_url;
+      } else if (post.yoast_head_json?.og_image?.[0]?.url) {
+        imageUrl = post.yoast_head_json.og_image[0].url;
+      } else if (post.better_featured_image?.source_url) {
+        imageUrl = post.better_featured_image.source_url;
+      } else if (post.parselyMeta?.['parsely-image-url']) {
+        imageUrl = post.parselyMeta['parsely-image-url'];
       } else {
         // Fallback: İçerikteki ilk resmi bulmaya çalış
         const content = post.content?.rendered || "";
         const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
         if (imgMatch && imgMatch[1]) {
           imageUrl = imgMatch[1];
-          if (index === 0) console.log(`[Karlısın-WP] Görsel içerikten çekildi: ${imageUrl}`);
         }
       }
-
+      
       if (index === 0 && imageUrl.includes('unsplash')) {
-        console.log(`[Karlısın-WP] UYARI: İlk yazı için görsel bulunamadı, varsayılan görsel kullanılıyor.`);
+        console.log(`[Karlısın-WP] UYARI: İlk yazı için WordPress'te öne çıkan görsel veya içeriksel görsel bulunamadı.`);
       }
 
       // Kategori bul
@@ -1030,8 +1036,8 @@ async function fetchWordPressPosts() {
       };
     });
 
-    // 2 dakika önbelleğe al (Hızlı güncelleme için)
-    cache.set(cacheKey, mappedPosts, 120);
+    // 30 saniye önbelleğe al (Neredeyse gerçek zamanlı güncelleme için)
+    cache.set(cacheKey, mappedPosts, 30);
     return mappedPosts;
   } catch (error) {
     console.error('[Karlısın-WP] FETCH HATASI:', error);
@@ -2044,22 +2050,52 @@ async function startServer() {
 
   app.get('/api/health', (req, res) => {
     res.json({ 
-      status: 'ok', 
-      time: new Date().toISOString(),
-      cache_keys: cache.keys().length,
-      node_version: process.versions.node,
-      env: process.env.NODE_ENV,
-      yahoo_initialized: !!yf && typeof yf.quote === 'function'
+      version: '3.1.8', 
+      mode: process.env.NODE_ENV, 
+      wordpress_configured: !!process.env.WORDPRESS_URL,
+      wordpress_url_preview: process.env.WORDPRESS_URL ? `${process.env.WORDPRESS_URL.substring(0, 15)}...` : 'not set',
+      timestamp: new Date().toISOString(),
+      last_x_error: lastXError 
     });
   });
 
+  // WordPress Hata Ayıklama Endpoint'i
+  app.get('/api/blog/debug', async (req, res) => {
+    const wpUrl = process.env.WORDPRESS_URL?.trim();
+    if (!wpUrl) return res.json({ error: 'WORDPRESS_URL environment variable is not set.' });
+    
+    try {
+      const apiUrl = `${wpUrl.replace(/\/$/, '')}/wp-json/wp/v2/posts?_embed&per_page=1`;
+      console.log(`[Karlısın-DEBUG] Fetching: ${apiUrl}`);
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      res.json({
+        config_url: wpUrl,
+        fetch_url: apiUrl,
+        status: response.status,
+        post_count: Array.isArray(data) ? data.length : 0,
+        sample_post_keys: data[0] ? Object.keys(data[0]) : [],
+        sample_embedded_keys: data[0]?._embedded ? Object.keys(data[0]._embedded) : [],
+        full_post_data: data[0] || null
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message, stack: err.stack });
+    }
+  });
+
   // WordPress Blog API
-  app.get('/api/blog/posts', async (req, res) => {
+  app.get('/api/blog/v2/posts', async (req, res) => {
+    console.log(`[Karlısın-API] /api/blog/v2/posts isteği geldi.`);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     try {
       const wpPosts = await fetchWordPressPosts();
+      console.log(`[Karlısın-API] /api/blog/v2/posts: ${wpPosts.length} yazı bulundu.`);
       res.json(wpPosts);
-    } catch (err) {
-      res.status(500).json({ error: 'Blog yazıları yüklenemedi' });
+    } catch (err: any) {
+      console.error(`[Karlısın-API] /api/blog/v2/posts HATASI:`, err.message);
+      res.status(500).json({ error: 'Blog yazıları yüklenemedi', details: err.message });
     }
   });
 
@@ -2368,12 +2404,16 @@ async function startServer() {
 
       try {
         const bistRes = await fetch('https://halkarz.com/', {
-          headers: { 'User-Agent': getRandomUserAgent() },
+          headers: { 
+            'User-Agent': getRandomUserAgent(),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'tr,en-US;q=0.7,en;q=0.3'
+          },
           signal: controller.signal as any
         });
         bistHtml = bistRes.ok ? await bistRes.text() : '';
       } catch (e: any) {
-        console.warn('[Karlısın-IPO] Scrape hatası:', e.message);
+        console.warn('[Karlısın-IPO] BIST Scrape hatası (Halk Arz):', e.message);
       } finally {
         clearTimeout(timeoutId);
       }
@@ -2412,18 +2452,32 @@ async function startServer() {
         });
         
         let text = result.text || "";
+        // Daha agresif JSON temizleme
         text = text.replace(/```json/g, '').replace(/```/g, '').trim();
         
+        // Eğer hala JSON bloğu içindeyse temizle
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) text = jsonMatch[0];
+        
         if (text) {
-          const parsed = JSON.parse(text);
-          parsed.lastUpdate = new Date().toISOString(); // Güncelleme zamanını damgalıyoruz
+          try {
+            const parsed = JSON.parse(text);
+            parsed.lastUpdate = new Date().toISOString(); 
+            
+            // Veri yapısı doğrulaması
+            if (!parsed.bist) parsed.bist = [];
+            if (!parsed.nasdaq) parsed.nasdaq = [];
 
-          // ID Fixes
-          if (parsed.bist) parsed.bist = parsed.bist.map((it: any, i: number) => ({ ...it, id: it.id || (i + 1) }));
-          if (parsed.nasdaq) parsed.nasdaq = parsed.nasdaq.map((it: any, i: number) => ({ ...it, id: it.id || (i + 101) }));
-          
-          cache.set(cacheKey, parsed, 172800); // 48 saat sakla (Reset durumunda veri kalsın)
-          return parsed;
+            // ID Fixes
+            parsed.bist = parsed.bist.map((it: any, i: number) => ({ ...it, id: it.id || (i + 1) }));
+            parsed.nasdaq = parsed.nasdaq.map((it: any, i: number) => ({ ...it, id: it.id || (i + 101) }));
+            
+            cache.set(cacheKey, parsed, 172800); 
+            return parsed;
+          } catch (pErr: any) {
+            console.error('[Karlısın-IPO] JSON Parse Hatası:', pErr.message, 'Text:', text.substring(0, 200));
+            throw new Error(`Invalid JSON: ${pErr.message}`);
+          }
         }
         throw new Error('Yanıt boş.');
       } catch (err: any) {

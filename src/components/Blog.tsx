@@ -26,7 +26,7 @@ export default function Blog() {
     async function fetchPosts() {
       try {
         setLoadingArticles(true);
-        const res = await fetch(getApiUrl('/api/blog/posts'));
+        const res = await fetch(getApiUrl('/api/blog/v2/posts'));
         if (res.ok) {
           const data = await res.json();
           setLiveArticles(data);
