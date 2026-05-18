@@ -1061,59 +1061,36 @@ async function fetchWordPressPosts() {
     console.log(`[Karlısın-WP] ${posts.length} ham yazı başarıyla alındı.`);
 
     const mappedPosts = posts.map((post: any, index: number) => {
-      // Öne çıkan görseli al - Ultra kapsamlı kontrol hiyerarşisi
+      // Öne çıkan görsel tespiti
       let imageUrl = 'https://images.unsplash.com/photo-1535320903710-d993d3d77d29?auto=format&fit=crop&q=80&w=1200';
       let detectionSource = 'default';
       
-      // 1. Standart WP Embedded Media
       const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0];
-      
       if (featuredMedia) {
         imageUrl = featuredMedia.source_url || 
-                   featuredMedia.media_details?.sizes?.full?.source_url || 
+                   featuredMedia.media_details?.sizes?.full?.source_url ||
                    featuredMedia.media_details?.sizes?.large?.source_url ||
-                   featuredMedia.media_details?.sizes?.medium_large?.source_url ||
                    featuredMedia.media_details?.sizes?.medium?.source_url ||
                    featuredMedia.guid?.rendered ||
                    imageUrl;
         detectionSource = 'wp:featuredmedia';
       } 
-      // 2. Direct Featured URL fields (common in some WP setups/plugins)
-      else if (post.featured_media_url) { imageUrl = post.featured_media_url; detectionSource = 'featured_media_url'; }
-      else if (post.jetpack_featured_media_url) { imageUrl = post.jetpack_featured_media_url; detectionSource = 'jetpack_featured_media_url'; }
-      else if (post.featured_media_src_url) { imageUrl = post.featured_media_src_url; detectionSource = 'featured_media_src_url'; }
-      else if (post.featured_image_url) { imageUrl = post.featured_image_url; detectionSource = 'featured_image_url'; }
+      else if (post.yoast_head_json?.og_image?.[0]?.url) { imageUrl = post.yoast_head_json.og_image[0].url; detectionSource = 'yoast_og'; }
+      else if (post.yoast_head_json?.twitter_image) { imageUrl = post.yoast_head_json.twitter_image; detectionSource = 'yoast_twitter'; }
+      else if (post.jetpack_featured_media_url) { imageUrl = post.jetpack_featured_media_url; detectionSource = 'jetpack'; }
       
-      // 3. Yoast SEO / Social Graph Metadata (Highly reliable fallback)
-      else if (post.yoast_head_json?.og_image?.[0]?.url) { imageUrl = post.yoast_head_json.og_image[0].url; detectionSource = 'yoast_og_image'; }
-      else if (post.yoast_head_json?.twitter_image) { imageUrl = post.yoast_head_json.twitter_image; detectionSource = 'yoast_twitter_image'; }
-      
-      // 4. Rank Math / Other SEO Plugins
-      else if (post.rank_math_facebook_image) { imageUrl = post.rank_math_facebook_image; detectionSource = 'rank_math_fb'; }
-      
-      // 5. Common Legacy Fields
-      else if (post.better_featured_image?.source_url) { imageUrl = post.better_featured_image.source_url; detectionSource = 'better_featured_image'; }
-      else if (post.parselyMeta?.['parsely-image-url']) { imageUrl = post.parselyMeta['parsely-image-url']; detectionSource = 'parsely'; }
-      
-      // 6. Content Scraping (Final attempt)
       else {
         const content = post.content?.rendered || "";
-        const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
-        if (imgMatch && imgMatch[1] && !imgMatch[1].includes('avatar')) {
-          imageUrl = imgMatch[1];
+        const imgMatches = [...content.matchAll(/<img[^>]+src="([^">]+)"/g)];
+        const validImg = imgMatches.find(m => m[1] && !m[1].includes('avatar') && !m[1].includes('spinner') && m[1].startsWith('http'));
+        if (validImg) {
+          imageUrl = validImg[1];
           detectionSource = 'content_scrape';
-        } else {
-          // İkincil deneme: og:image meta tagını içeriğin içinden ayıkla (bazı WP pluginleri basar)
-          const ogMatch = content.match(/property="og:image"\s+content="([^">]+)"/) || content.match(/name="twitter:image"\s+content="([^">]+)"/);
-          if (ogMatch && ogMatch[1]) {
-            imageUrl = ogMatch[1];
-            detectionSource = 'content_og_meta';
-          }
         }
       }
       
       if (index === 0) {
-        console.log(`[Karlısın-WP] Yazı: "${post.title?.rendered}", Kaynak: ${detectionSource}, Resim: ${imageUrl.substring(0, 40)}...`);
+        console.log(`[Karlısın-WP] İlk Yazı: "${post.title?.rendered}", Görsel: ${imageUrl.split('/').pop()}, Kaynak: ${detectionSource}`);
       }
 
       // Kategori bul
@@ -1242,32 +1219,6 @@ async function startServer() {
   const app = express();
   app.set('trust proxy', true);
   
-  // WP-Admin Safety Check (Helping user with DNS issues)
-  app.get(['/wp-admin*', '/wp-login.php*'], (req, res) => {
-    res.status(403).send(`
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; line-height: 1.6; max-width: 600px; margin: 40px auto; background: #0f172a; color: #f8fafc; border-radius: 24px; border: 1px solid #1e293b; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-        <h1 style="color: #f43f5e; font-weight: 900; letter-spacing: -0.05em; margin-bottom: 24px; text-transform: uppercase;">Dikkat: Alan Adı Yapılandırma Hatası</h1>
-        <p style="font-size: 1.1em; color: #94a3b8;">Şu anda WordPress paneline (WP-Admin) erişmeye çalışıyorsunuz ancak bu isteği <strong>Karlısın React Uygulaması</strong> (Frontend) karşıladı.</p>
-        
-        <div style="background: #1e293b; padding: 20px; border-radius: 16px; margin: 24px 0;">
-          <strong style="color: #fbbf24; display: block; margin-bottom: 8px;">Tespit Edilen Sorun:</strong>
-          WordPress'in yüklü olduğu subdomain (örn: <code>blog-admin.karlisin.com</code>), DNS ayarlarınızda yanlışlıkla bu Karlısın uygulamasına yönlendirilmiş.
-        </div>
-        
-        <strong style="display: block; margin-bottom: 12px; color: #38bdf8;">Çözüm İçin Yapılması Gerekenler:</strong>
-        <ol style="margin-left: 20px; color: #cbd5e1; padding-left: 0;">
-          <li style="margin-bottom: 12px;"><strong>DNS Ayarlarını Kontrol Edin:</strong> Domain sağlayıcınızın (Cloudflare, GoDaddy vb.) paneline girin.</li>
-          <li style="margin-bottom: 12px;"><strong>Subdomain Yönlendirmesini Düzeltin:</strong> <code>blog-admin</code> subdomain'inin A (veya CNAME) kaydını Karlısın'ın IP'sine değil, <strong>WordPress Hosting</strong> (örn: Bluehost, DigitalOcean) firmanızın IP'sine yönlendirin.</li>
-          <li style="margin-bottom: 12px;"><strong>Bu Uygulama:</strong> Karlısın Frontend uygulaması sadece ana domaininizde (<code>karlisin.com</code>) çalışmalıdır.</li>
-        </ol>
-        
-        <p style="margin-top: 32px; font-size: 0.8em; color: #475569; border-top: 1px solid #1e293b; padding-top: 16px; text-align: center;">
-          Karlısın Akıllı Sistemler Platformu v3.1.5
-        </p>
-      </div>
-    `);
-  });
-
   const PORT = Number(process.env.PORT) || 3000;
 
   // API Key Diagnostics
@@ -2955,16 +2906,14 @@ async function initAutoBroadcast(force = false) {
 
           console.log(`[Karlısın-AUTO] ${subscribers.length} mail gönderimi başlıyor... (From: ${sender})`);
 
-          // Resend Batching - 50 per batch
-          const batchSize = 50;
+          // Individual Sends for Privacy & Delivery
           let successCount = 0;
           
-          for (let i = 0; i < subscribers.length; i += batchSize) {
-            const batch = subscribers.slice(i, i + batchSize);
+          for (const email of subscribers) {
             try {
               const res = await resendInstance.emails.send({
                 from: sender,
-                to: batch,
+                to: [email],
                 subject: `Karlısın'dan Yeni İçerik: ${lastArticle.title} 📚`,
                 html: `
                   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #1e293b; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 32px;">
@@ -2978,31 +2927,29 @@ async function initAutoBroadcast(force = false) {
                       <p style="font-size: 16px; line-height: 1.6; color: #475569; margin-bottom: 24px;">${lastArticle.excerpt}</p>
                       
                       <div style="text-align: center;">
-                        <a href="${articleUrl}" style="display: inline-block; padding: 18px 36px; background: #4f46e5; color: #ffffff; font-weight: 800; text-decoration: none; border-radius: 18px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);">Yazının Tamamını Oku</a>
+                        <a href="${articleUrl}" style="display: inline-block; padding: 18px 36px; background: #4f46e5; color: #ffffff; font-weight: 800; text-decoration: none; border-radius: 18px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; shadow: 0 10px 20px rgba(79, 70, 229, 0.2);">Yazının Tamamını Oku</a>
                       </div>
                     </div>
                     
                     <div style="text-align: center; color: #94a3b8; font-size: 12px;">
-                      <p style="margin-bottom: 8px;">Bu e-posta Karlısın haftalık bültenine abone olduğunuz için gönderilmiştir.</p>
-                      <p>© 2026 Karlısın . Tüm hakları saklıdır.</p>
-                      <div style="margin-top: 16px;">
-                        <a href="https://www.karlisin.com" style="color: #4f46e5; text-decoration: none; font-weight: bold;">Ana Sayfaya Git</a>
-                      </div>
+                      <p style="margin-bottom: 8px;">Bu e-posta Karlısın bülten abonesi olduğunuz için gönderilmiştir.</p>
+                      <p>© 2026 Karlısın. Tüm hakları saklıdır.</p>
                     </div>
                   </div>
                 `
               });
               
               if (res.error) {
-                console.error(`[Karlısın-AUTO] Resend Batch Hatası:`, res.error);
+                console.error(`[Karlısın-AUTO] Resend Hatası (${email}):`, res.error);
               } else {
-                successCount += batch.length;
-                console.log(`[Karlısın-AUTO] Batch #${Math.floor(i/batchSize) + 1} gönderildi. (${successCount}/${subscribers.length})`);
+                successCount++;
               }
             } catch (err: any) {
-              console.error(`[Karlısın-AUTO] Batch İstisnası:`, err.message);
+              console.error(`[Karlısın-AUTO] Mail İstisnası (${email}):`, err.message);
             }
           }
+
+          console.log(`[Karlısın-AUTO] Toplam ${successCount}/${subscribers.length} mail başarıyla gönderildi.`);
 
           // Final update
           await systemRef.set({ 
