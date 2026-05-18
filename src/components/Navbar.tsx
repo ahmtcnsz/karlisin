@@ -23,6 +23,18 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const location = useLocation();
 
+  // Handle body scroll locking
+  React.useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
+
   const navItems = [
     { id: 'landing', path: '/anasayfa', label: 'Anasayfa' },
     { id: 'calculators', path: '/pazar-kar-hesaplama', label: 'Pazar Kâr', badge: 'POPÜLER' },
@@ -219,6 +231,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
                       </div>
                       <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded text-[7px] border border-indigo-500/30">YAKINDA</span>
                     </Link>
+
                   </div>
                 </motion.div>
               )}
@@ -275,7 +288,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="p-2 md:hidden text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
           >
-            <Menu size={24} />
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
@@ -284,60 +297,74 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-slate-900/95 backdrop-blur-2xl border-b border-white/10 overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="md:hidden fixed inset-x-0 top-[64px] bottom-0 bg-slate-950 z-50 overflow-y-auto overscroll-contain"
           >
-            <div className="flex flex-col p-4 gap-2">
+            <div className="flex flex-col p-6 pb-32 gap-3">
               <Link 
                 to="/" 
-                className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", isActive('/anasayfa') ? "bg-white/10 text-white" : "text-slate-400")}
+                className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", isActive('/anasayfa') ? "bg-white/10 text-white shadow-xl shadow-white/5 border border-white/10" : "text-slate-500 hover:bg-white/5")}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 ANASAYFA
               </Link>
               <Link 
                 to="/pazar-kar-hesaplama" 
-                className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-between", isActive('/pazar-kar-hesaplama') ? "bg-white/10 text-white" : "text-slate-400")}
+                className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all flex items-center justify-between", isActive('/pazar-kar-hesaplama') ? "bg-white/10 text-white shadow-xl shadow-white/5 border border-white/10" : "text-slate-500 hover:bg-white/5")}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                PAZAR KÂR <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-500 rounded text-[8px] border border-amber-500/20">POPÜLER</span>
+                PAZAR KÂR <span className="px-2 py-1 bg-amber-500/20 text-amber-400 rounded-lg text-[10px] border border-amber-500/30">POPÜLER</span>
               </Link>
               
-              <div className="mx-4 my-2 h-px bg-white/5" />
-              <p className="px-4 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-2">ÇALIŞMA HAYATIM</p>
+              <div className="mx-4 my-4 h-px bg-white/5" />
+              <p className="px-5 text-[11px] font-black text-slate-600 uppercase tracking-[0.3em] mb-2">ÇALIŞMA HAYATIM</p>
               
               <Link 
                 to="/maas-vergi-hesaplama" 
-                className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-between", isActive('/maas-vergi-hesaplama') ? "bg-white/10 text-white" : "text-slate-400")}
+                className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all flex items-center justify-between", isActive('/maas-vergi-hesaplama') ? "bg-white/10 text-white border border-white/10" : "text-slate-500 hover:bg-white/5")}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                MAAŞ & VERGİ <span className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[8px] border border-indigo-500/20">YENİ</span>
+                MAAŞ & VERGİ <span className="px-2 py-1 bg-indigo-500/20 text-indigo-400 rounded-lg text-[10px] border border-indigo-500/30">HESAPLA</span>
               </Link>
               <Link 
                 to="/kidem-ihbar-tazminat-hesaplama" 
-                className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", isActive('/kidem-ihbar-tazminat-hesaplama') ? "bg-white/10 text-white" : "text-slate-400")}
+                className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", isActive('/kidem-ihbar-tazminat-hesaplama') ? "bg-white/10 text-white border border-white/10" : "text-slate-500 hover:bg-white/5")}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 KIDEM & İHBAR
               </Link>
-
-              <div className="mx-4 my-2 h-px bg-white/5" />
-              <p className="px-4 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-2">BORSA MENÜSÜ</p>
               
-              <Link to="/temettu-takibi" className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", isActive('/temettu-takibi') ? "bg-indigo-600 text-white" : "text-slate-400")} onClick={() => setIsMobileMenuOpen(false)}>TEMETTÜ TAKİBİ</Link>
-              <Link to="/borsa/nabiz" className={cn("flex items-center justify-between px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", isActive('/borsa/nabiz') ? "bg-indigo-600 text-white" : "text-slate-400")} onClick={() => setIsMobileMenuOpen(false)}>
-                PİYASANIN NABZI <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded text-[8px] border border-indigo-500/30 font-black">YAKINDA</span>
+              <div className="mx-4 my-4 h-px bg-white/5" />
+              <p className="px-5 text-[11px] font-black text-slate-600 uppercase tracking-[0.3em] mb-2">BORSA MENÜSÜ</p>
+              
+              <Link to="/borsa/halka-arz" className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", isActive('/borsa/halka-arz') ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "text-slate-500 hover:bg-white/5")} onClick={() => setIsMobileMenuOpen(false)}>
+                HALKA ARZ TAKVİMİ
+              </Link>
+
+              <Link to="/temettu-takibi" className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", isActive('/temettu-takibi') ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "text-slate-500 hover:bg-white/5")} onClick={() => setIsMobileMenuOpen(false)}>
+                TEMETTÜ TAKİBİ
               </Link>
               
-              <div className="mx-4 my-2 h-px bg-white/5" />
-              <Link to="/blog" className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", location.pathname.startsWith('/blog') ? "bg-white/10 text-white" : "text-slate-400")} onClick={() => setIsMobileMenuOpen(false)}>BLOG</Link>
+              <Link to="/borsa/nabiz" className={cn("flex items-center justify-between px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", isActive('/borsa/nabiz') ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "text-slate-500 hover:bg-white/5")} onClick={() => setIsMobileMenuOpen(false)}>
+                PİYASANIN NABZI <span className="px-2 py-1 bg-white/10 text-slate-400 rounded-lg text-[10px] border border-white/10 font-black">YAKINDA</span>
+              </Link>
+
+
               
-              <div className="mx-4 my-2 h-px bg-white/5" />
-              <p className="px-4 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-2">KURUMSAL</p>
-              <Link to="/hakkimizda" className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", isActive('/hakkimizda') ? "bg-white/10 text-white" : "text-slate-400")} onClick={() => setIsMobileMenuOpen(false)}>Hakkımızda</Link>
-              <Link to="/iletisim" className={cn("block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all", isActive('/iletisim') ? "bg-white/10 text-white" : "text-slate-400")} onClick={() => setIsMobileMenuOpen(false)}>İletişim</Link>
+              <div className="mx-4 my-4 h-px bg-white/5" />
+              <Link to="/blog" className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", location.pathname.startsWith('/blog') ? "bg-white/10 text-white shadow-xl shadow-white/5 border border-white/10" : "text-slate-500 hover:bg-white/5")} onClick={() => setIsMobileMenuOpen(false)}>
+                BLOG
+              </Link>
+              
+              <div className="mx-4 my-4 h-px bg-white/5" />
+              <p className="px-5 text-[11px] font-black text-slate-600 uppercase tracking-[0.3em] mb-2">KURUMSAL</p>
+              <Link to="/hakkimizda" className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", isActive('/hakkimizda') ? "bg-white/10 text-white border border-white/10" : "text-slate-500 hover:bg-white/5")} onClick={() => setIsMobileMenuOpen(false)}>Hakkımızda</Link>
+              <Link to="/iletisim" className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", isActive('/iletisim') ? "bg-white/10 text-white border border-white/10" : "text-slate-500 hover:bg-white/5")} onClick={() => setIsMobileMenuOpen(false)}>İletişim</Link>
+              <Link to="/gizlilik-politikasi" className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", isActive('/gizlilik-politikasi') ? "bg-white/10 text-white border border-white/10" : "text-slate-500 hover:bg-white/5")} onClick={() => setIsMobileMenuOpen(false)}>Gizlilik Politikası</Link>
+              <Link to="/kullanim-kosullari" className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", isActive('/kullanim-kosullari') ? "bg-white/10 text-white border border-white/10" : "text-slate-500 hover:bg-white/5")} onClick={() => setIsMobileMenuOpen(false)}>Kullanım Şartları</Link>
+              <Link to="/site-haritasi" className={cn("block px-5 py-4 rounded-3xl text-lg font-black uppercase tracking-widest transition-all", isActive('/site-haritasi') ? "bg-white/10 text-white border border-white/10" : "text-slate-500 hover:bg-white/5")} onClick={() => setIsMobileMenuOpen(false)}>Site Haritası</Link>
             </div>
           </motion.div>
         )}

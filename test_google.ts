@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 async function test() {
   const url = "https://www.google.com/finance/quote/TAVHL:IST?hl=tr";
   const res = await fetch(url, {

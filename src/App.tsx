@@ -89,6 +89,7 @@ function AppContent({ isLoggedIn }: { isLoggedIn: boolean }) {
             <Route path="/temettu-takibi" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><DividendTracker /></Layout>} />
             <Route path="/borsa/halka-arz" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><HalkaArzTakvimi /></Layout>} />
             <Route path="/borsa/nabiz" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><MarketPulse /></Layout>} />
+
             <Route path="/dashboard" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Dashboard /></Layout>} />
             <Route path="/blog" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Blog /></Layout>} />
             <Route path="/blog/:id" element={<Layout isLoggedIn={isLoggedIn} hideNav={false}><Blog /></Layout>} />

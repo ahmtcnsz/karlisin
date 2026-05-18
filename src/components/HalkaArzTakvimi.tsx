@@ -17,15 +17,17 @@ import {
   Target,
   ArrowUpRight,
   Shield,
-  Briefcase
+  Briefcase,
+  Loader2,
+  Zap
 } from 'lucide-react';
 import { useSeo } from './Sitemap';
 
 interface IPO {
-  id: number;
+  id: number | string;
   name: string;
   code: string;
-  price: number;
+  price: number | string;
   date: string;
   method: string;
   status: 'upcoming' | 'ongoing' | 'completed';
@@ -35,47 +37,7 @@ interface IPO {
   investorType: string;
 }
 
-const ipoData: IPO[] = [
-  {
-    id: 1,
-    name: "Evofone Teknoloji A.Ş.",
-    code: "EVFON",
-    price: 65.00,
-    date: "15-16-17 Mayıs 2026",
-    method: "Eşit Dağıtım",
-    status: 'upcoming', 
-    description: "Xiaomi Türkiye distribütörü ve geniş ekosistem ürünleri sağlayıcısı. Türkiye'nin teknoloji perakendeciliği ve dağıtımında devleşen ismi.",
-    lotRange: "10-12 Lot (Tahmini)",
-    useOfFunds: ["%40 İşletme Sermayesi", "%30 Yeni Mağaza Yatırımları", "%30 Borç Yapılandırma"],
-    investorType: "Tüm Yatırımcılara Eşit"
-  },
-  {
-    id: 2,
-    name: "Yiğit Akü Malzemeleri A.Ş.",
-    code: "YIGIT",
-    price: 34.68,
-    date: "12-13-14 Mayıs 2026",
-    method: "Eşit Dağıtım",
-    status: 'ongoing', 
-    description: "Küresel ölçekte enerji depolama çözümleri sunan, 5 kıtada 100'den fazla ülkeye ihracat yapan akümülatör devi.",
-    lotRange: "25-30 Lot (Tahmini)",
-    useOfFunds: ["%50 Lityum Batarya Üretim Tesisi", "%25 Ar-Ge Yatırımları", "%25 İşletme Sermayesi"],
-    investorType: "Tüm Yatırımcılara Eşit"
-  },
-  {
-    id: 3,
-    name: "Altınay Savunma Teknolojileri",
-    code: "ALTNY",
-    price: 32.00,
-    date: "8-9-10 Mayıs 2026",
-    method: "Eşit Dağıtım",
-    status: 'completed', 
-    description: "İnsansız sistemler, hareket kontrol ve savunma sanayi teknolojilerinde Türkiye'nin öncü Ar-Ge merkezi.",
-    lotRange: "11 Lot (Gerçekleşen)",
-    useOfFunds: ["%60 Yeni Üretim Tesisi", "%30 Ar-Ge Galen Projesi", "%10 İşletme Sermayesi"],
-    investorType: "Tüm Yatırımcılara Eşit"
-  }
-];
+const ipoData: IPO[] = [];
 
 const nasdaqIpoData = [
   {
@@ -100,47 +62,307 @@ const nasdaqIpoData = [
   }
 ];
 
+// Sub-components for cleaner structure
+const IpoCard = ({ ipo, index, market, onSelect, formatCurrency, compact = false }: any) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: Math.min(index * 0.02, 0.8) }}
+    className={`group relative bg-slate-900/40 border border-white/5 rounded-[32px] overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 ${compact ? 'p-5' : 'p-8'}`}
+  >
+    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+    
+    <div className={`flex items-center gap-4 ${compact ? 'mb-4' : 'mb-8'}`}>
+      <div className={`${compact ? 'w-10 h-10 text-sm' : 'w-14 h-14 text-lg'} bg-white/5 rounded-2xl flex items-center justify-center text-indigo-400 font-black border border-white/10 group-hover:bg-indigo-500 group-hover:text-white group-hover:border-transparent transition-all duration-300 shrink-0 capitalize`}>
+        {(ipo.code || 'BIST').substring(0, 2)}
+      </div>
+      <div className="overflow-hidden">
+        <h2 className={`${compact ? 'text-sm' : 'text-lg'} font-black text-white truncate uppercase mb-1 leading-tight`}>{ipo.name || 'İsimsiz'}</h2>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black text-indigo-400 tracking-widest">{ipo.code || 'KOD'}</span>
+          {!compact && (
+            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${
+              ipo.status === 'ongoing' ? 'bg-emerald-500 text-slate-950 shadow-[0_0_10px_rgba(16,185,129,0.3)]' :
+              ipo.status === 'upcoming' ? 'bg-amber-500 text-slate-950 text-[7px] shadow-[0_0_10px_rgba(245,158,11,0.3)]' :
+              'bg-white/10 text-slate-400'
+            }`}>
+              {ipo.status === 'ongoing' ? 'TALEP TOPLIYOR' : ipo.status === 'upcoming' ? 'BEKLENİYOR' : 'İŞLEM GÖRÜYOR'}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {!compact ? (
+      <>
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="bg-slate-950/40 border border-white/5 rounded-[24px] p-4 flex flex-col items-center justify-center text-center">
+            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Arz Fiyatı</p>
+            <p className="text-base font-black text-white">
+              {formatCurrency(ipo.price, market)}
+            </p>
+          </div>
+          <div className="bg-slate-950/40 border border-white/5 rounded-[24px] p-4 flex flex-col items-center justify-center text-center">
+            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Talep Tarihi</p>
+            <p className="text-[11px] font-bold text-white line-clamp-1">{ipo.date || 'Belirsiz'}</p>
+          </div>
+        </div>
+
+        <div className="space-y-3.5 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-slate-500">
+              <Building2 size={14} className="opacity-60" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">{market === 'BIST' ? 'YÖNTEM' : 'Borsa'}</span>
+            </div>
+            <span className="text-[10px] font-black text-white uppercase">{market === 'BIST' ? ipo.method : ipo.market}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-slate-500">
+              <Users size={14} className="opacity-60" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">TAHMİNİ LOT</span>
+            </div>
+            <span className="text-[10px] font-black text-emerald-400">{ipo.lotRange || 'Belli Değil'}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-slate-500">
+              <TrendingUp size={14} className="opacity-60" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">PAZAR</span>
+            </div>
+            <span className="text-[11px] font-black text-indigo-300 uppercase truncate max-w-[100px] text-right">{ipo.market || 'Yıldız'}</span>
+          </div>
+        </div>
+      </>
+    ) : (
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-[10px] font-bold text-slate-500 uppercase">Durum:</span>
+        <span className="text-[10px] font-black text-amber-500 uppercase">Bekleniyor</span>
+      </div>
+    )}
+
+    <button 
+      onClick={() => onSelect(ipo)}
+      className={`w-full ${compact ? 'h-10' : 'h-12'} flex items-center justify-center gap-3 bg-white/[0.03] border border-white/5 rounded-2xl group/btn hover:bg-white/10 hover:border-white/20 transition-all duration-300`}
+    >
+      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover/btn:text-white transition-colors">Analizi Göster</span>
+      <ChevronRight size={14} className="text-slate-600 group-hover/btn:translate-x-1 group-hover/btn:text-indigo-400 transition-all" />
+    </button>
+  </motion.div>
+);
+
+const SyncModal = ({ isVisible }: { isVisible: boolean }) => (
+  <AnimatePresence>
+    {isVisible && (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
+        />
+        
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          className="relative w-full max-w-lg bg-slate-900 border border-indigo-500/20 rounded-[48px] overflow-hidden shadow-[0_0_50px_rgba(99,102,241,0.2)]"
+        >
+          {/* Animated background glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-indigo-500/20 blur-[80px] -mt-16 rounded-full" />
+          
+          <div className="p-10 text-center relative z-10">
+            <div className="relative mb-10 inline-block">
+              <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full animate-pulse" />
+              <div className="relative w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[32px] flex items-center justify-center shadow-2xl shadow-indigo-500/40">
+                <Loader2 className="text-white animate-spin" size={40} />
+              </div>
+              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-slate-900 border border-white/10 rounded-2xl flex items-center justify-center shadow-lg">
+                <Zap className="text-amber-400 fill-amber-400" size={20} />
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-10">
+              <div className="flex items-center justify-center gap-3">
+                <span className="px-3 py-1 bg-indigo-500 text-white text-[10px] font-black rounded-lg uppercase tracking-widest shadow-lg shadow-indigo-500/20">UNIFIED ENGINE v3.1</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Senkronize Ediliyor</span>
+              </div>
+              
+              <h2 className="text-3xl font-black text-white tracking-tight leading-tight">
+                Veriler <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Doğrulanıyor</span>
+              </h2>
+              
+              <p className="text-slate-400 text-base font-medium leading-relaxed max-w-sm mx-auto">
+                Borsa İstanbul, SPK ve KAP verileri eş zamanlı olarak taranıyor. Karlısın sistemi için en güncel arz verileri hazırlanıyor.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-white/5 border border-white/5 rounded-3xl group">
+                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-3 mx-auto group-hover:bg-indigo-500 shadow-inner group-hover:shadow-indigo-500/50 transition-all">
+                  <ShieldCheck className="text-indigo-400 group-hover:text-white" size={16} />
+                </div>
+                <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1 group-hover:text-indigo-400 transition-colors">SPK Kaynaklı</p>
+                <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+                  />
+                </div>
+              </div>
+              <div className="p-4 bg-white/5 border border-white/5 rounded-3xl group">
+                <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center mb-3 mx-auto group-hover:bg-purple-500 shadow-inner group-hover:shadow-purple-500/50 transition-all">
+                  <BarChart3 className="text-purple-400 group-hover:text-white" size={16} />
+                </div>
+                <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1 group-hover:text-purple-400 transition-colors">BİST Entegre</p>
+                <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                    className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 flex items-center justify-center gap-3">
+              <div className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 sm:h-2 sm:w-2"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 sm:h-2 sm:w-2"></span>
+              </div>
+              <span className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.2em] animate-pulse">Sistem Çalışıyor, Lütfen Bekleyin...</span>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    )}
+  </AnimatePresence>
+);
+
+const EmptyState = () => (
+  <div className="col-span-full py-20 text-center">
+    <div className="inline-flex p-6 bg-white/5 rounded-full mb-6">
+      <Info size={32} className="text-slate-500" />
+    </div>
+    <p className="text-slate-400 font-black uppercase tracking-widest text-sm">
+      Seçili kriterlere uygun halka arz bulunamadı.
+    </p>
+  </div>
+);
+
 export default function HalkaArzTakvimi() {
   useSeo('Halka Arz Takvimi', 'Borsa İstanbul ve NASDAQ güncel halka arz takvimi, talep toplama tarihleri ve halka arz sonuçları.');
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'ongoing' | 'completed'>('all');
   const [market, setMarket] = useState<'BIST' | 'NASDAQ'>('BIST');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedIpo, setSelectedIpo] = useState<any | null>(null);
   const [bistData, setBistData] = useState<IPO[]>(ipoData);
   const [nasdaqData, setNasdaqData] = useState<any[]>(nasdaqIpoData);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isBackgroundUpdating, setIsBackgroundUpdating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string>(new Date().toLocaleTimeString('tr-TR'));
 
   const fetchLiveIPOs = async (isRefresh = false) => {
+    const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2500));
     try {
+      const hasData = (bistData && bistData.length > 0) || (nasdaqData && nasdaqData.length > 0);
+      
+      // Always show loading if it's a refresh OR if we don't have data yet
+      // On initial mount, loading is already true
       if (isRefresh) {
+        setLoading(true);
+      } else if (!hasData) {
         setLoading(true);
       } else {
         setIsBackgroundUpdating(true);
       }
       
       const url = isRefresh ? '/api/ipo-data?refresh=true' : '/api/ipo-data';
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`API hatası: ${res.status}`);
+      
+      // Request timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutes UI timeout
+
+      const fetchPromise = fetch(url, { signal: controller.signal });
+      
+      // Wait for both the fetch AND the minimum 2 seconds delay
+      const [res] = await Promise.all([fetchPromise, minLoadingTime]);
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        throw new Error(`Sunucu meşgul veya hata verdi (${res.status}). Lütfen daha sonra tekrar deneyiniz.`);
+      }
       
       const data = await res.json();
       
-      // Sadece veri gerçekten varsa ve diziyse güncelle, yoksa eski (ipoData) verisini bozma
-      if (data && data.bist && Array.isArray(data.bist) && data.bist.length > 0) {
-        setBistData(data.bist);
+      if (!data) return;
+
+      // Veri koruma: Sadece dolu dizi gelirse güncelle ve eksik alanları (fiyat, lot, yöntem) koru
+      if (data.bist && Array.isArray(data.bist) && data.bist.length > 0) {
+        setBistData(prevBist => {
+          if (prevBist.length === 0) return data.bist;
+          
+          const merged = [...prevBist];
+          
+          data.bist.forEach((newItem: any) => {
+            const index = merged.findIndex(o => o.code === newItem.code);
+            
+            let cleanPrice = newItem.price;
+            if (typeof newItem.price === 'string') {
+              const parsed = parseFloat(newItem.price.replace(/[^\d.,]/g, '').replace(',', '.'));
+              if (!isNaN(parsed)) cleanPrice = parsed;
+            }
+
+            if (index !== -1) {
+              const oldItem = merged[index];
+              const isOldPriceValid = oldItem.price && oldItem.price !== 'Belli Değil' && oldItem.price !== '---' && oldItem.price !== '—';
+              const isNewPriceValid = cleanPrice && cleanPrice !== 'Belli Değil' && cleanPrice !== '---' && cleanPrice !== '—';
+
+              merged[index] = {
+                ...newItem,
+                price: !isNewPriceValid && isOldPriceValid ? oldItem.price : cleanPrice,
+                method: (!newItem.method || newItem.method === 'Belli Değil' || newItem.method === '—') ? (oldItem.method || newItem.method) : newItem.method,
+                lotRange: (!newItem.lotRange || newItem.lotRange === 'Belli Değil') ? (oldItem.lotRange || newItem.lotRange) : newItem.lotRange,
+                description: (!newItem.description || newItem.description.length < 10) ? (oldItem.description || newItem.description) : newItem.description,
+                useOfFunds: newItem.useOfFunds && newItem.useOfFunds.length > 0 ? newItem.useOfFunds : (oldItem.useOfFunds || []),
+                investorType: newItem.investorType || oldItem.investorType
+              };
+            } else {
+              merged.push({ ...newItem, price: cleanPrice });
+            }
+          });
+          
+          // Benzersizliği koru (Map ile)
+          const uniqueMap = new Map();
+          merged.forEach(item => uniqueMap.set(item.code, item));
+          return Array.from(uniqueMap.values());
+        });
       }
-      if (data && data.nasdaq && Array.isArray(data.nasdaq) && data.nasdaq.length > 0) {
+      
+      if (data.nasdaq && Array.isArray(data.nasdaq) && data.nasdaq.length > 0) {
         setNasdaqData(data.nasdaq);
       }
       
-      if (data && data.lastUpdate) {
+      if (data.lastUpdate) {
         const updateDate = new Date(data.lastUpdate);
         setLastUpdate(updateDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) + ' (' + updateDate.toLocaleDateString('tr-TR') + ')');
       }
-    } catch (err) {
-      console.warn('[Karlısın-IPO] Senkronizasyon hatası, statik veriye dönülüyor:', err);
-      // Hata durumunda en azından statik veriyi garantile
-      if (!bistData || bistData.length === 0) setBistData(ipoData);
+      
+      setError(null);
+    } catch (err: any) {
+      console.error("[Karlısın-IPO] Senkronizasyon hatası:", err);
+      
+      const hasData = (bistData && bistData.length > 0) || (nasdaqData && nasdaqData.length > 0);
+      if (isRefresh || !hasData) {
+        const msg = err.name === 'AbortError' 
+          ? "Zaman aşımı: Veri kaynağı yavaş yanıt veriyor. Lütfen tekrar deneyin." 
+          : "Veriler güncellenemedi. İnternet bağlantınızı veya sunucu durumunu kontrol edin.";
+        setError(msg);
+      }
     } finally {
       setLoading(false);
       setIsBackgroundUpdating(false);
@@ -151,11 +373,78 @@ export default function HalkaArzTakvimi() {
     fetchLiveIPOs();
   }, []);
 
-  const displayData = Array.isArray(market === 'BIST' ? bistData : nasdaqData) ? (market === 'BIST' ? bistData : nasdaqData) : [];
-  const filteredIpos = filter === 'all' ? displayData : displayData.filter((ipo: any) => ipo && ipo.status === filter);
+  const displayData = (market === 'BIST' ? bistData : nasdaqData) || [];
+  const validData = Array.isArray(displayData) ? displayData : [];
   
-  const activeCount = displayData.filter((ipo: any) => ipo && ipo.status === 'ongoing').length;
-  const upcomingIpo = displayData.find((ipo: any) => ipo && ipo.status === 'upcoming');
+  const filteredIpos = validData.filter((ipo: any) => {
+    if (!ipo) return false;
+    const matchesFilter = filter === 'all' || ipo.status === filter;
+    const matchesSearch = searchTerm === '' || 
+      ipo.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      ipo.code.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
+  }).sort((a, b) => {
+    // Status priority: ongoing (0) > upcoming (1) > completed (2)
+    const statusPriority = { ongoing: 0, upcoming: 1, completed: 2 };
+    const priorityA = statusPriority[a.status as keyof typeof statusPriority] ?? 3;
+    const priorityB = statusPriority[b.status as keyof typeof statusPriority] ?? 3;
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+
+    // Within same status, try to sort by date (descending for completed, ascending for upcoming/ongoing?)
+    // User asked "Recent to past", which generally means Descending Date globally.
+    // Let's try to parse dates like "15-16-17 Mayıs 2026" or "Haziran 2026"
+    
+    const getSortableDate = (dateStr: string) => {
+      if (!dateStr) return 0;
+      const lowerDate = dateStr.toLowerCase();
+      
+      // Extract year
+      const yearMatch = lowerDate.match(/\d{4}/);
+      const year = yearMatch ? parseInt(yearMatch[0]) : 2026;
+
+      // Extract month
+      const months = ["ocak", "şubat", "mart", "nisan", "mayıs", "haziran", "temmuz", "ağustos", "eylül", "ekim", "kasım", "aralık"];
+      let monthIndex = -1;
+      months.forEach((m, idx) => {
+        if (lowerDate.includes(m)) monthIndex = idx;
+      });
+      if (monthIndex === -1) monthIndex = 0;
+
+      // Extract day (last day of range if range)
+      const dayMatches = lowerDate.match(/\d+/g);
+      let day = 1;
+      if (dayMatches && dayMatches.length > 0) {
+        // Find the last number that isn't the year
+        const candidates = dayMatches.filter(d => d.length <= 2).map(d => parseInt(d));
+        if (candidates.length > 0) {
+          day = Math.max(...candidates);
+        }
+      }
+
+      return year * 10000 + (monthIndex + 1) * 100 + day;
+    };
+
+    const dateA = getSortableDate(a.date);
+    const dateB = getSortableDate(b.date);
+
+    return dateB - dateA; // Descending (Newest first)
+  });
+  
+  const finalItems = filteredIpos;
+  
+  // Categorization for "All" view with specific business labels
+  const categorized = {
+    ongoing: filteredIpos.filter(item => item.status === 'ongoing'),
+    upcoming: filteredIpos.filter(item => item.status === 'upcoming' && !item.date.toLowerCase().includes('bekleniyor') && !item.date.toLowerCase().includes('taslak')),
+    draft: filteredIpos.filter(item => item.status === 'upcoming' && (item.date.toLowerCase().includes('bekleniyor') || item.date.toLowerCase().includes('taslak'))),
+    completed: filteredIpos.filter(item => item.status === 'completed'),
+  };
+
+  const activeCount = validData.filter((ipo: any) => ipo && ipo.status === 'ongoing').length;
+  const upcomingIpo = validData.find((ipo: any) => ipo && ipo.status === 'upcoming');
   const upcomingDate = upcomingIpo?.date || 'Yakında';
 
   const faqSchema = {
@@ -211,14 +500,29 @@ export default function HalkaArzTakvimi() {
   };
 
   const formatCurrency = (val: any, m: 'BIST' | 'NASDAQ') => {
-    if (typeof val !== 'number') return '—';
+    if (!val || val === 'Belli Değil' || val === '---' || val === '—') return val || '—';
+    
+    let numericValue = val;
+    
+    if (typeof val === 'string') {
+      const cleaned = val.replace(/[^\d.,]/g, '').replace(',', '.');
+      const parsed = parseFloat(cleaned);
+      if (!isNaN(parsed)) {
+        numericValue = parsed;
+      } else {
+        return val || '—';
+      }
+    }
+    
+    if (typeof numericValue !== 'number' || isNaN(numericValue)) return val || '—';
+    
     try {
-      return val.toLocaleString(m === 'BIST' ? 'tr-TR' : 'en-US', { 
+      return numericValue.toLocaleString(m === 'BIST' ? 'tr-TR' : 'en-US', { 
         style: 'currency', 
         currency: m === 'BIST' ? 'TRY' : 'USD' 
       });
     } catch (e) {
-      return '—';
+      return val || '—';
     }
   };
 
@@ -231,34 +535,38 @@ export default function HalkaArzTakvimi() {
         <script type="application/ld+json">{JSON.stringify(softwareSchema)}</script>
       </Helmet>
       
-      <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto min-h-screen">
+      <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto min-h-screen relative">
+      {/* Synchronizing Data Modal */}
+      <SyncModal isVisible={loading} />
+
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
-        <div className="max-w-2xl">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center gap-10 mb-16 px-6">
+        <div className="lg:max-w-xl shrink-0">
           <motion.div 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
-            className="inline-flex items-center gap-4 px-4 py-1.5 bg-indigo-500/10 text-indigo-300 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-indigo-500/20"
+            onClick={() => fetchLiveIPOs(true)}
+            className="inline-flex items-center gap-4 px-4 py-1.5 bg-indigo-500/10 text-indigo-300 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-indigo-500/20 cursor-pointer hover:bg-indigo-500/20 transition-all group"
           >
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isBackgroundUpdating ? 'bg-amber-400' : 'bg-emerald-400'} opacity-75`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isBackgroundUpdating ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
               </span>
-              <span className={isBackgroundUpdating ? 'text-amber-400' : 'text-emerald-400'}>
-                {isBackgroundUpdating ? 'SENKRONİZE EDİLİYOR...' : 'VERİLER GÜNCEL'}
+              <span>
+                {isBackgroundUpdating ? 'GÜNCELLENİYOR...' : 'SİSTEM ÇALIŞIYOR'}
               </span>
             </div>
             <div className="w-px h-3 bg-white/20 mx-1" />
-            <div className="flex items-center gap-1">
-              <Calendar size={14} /> SON GÜNCELLEME: {lastUpdate} {/* NO REFRESH BUTTON SHOULD BE HERE */}
+            <div className="flex items-center gap-1.5">
+              <Calendar size={12} className="opacity-60" /> {lastUpdate}
             </div>
           </motion.div>
           <motion.h1 
             initial={{ opacity: 0, x: -20 }} 
             animate={{ opacity: 1, x: 0 }} 
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-black text-white tracking-tight"
+            className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-[0.9]"
           >
             Halka Arz <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Takvimi</span>
           </motion.h1>
@@ -266,46 +574,55 @@ export default function HalkaArzTakvimi() {
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.2 }}
-            className="text-slate-400 text-lg mt-4 font-medium leading-relaxed"
+            className="text-slate-400 text-lg mt-6 font-medium leading-relaxed"
           >
-            Unified Data Engine v3.1 ile 5 farklı kaynaktan doğrulanmış, Borsa İstanbul ve SPK onaylı en güncel halka arz listesi.
+            Borsa İstanbul ve NASDAQ onaylı en güncel arz verileri. 3 farklı kaynaktan doğrulanmış profesyonel takip platformu.
           </motion.p>
         </div>
 
-        {/* Market & Filters */}
-        <div className="flex flex-col gap-4">
-          <div className="flex bg-slate-900/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-xl self-end">
-            {(['BIST', 'NASDAQ'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMarket(m)}
-                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  market === m 
-                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-                    : 'text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                {m}
-              </button>
-            ))}
+        {/* Data Verification Panel (Position B) - Filling the gap */}
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="w-full lg:flex-1 h-full min-h-[160px] p-6 rounded-[32px] bg-slate-900/40 border border-white/5 relative overflow-hidden backdrop-blur-sm shadow-2xl flex flex-col justify-center"
+        >
+          <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/50" />
+          <div className="flex flex-col gap-5">
+            <div className="flex items-center gap-5">
+              <div className="shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 shadow-inner">
+                <ShieldCheck className="text-indigo-400" size={28} />
+              </div>
+              <div className="flex-grow">
+                <div className="flex items-center gap-3 mb-1.5">
+                  <span className="px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-black rounded-sm shadow-lg shadow-indigo-500/20">UNIFIED DATA ENGINE v3.1</span>
+                  <h3 className="text-sm font-black text-white uppercase tracking-tight">Veri Doğrulama</h3>
+                </div>
+                <p className="text-slate-400 text-xs font-medium leading-relaxed">
+                  Verilerimiz **SPK Haftalık Bültenleri**, **KAP (Kamuyu Aydınlatma Platformu)** bildirimleri ve kurumsal veri terminallerinden eş zamanlı olarak çapraz sorgulanarak çekilmektedir.
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="flex items-center justify-center gap-2 px-3 py-2.5 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors cursor-default">
+                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">SPK BÜLTENİ</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 px-3 py-2.5 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors cursor-default">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">KAP RESMİ</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 px-3 py-2.5 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors cursor-default">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">BİST VERİ</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 px-3 py-2.5 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors cursor-default">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">BANKA API</span>
+              </div>
+            </div>
           </div>
-
-          <div className="flex bg-slate-900/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-xl">
-            {(['all', 'ongoing', 'upcoming', 'completed'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  filter === f 
-                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-                    : 'text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                {f === 'all' ? 'Tümü' : f === 'ongoing' ? 'Devam Eden' : f === 'upcoming' ? 'Beklenen' : 'Tamamlanan'}
-              </button>
-            ))}
-          </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Stats Quick View */}
@@ -361,126 +678,179 @@ export default function HalkaArzTakvimi() {
         </motion.div>
       </div>
 
-      {/* Data Verification Panel */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        className="mb-16 p-8 rounded-[40px] bg-slate-900/40 border border-white/5 relative overflow-hidden"
-      >
-        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
-        <div className="flex flex-col lg:flex-row items-center gap-10">
-          <div className="shrink-0 flex items-center justify-center w-20 h-20 rounded-[28px] bg-indigo-500/10 border border-indigo-500/20">
-            <ShieldCheck className="text-indigo-400" size={40} />
+      {/* Moved Search & Market & Filters */}
+      <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-12 bg-slate-900/40 p-4 rounded-[32px] border border-white/5">
+        <div className="relative group w-full lg:w-96">
+          <input 
+            type="text" 
+            placeholder="Şirket veya Kod Ara..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-950/50 border border-white/10 rounded-2xl py-3.5 px-12 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 transition-all shadow-inner"
+          />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-500 transition-colors">
+            <Info size={18} />
           </div>
-          <div className="flex-grow">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="px-2 py-0.5 bg-indigo-500 text-white text-[9px] font-black rounded-md">UNIFIED DATA ENGINE v3.1</span>
-              <h3 className="text-xl font-black text-white uppercase tracking-tight">Veri Doğrulama ve Kaynak Şeffaflığı</h3>
-            </div>
-            <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-4xl">
-              Halka arz verilerimiz sadece tek bir kaynaktan değil; **SPK Haftalık Bültenleri**, **KAP (Kamuyu Aydınlatma Platformu)** bildirimleri, **Borsa İstanbul (BİST)** duyuruları ve kurumsal veri terminallerinden eş zamanlı olarak çekilmektedir. 
-              Her bir kayıt, ana motorumuz tarafından çapraz sorgulamaya tabi tutularak hata payı minimize edilir. Talep toplama tarihleri ve lot dağıtımları onaylandığı anda sistemimize canlı olarak yansır.
-            </p>
+          {searchTerm && (
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap lg:flex-nowrap gap-4 w-full lg:w-auto">
+          <div className="flex bg-slate-950/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-xl w-full lg:w-auto">
+            {(['BIST', 'NASDAQ'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMarket(m)}
+                className={`flex-1 lg:flex-none px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                  market === m 
+                    ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.3)]' 
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {m}
+              </button>
+            ))}
           </div>
-          <div className="grid grid-cols-2 gap-4 shrink-0">
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">SPK BÜLTENİ</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">KAP RESMİ</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">BİST VERİ</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
-              <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">BANKA API</span>
-            </div>
+
+          <div className="flex bg-slate-950/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-xl shrink-0 overflow-x-auto w-full lg:w-auto">
+            {(['all', 'ongoing', 'upcoming', 'completed'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`flex-1 lg:flex-none px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  filter === f 
+                    ? 'bg-slate-700 text-white border border-white/10' 
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {f === 'all' ? 'Tümü' : f === 'ongoing' ? 'Devam Eden' : f === 'upcoming' ? 'Beklenen' : 'Tamamlanan'}
+              </button>
+            ))}
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Main Table/Grid */}
+      {error && !loading && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-10 p-6 bg-red-500/10 border border-red-500/20 rounded-[32px] flex items-center gap-4 text-red-400"
+        >
+          <div className="p-2 bg-red-500/20 rounded-xl">
+            <Info size={20} />
+          </div>
+          <div className="flex-grow">
+            <p className="text-sm font-bold">{error}</p>
+          </div>
+          <button 
+            onClick={() => fetchLiveIPOs(true)}
+            className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+          >
+            Tekrar Dene
+          </button>
+        </motion.div>
+      )}
+
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-pulse">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-96 bg-white/5 rounded-[40px] border border-white/10" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-80 bg-white/5 rounded-[40px] border border-white/10" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {filteredIpos.map((ipo, index) => (
-            <motion.div
-              key={ipo.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="group relative bg-slate-900/40 border border-white/10 rounded-[40px] overflow-hidden hover:border-indigo-500/40 transition-all duration-500"
-            >
-              {/* Status Badge */}
-              <div className="absolute top-6 right-6">
-                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                  ipo.status === 'ongoing' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 ring-4 ring-emerald-500/5' :
-                  ipo.status === 'upcoming' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' :
-                  'bg-slate-800 text-slate-500 border border-white/5'
-                }`}>
-                  {ipo.status === 'ongoing' ? 'Talep Topluyor' : ipo.status === 'upcoming' ? 'Onay Bekliyor' : 'Tamamlandı'}
-                </span>
-              </div>
-
-              <div className="p-10">
-                <div className="flex items-start gap-6 mb-8">
-                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-indigo-500/20 shrink-0 capitalize">
-                    {(ipo.code || 'BIST').substring(0, 2)}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-white mb-1 group-hover:text-indigo-400 transition-colors uppercase">{ipo.name || 'İsimsiz Şirket'}</h2>
-                    <p className="text-sm font-black text-indigo-400 tracking-[0.2em]">{ipo.code || 'KOD'}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6 mb-8">
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Arz Fiyatı</p>
-                    <p className="text-lg font-black text-white">
-                      {formatCurrency(ipo.price, market)}
-                    </p>
-                  </div>
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Arz Tarihi</p>
-                    <p className="text-lg font-black text-white">{ipo.date}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4 mb-8">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-slate-500 font-bold"><Building2 size={16} /> {market === 'BIST' ? 'Dağıtım Yöntemi' : 'Borsa'}</span>
-                    <span className="text-slate-200 font-black">{market === 'BIST' ? ipo.method : ipo.market}</span>
-                  </div>
-                  {ipo.lotRange && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-slate-500 font-bold"><Wallet size={16} /> Tahmini Lot Dağıtımı</span>
-                      <span className="text-emerald-400 font-black">{ipo.lotRange}</span>
+        <div className="space-y-20">
+          {filter === 'all' ? (
+            <>
+              {/* Ongoing Section */}
+              {categorized.ongoing.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="h-10 w-1.5 bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+                    <div>
+                      <h2 className="text-2xl font-black text-white uppercase tracking-tight">TALEP TOPLAYANLAR</h2>
+                      <p className="text-[10px] text-emerald-400 font-bold tracking-widest uppercase">AKTİF HALKA ARZLAR ({categorized.ongoing.length})</p>
                     </div>
-                  )}
-                </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {categorized.ongoing.map((ipo, index) => (
+                      <IpoCard key={`ongoing-${ipo.code || index}-${index}`} ipo={ipo} index={index} market={market} onSelect={setSelectedIpo} formatCurrency={formatCurrency} />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-                <p className="text-slate-400 text-sm font-medium mb-10 line-clamp-2 italic">
-                  {ipo.description}
-                </p>
+              {/* Verified Upcoming Section */}
+              {categorized.upcoming.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="h-10 w-1.5 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+                    <div>
+                      <h2 className="text-2xl font-black text-white uppercase tracking-tight">ONAYLI HALKA ARZLAR</h2>
+                      <p className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">TARİHİ NETLEŞEN BEKLEYENLER ({categorized.upcoming.length})</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {categorized.upcoming.map((ipo, index) => (
+                      <IpoCard key={`upcoming-${ipo.code || index}-${index}`} ipo={ipo} index={index} market={market} onSelect={setSelectedIpo} formatCurrency={formatCurrency} />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-                <button 
-                  onClick={() => setSelectedIpo(ipo)}
-                  className="w-full flex items-center justify-center gap-2 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-white/10 hover:border-indigo-500/30 transition-all text-slate-300 group-hover:text-white"
-                >
-                  Analizi Gör <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
+              {/* Draft Section */}
+              {categorized.draft.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="h-10 w-1.5 bg-amber-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
+                    <div>
+                      <h2 className="text-2xl font-black text-white uppercase tracking-tight">TASLAK VE BEKLEYENLER</h2>
+                      <p className="text-[10px] text-amber-500 font-bold tracking-widest uppercase">İZAHNAME AŞAMASINDAKİ ŞİRKETLER ({categorized.draft.length})</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {categorized.draft.map((ipo, index) => (
+                      <IpoCard key={`draft-${ipo.code || index}-${index}`} ipo={ipo} index={index} market={market} onSelect={setSelectedIpo} formatCurrency={formatCurrency} compact={true} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Completed Section */}
+              {categorized.completed.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="h-10 w-1.5 bg-slate-700 rounded-full" />
+                    <div>
+                      <h2 className="text-2xl font-black text-white uppercase tracking-tight">İŞLEME BAŞLAYANLAR</h2>
+                      <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">BORSADA İŞLEM GÖREN GEÇMİŞ ARZLAR ({categorized.completed.length})</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60 hover:opacity-100 transition-opacity">
+                    {categorized.completed.map((ipo, index) => (
+                      <IpoCard key={`completed-${ipo.code || index}-${index}`} ipo={ipo} index={index} market={market} onSelect={setSelectedIpo} formatCurrency={formatCurrency} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {finalItems.length > 0 ? (
+                finalItems.map((ipo, index) => (
+                  <IpoCard key={`${ipo.status}-${ipo.code || index}-${index}`} ipo={ipo} index={index} market={market} onSelect={setSelectedIpo} formatCurrency={formatCurrency} />
+                ))
+              ) : (
+                <EmptyState />
+              )}
+            </div>
+          )}
         </div>
       )}
 

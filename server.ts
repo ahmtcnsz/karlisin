@@ -277,8 +277,85 @@ function getRandomUserAgent() {
 }
 
 /**
- * UNIFIED DATA SERVICE v2.1
- * Cross-verifies data from multiple sources with 12h caching
+ * YAPİ KREDİ API SERVICE v1.0
+ * Official Banking API for Borsa İstanbul Data
+ */
+class YapiKrediService {
+  private static token: string | null = null;
+  private static tokenExpiry: number = 0;
+
+  private static async getAccessToken() {
+    const clientId = process.env.YAPIKREDI_CLIENT_ID;
+    const clientSecret = process.env.YAPIKREDI_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) return null;
+
+    if (this.token && Date.now() < this.tokenExpiry) {
+      return this.token;
+    }
+
+    try {
+      const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+      const res = await fetch('https://api.yapikredi.com.tr/oauth2/token', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'grant_type=client_credentials'
+      });
+
+      if (!res.ok) throw new Error('Yapi Kredi Auth Failed');
+      const data = await res.json();
+      
+      this.token = data.access_token;
+      this.tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000; // 1 min buffer
+      return this.token;
+    } catch (err) {
+      console.error('[YapiKredi-Auth] Error:', err);
+      return null;
+    }
+  }
+
+  static async getStockInformation(symbol: string) {
+    const token = await this.getAccessToken();
+    if (!token) return null;
+
+    try {
+      const clean = symbol.replace('.IS', '').toUpperCase();
+      const res = await fetch(`https://api.yapikredi.com.tr/api/stockmarket/v1/stockInformation?stockCode=${clean}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!res.ok) return null;
+      const data = await res.json();
+      
+      if (data && data.responseContent) {
+        const item = data.responseContent;
+        return {
+          price: parseFloat(item.lastPrice) || 0,
+          changePercent: parseFloat(item.changePercentage) || 0,
+          dayHigh: parseFloat(item.highPrice) || 0,
+          dayLow: parseFloat(item.lowPrice) || 0,
+          volume: parseFloat(item.volume) || 0,
+          marketCap: parseFloat(item.marketValue) || 0,
+          name: item.stockName || clean,
+          source: 'Yapı Kredi API'
+        };
+      }
+    } catch (err) {
+      console.error('[YapiKredi-API] Error:', err);
+    }
+    return null;
+  }
+}
+
+/**
+ * UNIFIED DATA SERVICE v3.2
+ * Cross-verifies data from multiple sources including Yapı Kredi
  */
 class UnifiedDataService {
   private static async fetchInvesting(symbol: string) {
@@ -474,12 +551,13 @@ class UnifiedDataService {
     console.log(`[UnifiedDS v3.1.0] Aggregating multi-source for: ${cleanSymbol}`);
     
     // Providers to run in parallel
-    const [yahoo, google, av, investing, finnhub] = await Promise.allSettled([
+    const [yahoo, google, av, investing, finnhub, yapikredi] = await Promise.allSettled([
       this.fetchYahoo(cleanSymbol),
       this.fetchGoogle(cleanSymbol),
       this.fetchAlphaVantage(cleanSymbol),
       this.fetchInvesting(cleanSymbol),
-      this.fetchFinnhub(cleanSymbol)
+      this.fetchFinnhub(cleanSymbol),
+      YapiKrediService.getStockInformation(cleanSymbol)
     ]);
 
     const results: any = {
@@ -487,19 +565,22 @@ class UnifiedDataService {
       google: google.status === 'fulfilled' ? google.value : null,
       av: av.status === 'fulfilled' ? av.value : null,
       investing: investing.status === 'fulfilled' ? investing.value : null,
-      finnhub: finnhub.status === 'fulfilled' ? finnhub.value : null
+      finnhub: finnhub.status === 'fulfilled' ? finnhub.value : null,
+      yapikredi: yapikredi.status === 'fulfilled' ? yapikredi.value : null
     };
 
     // Detailed Debugging for sources
-    console.log(`[UnifiedDS v2.8] ${cleanSymbol} Status:`, {
+    console.log(`[UnifiedDS v3.2.0] ${cleanSymbol} Status:`, {
       yahoo: !!results.yahoo,
       google: !!results.google,
       av: !!results.av,
       investing: !!results.investing,
-      finnhub: !!results.finnhub
+      finnhub: !!results.finnhub,
+      yapikredi: !!results.yapikredi
     });
 
     const getValidPrice = () => {
+      if (results.yapikredi?.price && results.yapikredi.price > 0) return results.yapikredi.price;
       if (results.google?.price && results.google.price > 0) return results.google.price;
       if (results.yahoo?.price && results.yahoo.price > 0) return results.yahoo.price;
       if (results.finnhub?.price && results.finnhub.price > 0) return results.finnhub.price;
@@ -510,24 +591,24 @@ class UnifiedDataService {
 
     const price = getValidPrice();
     if (price === 0) {
-      console.error(`[UnifiedDS] CRITICAL: All 5 fetchers failed for ${cleanSymbol}.`);
+      console.error(`[UnifiedDS] CRITICAL: All 6 fetchers failed for ${cleanSymbol}.`);
     }
 
     // CROSS-VERIFICATION & AUGMENTATION LOGIC
     const aggregated = {
       symbol: cleanSymbol,
-      version: '3.1.0',
-      source: 'Unified Engine v3.1 (ZIRHLI PROD-MAX)',
+      version: '3.2.0',
+      source: results.yapikredi ? 'Yapı Kredi Verified' : 'Unified Engine v3.2 (ZIRHLI PROD-MAX)',
       timestamp: new Date().toISOString(),
       summary: {
         price: {
           regularMarketPrice: price,
-          longName: results.google?.name || results.yahoo?.name || results.investing?.name || results.av?.name || cleanSymbol,
+          longName: results.yapikredi?.name || results.google?.name || results.yahoo?.name || results.investing?.name || results.av?.name || cleanSymbol,
           currency: results.google?.currency || results.yahoo?.currency || results.investing?.currency || results.av?.currency || 'TRY',
-          regularMarketChangePercent: results.google?.changePercent !== undefined ? results.google?.changePercent : (results.finnhub?.changePercent || results.yahoo?.changePercent || 0),
-          dayHigh: [results.google?.dayHigh, results.yahoo?.dayHigh, results.finnhub?.dayHigh, results.investing?.dayHigh, results.av?.dayHigh].find(v => v && v > 0) || 0,
-          dayLow: [results.google?.dayLow, results.yahoo?.dayLow, results.finnhub?.dayLow, results.investing?.dayLow, results.av?.dayLow].find(v => v && v > 0) || 0,
-          volume: [results.google?.volume, results.yahoo?.volume, results.investing?.volume, results.av?.volume].find(v => v && v > 0) || 0
+          regularMarketChangePercent: results.yapikredi?.changePercent !== undefined ? results.yapikredi?.changePercent : (results.google?.changePercent !== undefined ? results.google?.changePercent : (results.finnhub?.changePercent || results.yahoo?.changePercent || 0)),
+          dayHigh: [results.yapikredi?.dayHigh, results.google?.dayHigh, results.yahoo?.dayHigh, results.finnhub?.dayHigh, results.investing?.dayHigh, results.av?.dayHigh].find(v => v && v > 0) || 0,
+          dayLow: [results.yapikredi?.dayLow, results.google?.dayLow, results.yahoo?.dayLow, results.finnhub?.dayLow, results.investing?.dayLow, results.av?.dayLow].find(v => v && v > 0) || 0,
+          volume: [results.yapikredi?.volume, results.google?.volume, results.yahoo?.volume, results.investing?.volume, results.av?.volume].find(v => v && v > 0) || 0
         },
         summaryDetail: {
           dividendYield: [results.yahoo?.dividendYield, results.investing?.dividendYield, results.av?.dividendYield, results.google?.dividendYield].find(v => v && v > 0) || 0,
@@ -535,7 +616,7 @@ class UnifiedDataService {
           forwardDividendRate: [results.yahoo?.forwardDividendRate, results.av?.dividendRate, results.google?.dividendRate].find(v => v && v > 0) || 0,
           forwardDividendYield: [results.yahoo?.forwardDividendYield, results.av?.dividendYield, results.google?.dividendYield].find(v => v && v > 0) || 0,
           payoutRatio: [results.yahoo?.payoutRatio, results.av?.payoutRatio, results.investing?.payoutRatio].find(v => v && (v > 0 || v < 0)) || 0,
-          marketCap: [results.yahoo?.marketCap, results.av?.marketCap, results.google?.marketCap, results.investing?.marketCap].find(v => v && v > 0) || 0,
+          marketCap: [results.yapikredi?.marketCap, results.yahoo?.marketCap, results.av?.marketCap, results.google?.marketCap, results.investing?.marketCap].find(v => v && v > 0) || 0,
           trailingPE: [results.yahoo?.pe, results.av?.pe, results.investing?.pe, results.google?.pe].find(v => v && v > 0) || 0,
           fiftyTwoWeekHigh: [results.yahoo?.high52, results.google?.high52, results.av?.high52, results.investing?.high52].find(v => v && v > 0) || 0,
           fiftyTwoWeekLow: [results.yahoo?.low52, results.google?.low52, results.av?.low52, results.investing?.low52].find(v => v && v > 0) || 0,
@@ -556,6 +637,7 @@ class UnifiedDataService {
       history: results.yahoo?.history || [],
       verification: {
         sources_count: Object.values(results).filter(v => !!v).length,
+        yapikredi_verified: !!results.yapikredi,
         google_verified: !!results.google,
         yahoo_verified: !!results.yahoo,
         alpha_vantage_verified: !!results.av,
@@ -971,12 +1053,19 @@ async function fetchWordPressPosts() {
     }
     
     const posts = await response.json();
-    if (!Array.isArray(posts)) return articles;
+    if (!Array.isArray(posts)) {
+      console.warn(`[Karlısın-WP] Beklenen dizi formatı gelmedi. Gelen: ${typeof posts}`);
+      return articles;
+    }
     
+    console.log(`[Karlısın-WP] ${posts.length} ham yazı başarıyla alındı.`);
+
     const mappedPosts = posts.map((post: any, index: number) => {
       // Öne çıkan görseli al - Ultra kapsamlı kontrol hiyerarşisi
       let imageUrl = 'https://images.unsplash.com/photo-1535320903710-d993d3d77d29?auto=format&fit=crop&q=80&w=1200';
+      let detectionSource = 'default';
       
+      // 1. Standart WP Embedded Media
       const featuredMedia = post._embedded?.['wp:featuredmedia']?.[0];
       
       if (featuredMedia) {
@@ -987,31 +1076,37 @@ async function fetchWordPressPosts() {
                    featuredMedia.media_details?.sizes?.medium?.source_url ||
                    featuredMedia.guid?.rendered ||
                    imageUrl;
-      } else if (post.featured_media_url) {
-        imageUrl = post.featured_media_url;
-      } else if (post.jetpack_featured_media_url) {
-        imageUrl = post.jetpack_featured_media_url;
-      } else if (post.featured_media_src_url) {
-        imageUrl = post.featured_media_src_url;
-      } else if (post.featured_image_url) {
-        imageUrl = post.featured_image_url;
-      } else if (post.yoast_head_json?.og_image?.[0]?.url) {
-        imageUrl = post.yoast_head_json.og_image[0].url;
-      } else if (post.better_featured_image?.source_url) {
-        imageUrl = post.better_featured_image.source_url;
-      } else if (post.parselyMeta?.['parsely-image-url']) {
-        imageUrl = post.parselyMeta['parsely-image-url'];
-      } else {
-        // Fallback: İçerikteki ilk resmi bulmaya çalış
+        detectionSource = 'wp:featuredmedia';
+      } 
+      // 2. Direct Featured URL fields (common in some WP setups/plugins)
+      else if (post.featured_media_url) { imageUrl = post.featured_media_url; detectionSource = 'featured_media_url'; }
+      else if (post.jetpack_featured_media_url) { imageUrl = post.jetpack_featured_media_url; detectionSource = 'jetpack_featured_media_url'; }
+      else if (post.featured_media_src_url) { imageUrl = post.featured_media_src_url; detectionSource = 'featured_media_src_url'; }
+      else if (post.featured_image_url) { imageUrl = post.featured_image_url; detectionSource = 'featured_image_url'; }
+      
+      // 3. Yoast SEO / Social Graph Metadata (Highly reliable fallback)
+      else if (post.yoast_head_json?.og_image?.[0]?.url) { imageUrl = post.yoast_head_json.og_image[0].url; detectionSource = 'yoast_og_image'; }
+      else if (post.yoast_head_json?.twitter_image) { imageUrl = post.yoast_head_json.twitter_image; detectionSource = 'yoast_twitter_image'; }
+      
+      // 4. Rank Math / Other SEO Plugins
+      else if (post.rank_math_facebook_image) { imageUrl = post.rank_math_facebook_image; detectionSource = 'rank_math_fb'; }
+      
+      // 5. Common Legacy Fields
+      else if (post.better_featured_image?.source_url) { imageUrl = post.better_featured_image.source_url; detectionSource = 'better_featured_image'; }
+      else if (post.parselyMeta?.['parsely-image-url']) { imageUrl = post.parselyMeta['parsely-image-url']; detectionSource = 'parsely'; }
+      
+      // 6. Content Scraping (Final attempt)
+      else {
         const content = post.content?.rendered || "";
         const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
-        if (imgMatch && imgMatch[1]) {
+        if (imgMatch && imgMatch[1] && !imgMatch[1].includes('avatar')) {
           imageUrl = imgMatch[1];
+          detectionSource = 'content_scrape';
         }
       }
       
-      if (index === 0 && imageUrl.includes('unsplash')) {
-        console.log(`[Karlısın-WP] UYARI: İlk yazı için WordPress'te öne çıkan görsel veya içeriksel görsel bulunamadı.`);
+      if (index === 0) {
+        console.log(`[Karlısın-WP] İlk Yazı Detayı: "${post.title?.rendered}", Görsel Kaynağı: ${detectionSource}, URL: ${imageUrl.substring(0, 50)}...`);
       }
 
       // Kategori bul
@@ -2037,6 +2132,30 @@ async function startServer() {
 
     res.json(allResults);
   });
+
+  // STOCK DETAIL API (Unified Engine)
+  app.get('/api/stock/:symbol', async (req, res) => {
+    const { symbol } = req.params;
+    if (!symbol) return res.status(400).json({ error: 'Sembol gerekli' });
+    
+    try {
+      console.log(`[Karlısın-API] Hisse detayı isteniyor: ${symbol}`);
+      const data = await UnifiedDataService.getFullStockData(symbol);
+      res.json(data);
+    } catch (err: any) {
+      console.error(`[Karlısın-API] Hisse detayı hatası (${symbol}):`, err.message);
+      res.status(500).json({ error: 'Hisse verisi alınamadı', details: err.message });
+    }
+  });
+
+  // Search Alias for easier frontend access
+  app.get('/api/search', async (req, res) => {
+    const query = req.query.q as string;
+    if (!query) return res.json([]);
+    
+    // Redirect to the existing search implementation
+    res.redirect(`/api/stock/search?q=${encodeURIComponent(query)}`);
+  });
   
   // BASİT PING TESTİ
   app.get('/api/ping', (req, res) => {
@@ -2090,7 +2209,7 @@ async function startServer() {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     try {
-      const wpPosts = await fetchWordPressPosts();
+      const wpPosts = await fetchWordPressPosts() as any[];
       console.log(`[Karlısın-API] /api/blog/v2/posts: ${wpPosts.length} yazı bulundu.`);
       res.json(wpPosts);
     } catch (err: any) {
@@ -2362,7 +2481,7 @@ async function startServer() {
   // LIVE IPO DATA ENGINE (Scrapes + Gemini Intelligence)
   app.get('/api/ipo-data', async (req, res) => {
     console.log(`[Karlısın-IPO] İSTEK ALINDI: ${req.url}`);
-    const cacheKey = 'live_ipo_data_v3';
+    const cacheKey = 'live_ipo_data_v7';
     const isRefresh = req.query.refresh === 'true';
     const cachedData = cache.get(cacheKey) as any;
     
@@ -2375,7 +2494,8 @@ async function startServer() {
     const isStale = cachedData ? (!cachedData.lastUpdate || new Date(cachedData.lastUpdate).getTime() < updateTimeUTC.getTime()) : true;
     const isPastUpdateHour = now.getTime() > updateTimeUTC.getTime();
 
-    const shouldUpdate = !cachedData || isRefresh || (isPastUpdateHour && isStale);
+    const isFourHoursStale = cachedData && cachedData.lastUpdate && (now.getTime() - new Date(cachedData.lastUpdate).getTime() > 4 * 60 * 60 * 1000);
+    const shouldUpdate = !cachedData || isRefresh || (isPastUpdateHour && isStale) || isFourHoursStale;
 
     if (cachedData && !shouldUpdate) {
       console.log('[Karlısın-IPO] Güncel veri önbellekten dönülüyor.');
@@ -2395,67 +2515,145 @@ async function startServer() {
       attempt++;
       console.log(`[Karlısın-IPO] Günlük güncelleme başlatılıyor... (Deneme: ${attempt})`);
       
-      const todayIso = now.toISOString().split('T')[0];
-      const todayTR = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-
-      let bistHtml = '';
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
       try {
-        const bistRes = await fetch('https://halkarz.com/', {
+        const todayIso = new Date().toISOString().split('T')[0];
+        const todayTR = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        function getRandomUserAgent() {
+          const uas = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          ];
+          return uas[Math.floor(Math.random() * uas.length)];
+        }
+
+        let bistHtml = '';
+        let archiveHtml = '';
+        let draftHtml = '';
+        let investazHtml = '';
+        let gedikHtml = '';
+        let yapikrediHtml = '';
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes for scrapes
+
+        const fetchOptions = {
           headers: { 
             'User-Agent': getRandomUserAgent(),
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-            'Accept-Language': 'tr,en-US;q=0.7,en;q=0.3'
+            'Accept-Language': 'tr,en-US;q=0.7,en;q=0.3',
+            'Cache-Control': 'no-cache',
           },
           signal: controller.signal as any
-        });
-        bistHtml = bistRes.ok ? await bistRes.text() : '';
-      } catch (e: any) {
-        console.warn('[Karlısın-IPO] BIST Scrape hatası (Halk Arz):', e.message);
-      } finally {
-        clearTimeout(timeoutId);
-      }
+        };
 
-      // Eğer dış kaynak tamamen ulaşılamaz durumdaysa ve önbellek varsa, AI çağırmaya gerek yok
-      if (!bistHtml && cachedData) {
-        console.log('[Karlısın-IPO] Kaynağa ulaşılamadı, mevcut önbellek yeni kabul ediliyor.');
-        return cachedData;
-      }
-      
-      // Eğer kaynak yoksa ve önbellek de yoksa, en azından boş bir yapı üretelim (AI'yı boş HTML ile yormayalım)
-      if (!bistHtml && !cachedData) {
-        return { bist: [], nasdaq: [], lastUpdate: new Date().toISOString() };
-      }
+        try {
+          // Individual timeouts for slow sources to prevent blocking the whole pipe
+          const fetchWithTimeout = async (url: string, options: any, timeout = 60000) => {
+            const innerController = new AbortController();
+            const id = setTimeout(() => innerController.abort(), timeout);
+            try {
+              const res = await fetch(url, { ...options, signal: innerController.signal });
+              return res;
+            } finally {
+              clearTimeout(id);
+            }
+          };
 
-      const prompt = `
-        Bugünün Tarihi: ${todayTR} (ISO: ${todayIso})
-        "halkarz.com" içeriğinden 2026 yılı halka arzlarını ayıkla.
-        
-        KURALLAR:
-        - Tarih henüz gelmediyse: "upcoming"
-        - Bugün aralıktaysa: "ongoing"
-        - Geçmişse: "completed"
-        
-        FORMAT: { "bist": [...], "nasdaq": [...], "lastUpdate": "ISO Date" } (JSON)
-      `;
+          const [bistRes, archiveRes, draftRes, investazRes, gedikRes, yapikrediRes] = await Promise.all([
+            fetchWithTimeout('https://halkarz.com/', fetchOptions, 40000).catch(() => null),
+            fetchWithTimeout('https://halkarz.com/arsiv/', fetchOptions, 40000).catch(() => null),
+            fetchWithTimeout('https://halkarz.com/taslak-izahnameler/', fetchOptions, 60000).catch(() => null),
+            fetchWithTimeout('https://www.investaz.com.tr/halka-arz-takvimi', fetchOptions, 40000).catch(() => null),
+            fetchWithTimeout('https://gedik.com/halka-arz-takvimi', fetchOptions, 40000).catch(() => null),
+            fetchWithTimeout('https://www.yapikredi.com.tr/bireysel-bankacilik/yatirim-urunleri/hisse-senetleri/halka-arz-takvimi', fetchOptions, 40000).catch(() => null)
+          ]);
+          
+          bistHtml = (bistRes && bistRes.ok) ? await bistRes.text() : '';
+          archiveHtml = (archiveRes && archiveRes.ok) ? await archiveRes.text() : '';
+          draftHtml = (draftRes && draftRes.ok) ? await draftRes.text() : '';
+          investazHtml = (investazRes && investazRes.ok) ? await investazRes.text() : '';
+          gedikHtml = (gedikRes && gedikRes.ok) ? await gedikRes.text() : '';
+          yapikrediHtml = (yapikrediRes && yapikrediRes.ok) ? await yapikrediRes.text() : '';
+          
+          console.log(`[Karlısın-IPO] Sources scraped: Main, Archive, Drafts, InvestAz, Gedik, YapiKredi.`);
+        } catch (e: any) {
+          console.warn('[Karlısın-IPO] Scrape warning:', e.message);
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
-      try {
+        const prompt = `
+            GÖREV: Sana verdiğim 6 farklı finans kaynağından gelen verileri karşılaştır ve Borsa İstanbul (BIST) halka arz takvimini oluştur.
+            ÖZELLİKLE "TASLAK İZAHNAME" (BAŞVURU SÜRECİNDE) OLAN TÜM ŞİRKETLERİ LİSTELE. 
+            İnternette 200'den fazla taslak şirket var, bulabildiğin kadarını (en az 100-150 tane) JSON içine ekle.
+            
+            BUGÜNÜN TARİHİ: ${todayTR} (YIL 2026)
+            
+            KATEGORİZASYON:
+            1. ongoing (TALEP TOPLAYANLAR): Sadece bugün (${todayTR}) talep toplama tarihlerindeyse.
+            2. upcoming (ONAY BEKLEYEN / TASLAK): SPK onayı bekleyen, taslak izahnamesi sunulmuş olan TÜM şirketler. Bu liste çok uzun olmalı!
+            3. completed (İŞLEMDE OLANLAR): Yakın zamanda (2025-2026) halka arzı bitmiş ve borsada işlem gören şirketler.
+            
+            ÖNEMLİ: 2024 ve 2025 verilerini "ongoing" yapma, onlar "completed" olmalı.
+            
+            JSON FORMATI:
+            {
+              "bist": [
+                {
+                  "name": "Şirket Adı",
+                  "code": "KOD",
+                  "price": 0.0,
+                  "date": "Tarih veya 'Taslak'",
+                  "status": "ongoing|upcoming|completed",
+                  "method": "...",
+                  "lotRange": "...",
+                  "market": "...",
+                  "description": "..."
+                }
+              ],
+              "nasdaq": [],
+              "lastUpdate": "${new Date().toISOString()}"
+            }
+          `;
+
+        const cleanHtml = (html: string, limit = 15000) => {
+          if (!html) return '';
+          return html
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+            .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, '')
+            .replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, '')
+            .replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, '')
+            .replace(/\s+/g, ' ')
+            .substring(0, limit); 
+        };
+
         const result = await aiClient.models.generateContent({
-          model: "gemini-3.1-flash-lite",
-          contents: [{ role: 'user', parts: [{ text: prompt }, { text: `HTML: ${bistHtml.substring(0, 40000)}` }] }],
+          model: "gemini-3-flash-preview",
+          contents: [{ role: 'user', parts: [
+            { text: prompt },
+            { text: `KAYNAK 1 (HalkArz Ana/Ongoing):\n${cleanHtml(bistHtml)}` },
+            { text: `KAYNAK 2 (HalkArz Taslaklar - 200+ Şirket):\n${cleanHtml(draftHtml, 40000)}` },
+            { text: `KAYNAK 3 (HalkArz Arşiv - Completed):\n${cleanHtml(archiveHtml)}` },
+            { text: `KAYNAK 4 (Finans Kurumları):\n${cleanHtml(investazHtml)}\n${cleanHtml(gedikHtml)}\n${cleanHtml(yapikrediHtml)}` }
+          ]}],
           config: { 
-            responseMimeType: "application/json", 
-            temperature: 0.1
+            responseMimeType: "application/json",
+            temperature: 0,
+            tools: [{ googleSearch: {} }]
           }
         });
         
-        let text = result.text || "";
-        // Daha agresif JSON temizleme
+        let text = "";
+        try {
+          text = (result as any).candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        } catch (e) {
+          text = (result as any).text || "{}";
+        }
+
         text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        
-        // Eğer hala JSON bloğu içindeyse temizle
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) text = jsonMatch[0];
         
@@ -2464,15 +2662,31 @@ async function startServer() {
             const parsed = JSON.parse(text);
             parsed.lastUpdate = new Date().toISOString(); 
             
-            // Veri yapısı doğrulaması
             if (!parsed.bist) parsed.bist = [];
             if (!parsed.nasdaq) parsed.nasdaq = [];
 
-            // ID Fixes
-            parsed.bist = parsed.bist.map((it: any, i: number) => ({ ...it, id: it.id || (i + 1) }));
-            parsed.nasdaq = parsed.nasdaq.map((it: any, i: number) => ({ ...it, id: it.id || (i + 101) }));
-            
-            cache.set(cacheKey, parsed, 172800); 
+            // --- SERVER-SIDE FINAL VALIDATION ---
+            parsed.bist = parsed.bist.map((item: any, i: number) => {
+              const dateStr = (item.date || "").toLowerCase();
+              
+              // 2024-2025 verilerini "completed" olarak işaretle
+              if (dateStr.includes("2024") || dateStr.includes("2025")) {
+                item.status = "completed";
+              }
+              
+              // Yiğit Akü ve Horoz Lojistik koruması
+              if (item.code === "YIGIT" || item.code === "HOROZ") {
+                item.status = "completed";
+              }
+
+              return { ...item, id: item.id || (item.code + "_" + i) };
+            });
+
+            if (parsed.bist.length === 0 && cachedData && cachedData.bist && cachedData.bist.length > 0) {
+              return cachedData;
+            }
+
+            cache.set(cacheKey, parsed, 7200); 
             return parsed;
           } catch (pErr: any) {
             console.error('[Karlısın-IPO] JSON Parse Hatası:', pErr.message, 'Text:', text.substring(0, 200));
@@ -2590,6 +2804,12 @@ async function startServer() {
     
     // Server startup automatic broadcast check
     initAutoBroadcast();
+
+    // Check for new WordPress posts every 10 minutes
+    setInterval(() => {
+      console.log('[Karlısın-WP-Sync] Periyodik kontrol başlatılıyor...');
+      initAutoBroadcast();
+    }, 600000); 
   });
 }
 
@@ -2606,7 +2826,22 @@ async function initAutoBroadcast(force = false) {
   }
 
   try {
-    const lastArticle = articles[articles.length - 1];
+    // Önce WordPress yazılarını almayı dene
+    let latestArticles = articles;
+    const wpUrl = process.env.WORDPRESS_URL?.trim();
+    
+    if (wpUrl) {
+      try {
+        const wpPosts = await fetchWordPressPosts();
+        if (wpPosts && Array.isArray(wpPosts) && wpPosts.length > 0) {
+          latestArticles = wpPosts as any[];
+        }
+      } catch (err) {
+        console.warn('[Karlısın-AUTO] WordPress yazıları alınamadı, yerel listeye bakılıyor.');
+      }
+    }
+
+    const lastArticle = latestArticles[0]; // WordPress API en yeniyi en başa getirir
     if (!lastArticle) {
       console.log('[Karlısın-AUTO] Yayınlanmış yazı bulunamadı.');
       return;

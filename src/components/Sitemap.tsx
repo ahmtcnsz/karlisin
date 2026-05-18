@@ -46,6 +46,7 @@ export default function Sitemap() {
         { name: 'Temettü Dağıtımı ve Verimi Takibi', path: '/temettu-takibi', icon: <PieChart size={16} /> },
         { name: 'Borsa Takibi ve Şirket Finansal Analizi', path: '/borsa/nabiz', icon: <TrendingUp size={16} /> },
         { name: 'Borsa İstanbul Halka Arz Takvimi', path: '/borsa/halka-arz', icon: <Calendar size={16} /> },
+
       ]
     },
     {
