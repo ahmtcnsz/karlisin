@@ -1102,11 +1102,18 @@ async function fetchWordPressPosts() {
         if (imgMatch && imgMatch[1] && !imgMatch[1].includes('avatar')) {
           imageUrl = imgMatch[1];
           detectionSource = 'content_scrape';
+        } else {
+          // İkincil deneme: og:image meta tagını içeriğin içinden ayıkla (bazı WP pluginleri basar)
+          const ogMatch = content.match(/property="og:image"\s+content="([^">]+)"/) || content.match(/name="twitter:image"\s+content="([^">]+)"/);
+          if (ogMatch && ogMatch[1]) {
+            imageUrl = ogMatch[1];
+            detectionSource = 'content_og_meta';
+          }
         }
       }
       
       if (index === 0) {
-        console.log(`[Karlısın-WP] İlk Yazı Detayı: "${post.title?.rendered}", Görsel Kaynağı: ${detectionSource}, URL: ${imageUrl.substring(0, 50)}...`);
+        console.log(`[Karlısın-WP] Yazı: "${post.title?.rendered}", Kaynak: ${detectionSource}, Resim: ${imageUrl.substring(0, 40)}...`);
       }
 
       // Kategori bul
@@ -1234,6 +1241,33 @@ async function startServer() {
 
   const app = express();
   app.set('trust proxy', true);
+  
+  // WP-Admin Safety Check (Helping user with DNS issues)
+  app.get(['/wp-admin*', '/wp-login.php*'], (req, res) => {
+    res.status(403).send(`
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; line-height: 1.6; max-width: 600px; margin: 40px auto; background: #0f172a; color: #f8fafc; border-radius: 24px; border: 1px solid #1e293b; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+        <h1 style="color: #f43f5e; font-weight: 900; letter-spacing: -0.05em; margin-bottom: 24px; text-transform: uppercase;">Dikkat: Alan Adı Yapılandırma Hatası</h1>
+        <p style="font-size: 1.1em; color: #94a3b8;">Şu anda WordPress paneline (WP-Admin) erişmeye çalışıyorsunuz ancak bu isteği <strong>Karlısın React Uygulaması</strong> (Frontend) karşıladı.</p>
+        
+        <div style="background: #1e293b; padding: 20px; border-radius: 16px; margin: 24px 0;">
+          <strong style="color: #fbbf24; display: block; margin-bottom: 8px;">Tespit Edilen Sorun:</strong>
+          WordPress'in yüklü olduğu subdomain (örn: <code>blog-admin.karlisin.com</code>), DNS ayarlarınızda yanlışlıkla bu Karlısın uygulamasına yönlendirilmiş.
+        </div>
+        
+        <strong style="display: block; margin-bottom: 12px; color: #38bdf8;">Çözüm İçin Yapılması Gerekenler:</strong>
+        <ol style="margin-left: 20px; color: #cbd5e1; padding-left: 0;">
+          <li style="margin-bottom: 12px;"><strong>DNS Ayarlarını Kontrol Edin:</strong> Domain sağlayıcınızın (Cloudflare, GoDaddy vb.) paneline girin.</li>
+          <li style="margin-bottom: 12px;"><strong>Subdomain Yönlendirmesini Düzeltin:</strong> <code>blog-admin</code> subdomain'inin A (veya CNAME) kaydını Karlısın'ın IP'sine değil, <strong>WordPress Hosting</strong> (örn: Bluehost, DigitalOcean) firmanızın IP'sine yönlendirin.</li>
+          <li style="margin-bottom: 12px;"><strong>Bu Uygulama:</strong> Karlısın Frontend uygulaması sadece ana domaininizde (<code>karlisin.com</code>) çalışmalıdır.</li>
+        </ol>
+        
+        <p style="margin-top: 32px; font-size: 0.8em; color: #475569; border-top: 1px solid #1e293b; padding-top: 16px; text-align: center;">
+          Karlısın Akıllı Sistemler Platformu v3.1.5
+        </p>
+      </div>
+    `);
+  });
+
   const PORT = Number(process.env.PORT) || 3000;
 
   // API Key Diagnostics
@@ -2884,6 +2918,7 @@ async function initAutoBroadcast(force = false) {
             return;
           }
 
+          // 2. Fetch subscribers and send mail via Resend in batches
           const querySnapshot = await adminDb.collection('newsletter_subscribers').get();
           const subscribers = querySnapshot.docs
             .map((doc: any) => doc.data().email)
@@ -2891,7 +2926,7 @@ async function initAutoBroadcast(force = false) {
 
           console.log(`[Karlısın-AUTO] ${subscribers.length} geçerli abone bulundu.`);
 
-          // 1. X (Twitter) Otomatik Paylaşım
+          // 1. X (Twitter) Otomatik Paylaşım (Hemen yap)
           const tweetText = `📢 Yeni Yazı: ${lastArticle.title}\n\n${lastArticle.excerpt.slice(0, 110)}...\n\n🔗 Okumak için: https://www.karlisin.com/blog/${lastArticle.slug || currentId}\n\n#Karlısın #Borsa #FinansalOzgurluk @KarlisinTR`;
           console.log('[Karlısın-AUTO] X Paylaşımı başlatılıyor...');
           try {
@@ -2906,7 +2941,8 @@ async function initAutoBroadcast(force = false) {
               last_broadcasted_article_id: currentId,
               status: 'IDLE',
               updated_at: new Date().toISOString(),
-              total_sent: 0
+              total_sent: 0,
+              last_article_title: lastArticle.title
             }, { merge: true });
             isLocalBroadcastPending = false;
             return;
@@ -2917,43 +2953,54 @@ async function initAutoBroadcast(force = false) {
           const sender = getSenderEmail();
           const articleUrl = `https://www.karlisin.com/blog/${lastArticle.slug || currentId}`;
 
-          let successCount = 0;
           console.log(`[Karlısın-AUTO] ${subscribers.length} mail gönderimi başlıyor... (From: ${sender})`);
 
-          for (const email of subscribers) {
+          // Resend Batching - 50 per batch
+          const batchSize = 50;
+          let successCount = 0;
+          
+          for (let i = 0; i < subscribers.length; i += batchSize) {
+            const batch = subscribers.slice(i, i + batchSize);
             try {
               const res = await resendInstance.emails.send({
                 from: sender,
-                to: [email],
+                to: batch,
                 subject: `Karlısın'dan Yeni İçerik: ${lastArticle.title} 📚`,
                 html: `
-                  <div style="font-family:sans-serif;padding:20px;color:#1e293b;max-width:600px;margin:0 auto;">
-                    <div style="text-align:center;margin-bottom:30px;">
-                      <h1 style="color:#4f46e5;margin:0;">Karlısın.com</h1>
-                      <p style="color:#64748b;margin:5px 0 0 0;">Finansal Özgürlük Analizleri</p>
+                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #1e293b; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 32px;">
+                    <div style="text-align: center; margin-bottom: 40px;">
+                      <div style="display: inline-block; padding: 12px 24px; background: #4f46e5; border-radius: 16px; color: white; font-weight: 900; letter-spacing: 2px;">KARLISIN</div>
+                      <p style="margin-top: 12px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 4px;">Geleceğini Hesapla</p>
                     </div>
-                    <div style="background:#f8fafc;padding:30px;border-radius:24px;border:1px solid #e2e8f0;margin-bottom:20px;">
-                      <h2 style="margin-top:0;color:#1e293b;font-size:20px;">${lastArticle.title}</h2>
-                      <p style="color:#475569;line-height:1.6;">${lastArticle.excerpt}</p>
-                      <div style="margin-top:25px;text-align:center;">
-                        <a href="${articleUrl}" style="display:inline-block;background:#4f46e5;color:white;padding:14px 28px;text-decoration:none;border-radius:12px;font-weight:bold;font-size:16px;">Yazının Tamamını Oku</a>
+                    
+                    <div style="margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 40px;">
+                      <h1 style="font-size: 28px; font-weight: 800; color: #0f172a; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 16px;">${lastArticle.title}</h1>
+                      <p style="font-size: 16px; line-height: 1.6; color: #475569; margin-bottom: 24px;">${lastArticle.excerpt}</p>
+                      
+                      <div style="text-align: center;">
+                        <a href="${articleUrl}" style="display: inline-block; padding: 18px 36px; background: #4f46e5; color: #ffffff; font-weight: 800; text-decoration: none; border-radius: 18px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);">Yazının Tamamını Oku</a>
                       </div>
                     </div>
-                    <div style="text-align:center;color:#94a3b8;font-size:12px;">
-                      <p>© 2026 Karlısın. Tüm hakları saklıdır.</p>
-                      <p>Haftalık bülten aboneliğiniz kapsamında gönderilmiştir.</p>
+                    
+                    <div style="text-align: center; color: #94a3b8; font-size: 12px;">
+                      <p style="margin-bottom: 8px;">Bu e-posta Karlısın haftalık bültenine abone olduğunuz için gönderilmiştir.</p>
+                      <p>© 2026 Karlısın . Tüm hakları saklıdır.</p>
+                      <div style="margin-top: 16px;">
+                        <a href="https://www.karlisin.com" style="color: #4f46e5; text-decoration: none; font-weight: bold;">Ana Sayfaya Git</a>
+                      </div>
                     </div>
                   </div>
                 `
               });
               
               if (res.error) {
-                console.error(`[Karlısın-AUTO] Resend Hatası (${email}):`, res.error);
+                console.error(`[Karlısın-AUTO] Resend Batch Hatası:`, res.error);
               } else {
-                successCount++;
+                successCount += batch.length;
+                console.log(`[Karlısın-AUTO] Batch #${Math.floor(i/batchSize) + 1} gönderildi. (${successCount}/${subscribers.length})`);
               }
             } catch (err: any) {
-              console.error(`[Karlısın-AUTO] Mail İstisnası (${email}):`, err.message);
+              console.error(`[Karlısın-AUTO] Batch İstisnası:`, err.message);
             }
           }
 
